@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools", "wheel", "hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sentencesegmenter"
+classifiers = ["Private :: Do Not Upload"]
+version = "0"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+tests = [
+    'pytest'
+]
+dev = [
+    "black",
+    "ruff",
+    "tox",
+]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[project.scripts]
+sentencesegmenter = "sentencesegmenter"
