@@ -2,6 +2,7 @@ import pytest
 
 from sentencesegmenter import segment
 
+# ruff: noqa: E501
 tests = [
     (
         "安永已聯繫周怡安親屬，協助辦理簽證相關事宜，周怡安家屬1月1日晚間搭乘東方航空班機抵達上海，他們步入入境大廳時神情落寞、不發一語。周怡安來自台中，去年剛從元智大學畢業，同年9月加入安永。",

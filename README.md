@@ -1,5 +1,7 @@
 # Sentence segmenter
 
+![Tests](https://github.com/santhoshtr/sentencesegmenter/actions/workflows/tests.yml/badge.svg)
+
 Basic approach:
 
 - If it's a period, it ends a sentence.

@@ -30,5 +30,4 @@ def segment(language, text: str) -> List[str]:
     return get_language_class(language)().segment(text)
 
 
-
 __all__ = ["languages", "segment"]

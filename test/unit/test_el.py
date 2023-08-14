@@ -2,6 +2,7 @@ import pytest
 
 from sentencesegmenter import segment
 
+# ruff: noqa: E501
 tests = [
     (
         "Με συγχωρείτε· πού είναι οι τουαλέτες; Τις Κυριακές δε δούλευε κανένας. το κόστος του σπιτιού ήταν £260.950,00.",

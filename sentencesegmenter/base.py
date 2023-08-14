@@ -4,8 +4,8 @@ from typing import Dict, List
 from .terminators import GLOBAL_SENTENCE_TERMINATORS
 
 GLOBAL_SENTENCE_BOUNDARY_REGEX = r"[%s]+" % "".join(GLOBAL_SENTENCE_TERMINATORS)
-QUOTES="\"'«»‘’‚‛“”„‟‹›《》"
-QUOTES_REGEX = r"[%s][^%s]+[%s]" % (QUOTES,QUOTES,QUOTES)
+QUOTES_REGEX = r"([\"'«‘‚‛“„‟‹《])(?:\\\1|.)*?[\"'»’‚‛”„‟›》]"
+EMAIL_REGEX = r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}"
 
 NUMBERED_REFERENCE_REGEX = r"^(\[\d+])+"
 
@@ -35,6 +35,7 @@ class Language(object, metaclass=Languages):
 
     language = "base"
     abbreviations: set = set()
+    sentence_break_regex = GLOBAL_SENTENCE_BOUNDARY_REGEX
 
     def is_abbreviation(self, head: str, tail: str) -> bool:
         """
@@ -81,11 +82,9 @@ class Language(object, metaclass=Languages):
         # print(match_len)
         return match.start() + match_len
 
-
-
     def segment(self, text: str) -> List[str]:
         sentences = []
-        paragraph_break ='\n\n'
+        paragraph_break = "\n\n"
         paragraphs = text.split(paragraph_break)
         paragraph_index = 0
         for paragraph in paragraphs:
@@ -98,7 +97,11 @@ class Language(object, metaclass=Languages):
             for quote_match in quote_matches:
                 skippable_ranges.append(quote_match.span())
 
-            matches = re.finditer(GLOBAL_SENTENCE_BOUNDARY_REGEX, paragraph)
+            email_matches = re.finditer(EMAIL_REGEX, paragraph)
+            for quote_match in email_matches:
+                skippable_ranges.append(quote_match.span())
+
+            matches = re.finditer(self.sentence_break_regex, paragraph)
 
             for match in matches:
                 boundary = self.findBoundary(paragraph, match)
@@ -107,8 +110,13 @@ class Language(object, metaclass=Languages):
                     continue
 
                 # Skip breaks that are inside a quote.
-                in_range=False
-                for (qstart, qend) in skippable_ranges:
+                in_range = False
+                for qstart, qend in skippable_ranges:
+                    print(
+                        boundary,
+                        qstart,
+                        qend,
+                    )
                     if boundary > qstart and boundary < qend:
                         in_range = True
                         break
@@ -116,7 +124,6 @@ class Language(object, metaclass=Languages):
                     continue
 
                 boundaries.append(boundary)
-
 
             for i, j in zip(boundaries, boundaries[1:] + [None]):
                 sentence = paragraph[i:j]
