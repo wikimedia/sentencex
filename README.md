@@ -1,6 +1,6 @@
 # Sentence segmenter
 
-![Tests](https://github.com/santhoshtr/sentencesegmenter/actions/workflows/tests.yml/badge.svg)
+[![tests](https://github.com/santhoshtr/sentencesegmenter/actions/workflows/tests.yaml/badge.svg)](https://github.com/santhoshtr/sentencesegmenter/actions/workflows/tests.yaml)
 
 Basic approach:
 
