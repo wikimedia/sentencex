@@ -4,10 +4,19 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sentencesegmenter"
+description = "Sentence segmenter that supports ~300 languages"
+readme = "README.md"
+authors = [{name = "Santhosh Thottingal"}]
 classifiers = ["Private :: Do Not Upload"]
 version = "0.1"
 requires-python = ">=3.8"
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/santhoshtr/sentencesegmenter"
+Changelog = "https://github.com/santhoshtr/sentencesegmenter/releases"
+Issues = "https://github.com/santhoshtr/sentencesegmenter/issues"
+CI = "https://github.com/santhoshtr/sentencesegmenter/actions"
 
 [project.optional-dependencies]
 tests = [
