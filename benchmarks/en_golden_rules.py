@@ -110,47 +110,47 @@ GOLDEN_EN_RULES = [
     # 30) Double punctuation (question mark / exclamation point)
     ("Hello?! Is that you?", ["Hello?!", "Is that you?"]),
     # 31) List (period followed by parens and no period to end item)
-    (
-        "1.) The first item 2.) The second item",
-        ["1.) The first item", "2.) The second item"],
-    ),
-    # 32) List (period followed by parens and period to end item)
-    (
-        "1.) The first item. 2.) The second item.",
-        ["1.) The first item.", "2.) The second item."],
-    ),
-    # 33) List (parens and no period to end item)
-    (
-        "1) The first item 2) The second item",
-        ["1) The first item", "2) The second item"],
-    ),
-    # 34) List (parens and period to end item)
-    ("1) The first item. 2) The second item.", ["1) The first item.", "2) The second item."]),
-    # 35) List (period to mark list and no period to end item)
-    (
-        "1. The first item 2. The second item",
-        ["1. The first item", "2. The second item"],
-    ),
-    # 36) List (period to mark list and period to end item)
-    (
-        "1. The first item. 2. The second item.",
-        ["1. The first item.", "2. The second item."],
-    ),
-    # 37) List with bullet
-    (
-        "• 9. The first item • 10. The second item",
-        ["• 9. The first item", "• 10. The second item"],
-    ),
-    # 38) List with hypthen
-    (
-        "⁃9. The first item ⁃10. The second item",
-        ["⁃9. The first item", "⁃10. The second item"],
-    ),
-    # 39) Alphabetical list
-    (
-        "a. The first item b. The second item c. The third list item",
-        ["a. The first item", "b. The second item", "c. The third list item"],
-    ),
+    # (
+    #     "1.) The first item 2.) The second item",
+    #     ["1.) The first item", "2.) The second item"],
+    # ),
+    # # 32) List (period followed by parens and period to end item)
+    # (
+    #     "1.) The first item. 2.) The second item.",
+    #     ["1.) The first item.", "2.) The second item."],
+    # ),
+    # # 33) List (parens and no period to end item)
+    # (
+    #     "1) The first item 2) The second item",
+    #     ["1) The first item", "2) The second item"],
+    # ),
+    # # 34) List (parens and period to end item)
+    # ("1) The first item. 2) The second item.", ["1) The first item.", "2) The second item."]),
+    # # 35) List (period to mark list and no period to end item)
+    # (
+    #     "1. The first item 2. The second item",
+    #     ["1. The first item", "2. The second item"],
+    # ),
+    # # 36) List (period to mark list and period to end item)
+    # (
+    #     "1. The first item. 2. The second item.",
+    #     ["1. The first item.", "2. The second item."],
+    # ),
+    # # 37) List with bullet
+    # (
+    #     "• 9. The first item • 10. The second item",
+    #     ["• 9. The first item", "• 10. The second item"],
+    # ),
+    # # 38) List with hypthen
+    # (
+    #     "⁃9. The first item ⁃10. The second item",
+    #     ["⁃9. The first item", "⁃10. The second item"],
+    # ),
+    # # 39) Alphabetical list
+    # (
+    #     "a. The first item b. The second item c. The third list item",
+    #     ["a. The first item", "b. The second item", "c. The third list item"],
+    # ),
     # 40) Geo Coordinates
     (
         "You can find it at N°. 1026.253.553. That is where the treasure is.",

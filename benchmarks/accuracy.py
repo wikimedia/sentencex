@@ -100,14 +100,12 @@ if __name__ == "__main__":
         stanza_tokenize,
         syntok_tokenize,
     )
-
+    print("{:30}{:10}{:30}".format('Tokenizer', 'GRS score', 'Speed(Avg over 100 runs)'))
     for tokenize_func in libraries:
         t = time.time()
         for _index in range(100):
             percent_score = benchmark(GOLDEN_EN_RULES, tokenize_func)
 
         time_taken = time.time() - t
-        print()
-        print(tokenize_func.__name__)
-        print("GRS score: {:0.2f}%".format(percent_score))
-        print("Speed(Avg over 100 runs): {:>10.2f} ms".format(time_taken * 1000 / 100))
+
+        print(f"{tokenize_func.__name__:30}{percent_score:0.2f}{time_taken * 1000 / 100:>10.2f}")
