@@ -17,4 +17,4 @@ tests = [
 
 @pytest.mark.parametrize("text,expected_sents", tests)
 def test_segment(text, expected_sents):
-    assert segment("zh", text) == expected_sents
+    assert list(segment("zh", text)) == expected_sents

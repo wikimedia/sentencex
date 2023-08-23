@@ -1,13 +1,22 @@
 import re
-from typing import Dict, List
+from typing import Dict, Iterator
 
 from .terminators import GLOBAL_SENTENCE_TERMINATORS
 
-GLOBAL_SENTENCE_BOUNDARY_REGEX = r"[%s]+" % "".join(GLOBAL_SENTENCE_TERMINATORS)
-QUOTES_REGEX = r"([\"'«‘‚‛“„‟‹《])(?:\\\1|.)*?[\"'»’‚‛”„‟›》]"
-EMAIL_REGEX = r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}"
-
-NUMBERED_REFERENCE_REGEX = r"^(\[\d+])+"
+quote_pairs = {
+    '"': '"',
+    "'": "'",
+    "«": "»",
+    "‘": "’",
+    "‚": "‚",
+    "“": "”",
+    "‛": "‛",
+    "„": "„",
+    "‟": "‟",
+    "‹": "›",
+    "《": "》",
+    "「": "」",
+}
 
 
 class Languages(type):
@@ -35,6 +44,13 @@ class Language(object, metaclass=Languages):
 
     language = "base"
     abbreviations: set = set()
+    GLOBAL_SENTENCE_BOUNDARY_REGEX = re.compile(r"[%s]+" % "".join(GLOBAL_SENTENCE_TERMINATORS))
+    quotes_regx_str = r"|".join([f"{left}(\n|.)*?{right}" for left, right in quote_pairs.items()])
+    quotes_regex = re.compile(r"%s+" % quotes_regx_str)
+    parens_regex = re.compile(r"([\(（<{\[])(?:\\\1|.)*?[\)\]}）]")
+    email_regex = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}")
+
+    numbered_reference_regex = re.compile(r"^(\[\d+])+")
     sentence_break_regex = GLOBAL_SENTENCE_BOUNDARY_REGEX
 
     def is_abbreviation(self, head: str, tail: str) -> bool:
@@ -67,7 +83,7 @@ class Language(object, metaclass=Languages):
         #     return None
 
         # If next word is numbered reference, expand boundary to that.'
-        number_ref_match = re.match(NUMBERED_REFERENCE_REGEX, tail)
+        number_ref_match = self.numbered_reference_regex.match(tail)
 
         if number_ref_match:
             return match.start() + 1 + len(number_ref_match.group(0))
@@ -82,54 +98,62 @@ class Language(object, metaclass=Languages):
         # print(match_len)
         return match.start() + match_len
 
-    def segment(self, text: str) -> List[str]:
-        sentences = []
-        paragraph_break = "\n\n"
-        paragraphs = text.split(paragraph_break)
-        paragraph_index = 0
+    def segment(self, text: str) -> Iterator[str]:
+        """
+        Splits the given input text into sentences.
+
+        Args:
+            text (str): The input text to be segmented into sentences.
+
+        Yields:
+            Iterator[str]: An iterator that yields each sentence from the input text.
+
+        """
+        # Split the text into paragraphs using consecutive newlines as delimiters.
+        paragraphs = re.split(r"(\n{2,})", text)
+
+        # Iterate over each paragraph.
         for paragraph in paragraphs:
-            skippable_ranges = []
-            if paragraph_index > 0:
-                sentences.append(paragraph_break)
+            # Initialize a list to store the boundaries of sentences.
             boundaries = [0]
-            quote_matches = re.finditer(QUOTES_REGEX, paragraph)
 
-            for quote_match in quote_matches:
-                skippable_ranges.append(quote_match.span())
+            # Find all matches of sentence breaks in the paragraph.
+            matches = self.sentence_break_regex.finditer(paragraph)
 
-            email_matches = re.finditer(EMAIL_REGEX, paragraph)
-            for quote_match in email_matches:
-                skippable_ranges.append(quote_match.span())
+            # Create a list of skippable ranges, such as quotes, parentheses, and email addresses.
+            skippable_ranges = [match.span() for match in self.quotes_regex.finditer(paragraph)]
+            skippable_ranges += [match.span() for match in self.parens_regex.finditer(paragraph)]
+            skippable_ranges += [match.span() for match in self.email_regex.finditer(paragraph)]
 
-            matches = re.finditer(self.sentence_break_regex, paragraph)
-
+            # Iterate over each match of sentence breaks.
             for match in matches:
+                # Find the boundary of the sentence.
                 boundary = self.findBoundary(paragraph, match)
 
+                # If boundary is None, skip to the next match.
                 if boundary is None:
                     continue
 
-                # Skip breaks that are inside a quote.
+                # Check if the boundary is inside a skippable range (quote, parentheses, or email).
                 in_range = False
                 for qstart, qend in skippable_ranges:
-                    print(
-                        boundary,
-                        qstart,
-                        qend,
-                    )
                     if boundary > qstart and boundary < qend:
                         in_range = True
                         break
+
+                # If in_range is True, skip to the next match.
                 if in_range:
                     continue
 
+                # Add the boundary to the boundaries list.
                 boundaries.append(boundary)
 
+            # Iterate over each pair of boundaries.
             for i, j in zip(boundaries, boundaries[1:] + [None]):
+                # Slice the paragraph using the boundaries to get the sentence.
                 sentence = paragraph[i:j]
-                if len(sentence):
-                    sentence = sentence.strip(" ")
-                    sentences.append(sentence)
-            paragraph_index += 1
 
-        return sentences
+                # If the sentence has a length, yield the sentence
+                # stripped of leading/trailing spaces.
+                if len(sentence):
+                    yield sentence.strip(" ")

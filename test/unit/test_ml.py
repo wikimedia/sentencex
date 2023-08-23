@@ -12,4 +12,4 @@ tests = [
 
 @pytest.mark.parametrize("text, expected_sents", tests)
 def test_segment(text, expected_sents):
-    assert segment("ml", text) == expected_sents
+    assert list(segment("ml", text)) == expected_sents

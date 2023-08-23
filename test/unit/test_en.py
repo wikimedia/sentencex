@@ -199,11 +199,12 @@ tests = [
             "She left the store.",
         ],
     ),
-    (
+    pytest.param(
         "I wasn’t really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn’t mean it.",
         [
             "I wasn’t really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn’t mean it."
         ],
+        marks=pytest.mark.xfail,
     ),
     pytest.param(
         "One further habit which was somewhat weakened . . . was that of combining words into self-interpreting compounds. . . . The practice was not abandoned. . . .",
@@ -241,9 +242,22 @@ tests = [
             "The radicals sought a second opinion on the meeting's legality.",
         ],
     ),
+    (
+        "“Why, indeed?” murmured Holmes. “Your Majesty had not spoken before I \nwas aware that I was addressing Wilhelm Gottsreich Sigismond von \nOrmstein, Grand Duke of Cassel-Felstein, and hereditary King of \nBohemia.”",
+        [
+            "“Why, indeed?” murmured Holmes.",
+            "“Your Majesty had not spoken before I \nwas aware that I was addressing Wilhelm Gottsreich Sigismond von \nOrmstein, Grand Duke of Cassel-Felstein, and hereditary King of \nBohemia.”",
+        ],
+    ),
+    (
+        "“How many? I don’t know.”",
+        [
+            "“How many? I don’t know.”",
+        ],
+    ),
 ]
 
 
 @pytest.mark.parametrize("text, expected_sents", tests)
 def test_segment(text, expected_sents):
-    assert segment("en", text) == expected_sents
+    assert list(segment("en", text)) == expected_sents

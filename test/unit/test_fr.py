@@ -40,4 +40,4 @@ tests = [
 @pytest.mark.parametrize("text,expected_sents", tests)
 def test_segment(text, expected_sents):
     # assert len(segment("el", text)) <= len(expected_sents)
-    assert segment("fr", text) == expected_sents
+    assert list(segment("fr", text)) == expected_sents
