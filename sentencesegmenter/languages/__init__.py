@@ -17,6 +17,7 @@ from .my import Burmese
 from .nl import Dutch
 from .pl import Polish
 from .ru import Russian
+from .sk import Slovak
 from .ta import Tamil
 
 __all__ = [
