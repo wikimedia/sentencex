@@ -25,8 +25,25 @@ The accurate splitting of this sentence is
 
 However, to achieve this level precision, complex rules need to be added and it could create side effects. Instead, if we just don't segment between `I. Did`, it is ok for most of downstream applications.
 
-Consider another example: `My id is Jane.`.
-The correct splitting for this sentence is `["My id is Jane.", "Doe@example.com is my email" ]`. But getting it correct with a rule based system is hard. But there is no harm is not segmenting by strictly requiring a space after terminator for segmenting.
+## Language support
+
+The aim is to support all languages where there is a wikipedia. Instead of falling back on English for languages not defined in the library, a fallback chain is used. The closest language which is defined in the library will be used.
+
+## Performance
+
+Measured on Golden Rule Set for English. Lists are excempted(1. sentence 2. another sentence).
+
+| Tokenizer                |  GRS score    | Speed(Avg over 100 runs) |
+|--------------------------|------------|-----------|
+| sentencesegmenter_segment |    74.36  |     0.93 |
+| mwtokenizer_tokenize      |    30.77  |    1.54  |
+| blingfire_tokenize        |    89.74  |    **0.27**  |
+| nltk_tokenize             |    66.67  |    1.86  |
+| pysbd_tokenize            |**97.44**  |    10.57 |
+| spacy_tokenize            |    61.54  |     2.45 |
+| spacy_dep_tokenize        |   74.36   |   138.93 |
+| stanza_tokenize           |   87.18   |   107.51 |
+| syntok_tokenize           |    79.49  |     4.72 |
 
 ## License
 
