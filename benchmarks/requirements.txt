@@ -1,0 +1,7 @@
+nltk==3.8.1
+spacy==3.6.1
+stanza==1.5.0
+syntok==1.4.4
+blingfire==0.1.8
+pysbd==0.3.4
+mwtokenizer==0.0.2

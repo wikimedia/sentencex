@@ -15,4 +15,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     for text in fileinput.input(files=args.files):
         sentences = segment(args.language, text)
-        print(sentences)
+        print(list(sentences))
