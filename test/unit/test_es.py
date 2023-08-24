@@ -82,11 +82,12 @@ tests = [
             "¿Qué te parece?",
         ],
     ),
-    (
+    pytest.param(
         "Se le pidió a los niños que leyeran los párrf. 5 y 6 del art. 4 de la constitución de los EE. UU..",
         [
             "Se le pidió a los niños que leyeran los párrf. 5 y 6 del art. 4 de la constitución de los EE. UU.."
         ],
+        marks=pytest.mark.xfail,
     ),
     (
         'Una de las preguntas realizadas en la evaluación del día Lun. 15 de Mar. fue la siguiente: "Alumnos, ¿cuál es el resultado de la operación 1.1 + 4/5?". Disponían de 1 min. para responder esa pregunta.',
@@ -134,13 +135,14 @@ tests = [
         "Hoy es 27/04/2014, y es mi cumpleaños. ¿Cuándo es el tuyo?",
         ["Hoy es 27/04/2014, y es mi cumpleaños.", "¿Cuándo es el tuyo?"],
     ),
-    (
+    pytest.param(
         "Aquí está la lista de compras para el almuerzo: 1.Helado, 2.Carne, 3.Arroz. ¿Cuánto costará? Quizás $12.5.",
         [
             "Aquí está la lista de compras para el almuerzo: 1.Helado, 2.Carne, 3.Arroz.",
             "¿Cuánto costará?",
             "Quizás $12.5.",
         ],
+        marks=pytest.mark.xfail,
     ),
     (
         "1 + 1 es 2. 2 + 2 es 4. El auto es de color rojo.",

@@ -1,3 +1,5 @@
+import re
+
 from sentencesegmenter.base import Language
 
 
@@ -480,3 +482,7 @@ class Danish(Language):
         "vsa",
         "zool",
     }
+
+    def continue_in_next_word(self, text_after_boundary) -> bool:
+        if re.match(r"^\W*[0-9a-z]", text_after_boundary):
+            return True
