@@ -8,6 +8,31 @@ class Kannada(Language):
     # Writing English abbreviation like Dr as such inside Kannada is common
     abbreviations = English.abbreviations.union(
         {
-            # TODO: add language abbreviations here
+            "ಎ",
+            "ಬಿ",
+            "ಸಿ",
+            "ಡಿ",
+            "ಈ",
+            "ಎಫ್",
+            "ಜಿ",
+            "ಹೆಚ್",
+            "ಐ",
+            "ಜೆ",
+            "ಕೆ",
+            "ಎಲ್",
+            "ಎಂ",
+            "ಎನ್",
+            "ಓ",
+            "ಪಿ",
+            "ಕ್ಯೂ",
+            "ಆರ್",
+            "ಎಸ್",
+            "ಟಿ",
+            "ಯೂ",
+            "ವಿ",
+            "ಡಬಲ್ಯೂ",
+            "ಎಕ್ಸ್",
+            "ವೈ",
+            "ಜೆಡ್",
         }
     )
