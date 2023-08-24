@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Iterator
+from typing import Dict, Iterator, Tuple
 
 from .terminators import GLOBAL_SENTENCE_TERMINATORS
 
@@ -115,7 +115,7 @@ class Language(object, metaclass=Languages):
     def continue_in_next_word(self, text_after_boundary) -> bool:
         return re.match(r"^[0-9a-z]", text_after_boundary)
 
-    def get_skippable_ranges(self, text) -> tuple[int, int]:
+    def get_skippable_ranges(self, text) -> Tuple[int, int]:
         # Create a list of skippable ranges, such as quotes, parentheses, and email addresses.
         skippable_ranges = [match.span() for match in self.quotes_regex.finditer(text)]
         skippable_ranges += [match.span() for match in self.parens_regex.finditer(text)]
