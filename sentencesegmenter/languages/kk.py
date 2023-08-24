@@ -1,3 +1,5 @@
+import re
+
 from sentencesegmenter.base import Language
 
 
@@ -292,4 +294,10 @@ class Kazakh(Language):
         "эыдұ",
         "юнеско",
         "янв.",
+        "А",
+        "М",
+        "Т",
     }
+
+    def continue_in_next_word(self, text_after_boundary) -> bool:
+        return re.match(r"^\W*[0-9a-zа-я]", text_after_boundary)

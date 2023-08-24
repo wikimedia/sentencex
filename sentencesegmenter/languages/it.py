@@ -1,3 +1,5 @@
+import re
+
 from sentencesegmenter.base import Language
 
 
@@ -161,6 +163,7 @@ class Italian(Language):
         "alq",
         "alt",
         "am",
+        "amm",
         "ama",
         "amaci",
         "amag",
@@ -613,6 +616,7 @@ class Italian(Language):
         "css",
         "ct",
         "ctc",
+        "cte",
         "cti",
         "ctr",
         "ctsis",
@@ -829,6 +833,7 @@ class Italian(Language):
         "eufic",
         "eula",
         "eva®",
+        "f",
         "f.a",
         "f.b",
         "f.m",
@@ -2231,3 +2236,7 @@ class Italian(Language):
         "ztl",
         "µg",
     }
+
+    def get_lastword(self, text: str):
+        lastword = re.split(r"[\s\.]+", text)[-1]
+        return lastword.split("l'")[-1]

@@ -1,3 +1,5 @@
+import re
+
 from sentencesegmenter.base import Language
 
 
@@ -75,3 +77,6 @@ class Russian(Language):
         "ф",
         "ч",
     }
+
+    def continue_in_next_word(self, text_after_boundary) -> bool:
+        return re.match(r"^[0-9a-zа-я]", text_after_boundary)

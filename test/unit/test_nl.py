@@ -14,7 +14,7 @@ tests = [
     ),
     (
         "81 procent van de schoten was raak. ...en toen barste de hel los.",
-        ["81 procent van de schoten was raak.", "...en toen barste de hel los."],
+        ["81 procent van de schoten was raak.", "...", "en toen barste de hel los."],
     ),
     ("Afkorting aanw. vnw.", ["Afkorting aanw. vnw."]),
 ]

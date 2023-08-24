@@ -100,7 +100,7 @@ if __name__ == "__main__":
         stanza_tokenize,
         syntok_tokenize,
     )
-    print("{:30}{:10}{:30}".format('Tokenizer', 'GRS score', 'Speed(Avg over 100 runs)'))
+    print("{:30}{:10}{:30}".format("Tokenizer", "GRS score", "Speed(Avg over 100 runs)"))
     for tokenize_func in libraries:
         t = time.time()
         for _index in range(100):
