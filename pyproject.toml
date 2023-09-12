@@ -6,9 +6,29 @@ build-backend = "hatchling.build"
 name = "sentencesegmenter"
 description = "Sentence segmenter that supports ~300 languages"
 readme = "README.md"
-authors = [{name = "Santhosh Thottingal"}]
-classifiers = ["Private :: Do Not Upload"]
-version = "0.1"
+authors = [{name = "Santhosh Thottingal", email = "santhosh.thottingal@@gmail.com"}]
+license = "MIT"
+keywords = [
+  "NLP",
+  "Natural Language Processing",
+  "Tokenizer"
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Text Processing",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+version = "0.1.0"
 requires-python = ">=3.8"
 dependencies = []
 
@@ -20,7 +40,7 @@ CI = "https://github.com/santhoshtr/sentencesegmenter/actions"
 
 [project.optional-dependencies]
 tests = [
-    'pytest'
+    "pytest"
 ]
 dev = [
     "black",
@@ -45,6 +65,3 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
-
-[project.scripts]
-sentencesegmenter = "sentencesegmenter:__main__"
