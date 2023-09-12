@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "sentencesegmenter"
 description = "Sentence segmenter that supports ~300 languages"
 readme = "README.md"
-authors = [{name = "Santhosh Thottingal", email = "santhosh.thottingal@@gmail.com"}]
+authors = [{name = "Santhosh Thottingal", email = "santhosh.thottingal@gmail.com"}]
 license = "MIT"
 keywords = [
   "NLP",
