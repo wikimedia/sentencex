@@ -1,6 +1,6 @@
 import pytest
 
-from sentencesegmenter import segment
+from sentencex import segment
 
 tests = [
     ("ഇത് ഡോ. ശിവൻ. ഇദ്ദേഹമാണ് ഞാൻ പറഞ്ഞയാൾ", ["ഇത് ഡോ. ശിവൻ.", "ഇദ്ദേഹമാണ് ഞാൻ പറഞ്ഞയാൾ"]),

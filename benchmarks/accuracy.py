@@ -11,7 +11,7 @@ from en_golden_rules import GOLDEN_EN_RULES
 from mwtokenizer.tokenizer import Tokenizer as MWTokenizer
 from syntok.tokenizer import Tokenizer
 
-import sentencesegmenter
+import sentencex
 
 pysbd_segmenter = pysbd.Segmenter(language="en", clean=False, char_span=False)
 
@@ -66,8 +66,8 @@ def mwtokenizer_tokenize(text):
     return list(mwtokenizer.sentence_tokenize(text, use_abbreviation=True))
 
 
-def sentencesegmenter_segment(text):
-    return list(sentencesegmenter.segment("en", text))
+def sentencex_segment(text):
+    return list(sentencex.segment("en", text))
 
 
 total_rules = len(GOLDEN_EN_RULES)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         prog="benchmark", description="Measure sentence segmentation performance"
     )
     libraries = (
-        sentencesegmenter_segment,
+        sentencex_segment,
         mwtokenizer_tokenize,
         blingfire_tokenize,
         nltk_tokenize,

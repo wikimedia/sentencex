@@ -1,10 +1,10 @@
 import fileinput
 from argparse import ArgumentParser
 
-from sentencesegmenter import segment
+from sentencex import segment
 
 if __name__ == "__main__":
-    parser = ArgumentParser(prog="sentencesegmenter", description="Split the text to sentences")
+    parser = ArgumentParser(prog="sentencex", description="Split the text to sentences")
     parser.add_argument("language")
     parser.add_argument(
         "files",

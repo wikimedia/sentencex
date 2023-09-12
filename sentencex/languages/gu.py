@@ -1,4 +1,4 @@
-from sentencesegmenter.base import Language
+from sentencex.base import Language
 
 from .en import English
 

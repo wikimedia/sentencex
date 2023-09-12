@@ -1,6 +1,6 @@
 import pytest
 
-from sentencesegmenter import segment
+from sentencex import segment
 
 # ruff: noqa: E501
 

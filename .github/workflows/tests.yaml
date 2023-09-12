@@ -1,4 +1,4 @@
-name: Test sentencesegmenter
+name: Test sentencex
 
 on:
   - push

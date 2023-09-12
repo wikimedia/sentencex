@@ -1,7 +1,7 @@
 import re
 
-from sentencesegmenter.base import Language
-from sentencesegmenter.terminators import GLOBAL_SENTENCE_TERMINATORS
+from sentencex.base import Language
+from sentencex.terminators import GLOBAL_SENTENCE_TERMINATORS
 
 
 class Greek(Language):

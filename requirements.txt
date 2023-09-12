@@ -5,7 +5,7 @@
 #    pip-compile --extra=tests,dev --output-file=requirements.txt pyproject.toml
 #
 black==23.3.0
-    # via sentencesegmenter (pyproject.toml)
+    # via sentencex (pyproject.toml)
 cachetools==5.3.1
     # via tox
 chardet==5.1.0
@@ -44,10 +44,10 @@ pluggy==1.2.0
 pyproject-api==1.5.2
     # via tox
 pytest==7.4.0
-    # via sentencesegmenter (pyproject.toml)
+    # via sentencex (pyproject.toml)
 ruff==0.0.277
-    # via sentencesegmenter (pyproject.toml)
+    # via sentencex (pyproject.toml)
 tox==4.6.3
-    # via sentencesegmenter (pyproject.toml)
+    # via sentencex (pyproject.toml)
 virtualenv==20.23.1
     # via tox

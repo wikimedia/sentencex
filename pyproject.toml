@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel", "hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sentencesegmenter"
+name = "sentencex"
 description = "Sentence segmenter that supports ~300 languages"
 readme = "README.md"
 authors = [{name = "Santhosh Thottingal", email = "santhosh.thottingal@gmail.com"}]
@@ -33,10 +33,10 @@ requires-python = ">=3.8"
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/santhoshtr/sentencesegmenter"
-Changelog = "https://github.com/santhoshtr/sentencesegmenter/releases"
-Issues = "https://github.com/santhoshtr/sentencesegmenter/issues"
-CI = "https://github.com/santhoshtr/sentencesegmenter/actions"
+Homepage = "https://github.com/santhoshtr/sentencex"
+Changelog = "https://github.com/santhoshtr/sentencex/releases"
+Issues = "https://github.com/santhoshtr/sentencex/issues"
+CI = "https://github.com/santhoshtr/sentencex/actions"
 
 [project.optional-dependencies]
 tests = [

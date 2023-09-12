@@ -1,6 +1,6 @@
 # Sentence segmenter
 
-[![tests](https://github.com/santhoshtr/sentencesegmenter/actions/workflows/tests.yaml/badge.svg)](https://github.com/santhoshtr/sentencesegmenter/actions/workflows/tests.yaml)
+[![tests](https://github.com/santhoshtr/sentencex/actions/workflows/tests.yaml/badge.svg)](https://github.com/santhoshtr/sentencex/actions/workflows/tests.yaml)
 
 A sentence segmentation library with wide language support optimized for speed and utility.
 
@@ -47,7 +47,7 @@ The following libraries are used for benchmarking:
 
 | Tokenizer Library               |  English Golden Rule Set score    | Speed(Avg over 100 runs) in seconds |
 |--------------------------|------------|-----------|
-| sentencesegmenter_segment |    74.36  |     0.93 |
+| sentencex_segment |    74.36  |     0.93 |
 | mwtokenizer_tokenize      |    30.77  |    1.54  |
 | blingfire_tokenize        |    89.74  |    **0.27**  |
 | nltk_tokenize             |    66.67  |    1.86  |
