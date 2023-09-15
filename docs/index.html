@@ -16,26 +16,62 @@
             main {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                height: 90vh;
+                height: 95vh;
             }
 
             #text,
-            #language,
             #sentences {
                 padding: 1em;
                 overflow: auto;
-                background-color: white;
-                border: 1px solid gray;
-                margin-right: 4px;
-                border-radius: 8px;
             }
 
             #text,
             .sentence {
                 white-space: pre-line;
                 font-size: 16px;
+                line-height: 1.4;
                 font-family: sans-serif;
 
+            }
+
+            .sentence {
+                padding: 2px 4px;
+                border-radius: 8px;
+            }
+
+            .green {
+                background-color: #E8F5E9;
+                color: #1B5E20;
+            }
+
+            .red {
+                color: #B71C1C;
+                background-color: #FFEBEE;
+            }
+
+            .yellow {
+                background-color: #FFFDE7;
+                color: #F57F17;
+            }
+
+            .orange {
+                color: #E65100;
+                background-color: #FFF3E0;
+            }
+
+            .blue {
+                background-color: #E3F2FD;
+                color: #0D47A1;
+            }
+
+            .indigo {
+                background-color: #E8EAF6;
+                color: #1A237E;
+            }
+
+            .lime {
+                background-color: #F9FBE7;
+                color: #827717;
             }
         </style>
 
@@ -63,15 +99,7 @@
             const inputEl = document.getElementById("text");
             const languageEl = document.getElementById("language");
 
-            const materialColors = [
-                "#5f0f40",
-                "#9a031e",
-                "#fb8b24",
-                "#e36414",
-                "#0f4c5c",
-                "#283618",
-                "#bc6c25",
-            ].sort()
+            const classes = ["red", "blue", "orange", "green", "yellow", "indigo", "lime"];
 
             const segmenterPy = `
                     from sentencex import segment
@@ -93,15 +121,11 @@
                 let sentenceSpans = [];
 
                 for (let i = 0; i < sentences.length; i++) {
-                    const randomColor = materialColors[i % materialColors.length];
+                    const randomClass = classes[i % classes.length];
                     sentenceSpans[i] =
-                        '<span class="sentence" style="color:' +
-                        randomColor +
-                        '">' +
-                        sentences[i] +
-                        "</span>";
+                        '<span class="sentence ' + randomClass + '">' + sentences[i] + "</span>";
                 }
-                sentencesEl.innerHTML = sentenceSpans.join(" ");
+                sentencesEl.innerHTML = sentenceSpans.join("");
             }
 
             init().then((pyodide) => {
