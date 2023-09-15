@@ -11,6 +11,7 @@ class Malayalam(Language):
             "ഡോ",  # Dr
             "Dr",
             "പ്രൊ",  # Prof
+            "പ്രൊഫ",  # Prof
             "മി",  # Mr, or Minister
             "ശ്രീ",  # Formal addressing - male
             "ശ്രീമതി",  # Formal addressing - female
@@ -36,6 +37,7 @@ class Malayalam(Language):
             "ക്യു",
             "ക്യൂ",
             "ആർ",
+            "എസ്",
             "ടി",
             "യു",
             "യൂ",
