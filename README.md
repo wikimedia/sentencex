@@ -27,6 +27,28 @@ However, to achieve this level precision, complex rules need to be added and it 
 
 The sentence segmentation in this library is **non-distructive**. This means, if the sentences are combined together, you can reconstruct the original text. Line breaks, punctuations and whitespaces are preserved in the output.
 
+## Usage
+
+Install the library using
+
+```bash
+pip install sentencex
+```
+
+Then, any text can be segmented as follows.
+
+```python
+from sentencex import segment
+
+text = """
+The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development")
+"""
+print(list(segment("en", text)))
+
+```
+
+The first argument is language code, second argument is text to segment. The `segment` method returns an iterator on identified sentences.
+
 ## Language support
 
 The aim is to support all languages where there is a wikipedia. Instead of falling back on English for languages not defined in the library, a fallback chain is used. The closest language which is defined in the library will be used. Fallbacks for ~244 languages are defined.
