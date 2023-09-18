@@ -6,6 +6,7 @@ from .da import Danish
 from .de import Deutsch
 from .el import Greek
 from .en import English
+from .fi import Finnish
 from .fr import French
 from .gu import Gujarati
 from .hi import Hindi
@@ -36,6 +37,7 @@ __all__ = [
     "Deutsch",
     "Dutch",
     "English",
+    "Finnish",
     "French",
     "Gujarati",
     "Greek",
