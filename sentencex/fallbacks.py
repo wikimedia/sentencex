@@ -171,7 +171,6 @@ LANGUAGE_FALLBACKS = {
     "pih": ["en"],
     "pms": ["it"],
     "pnt": ["el"],
-    "pt": ["pt-br"],
     "pt-br": ["pt"],
     "qu": ["qug", "es"],
     "qug": ["qu", "es"],

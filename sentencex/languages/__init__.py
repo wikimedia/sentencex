@@ -21,6 +21,7 @@ from .nl import Dutch
 from .or_ import Odia
 from .pa import Punjabi
 from .pl import Polish
+from .pt import Portuguese
 from .ru import Russian
 from .sk import Slovak
 from .ta import Tamil
@@ -50,6 +51,7 @@ __all__ = [
     "Odia",
     "Punjabi",
     "Polish",
+    "Portuguese",
     "Russian",
     "Slovak",
     "Spanish",
