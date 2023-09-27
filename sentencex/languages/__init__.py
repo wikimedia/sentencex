@@ -1,3 +1,4 @@
+from .am import Amharic
 from .ar import Arabic
 from .bg import Bulgarian
 from .bn import Bengali
@@ -28,6 +29,7 @@ from .ta import Tamil
 from .te import Telugu
 
 __all__ = [
+    "Amharic",
     "Arabic",
     "Armenian",
     "Bengali",
