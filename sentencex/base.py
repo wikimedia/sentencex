@@ -49,7 +49,7 @@ class Language(object, metaclass=Languages):
     quotes_regex = re.compile(r"%s+" % quotes_regx_str)
     parens_regex = re.compile(r"([\(（<{\[])(?:\\\1|.)*?[\)\]}）]")
     email_regex = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}")
-
+    abbreviation_char = "."
     EXCLAMATION_WORDS = set(
         (
             "!Xũ !Kung ǃʼOǃKung !Xuun !Kung-Ekoka ǃHu ǃKhung ǃKu ǃung ǃXo ǃXû ǃXung "
@@ -60,11 +60,15 @@ class Language(object, metaclass=Languages):
     numbered_reference_regex = re.compile(r"^(\[\d+])+")
     sentence_break_regex = GLOBAL_SENTENCE_BOUNDARY_REGEX
 
-    def is_abbreviation(self, head: str, tail: str) -> bool:
+    def is_abbreviation(self, head: str, tail: str, seperator: str) -> bool:
         """
         Do not break in abbreviations. Example D. John, St. Peter
         In the case of "This is Dr. Watson", head is "This is Dr", tail is " Watson"
         """
+
+        if self.abbreviation_char != seperator:
+            return False
+
         lastword = self.get_lastword(head)
 
         if len(lastword) == 0:
@@ -102,7 +106,7 @@ class Language(object, metaclass=Languages):
         # Next character is number or lower-case: not a sentence boundary
         if self.continue_in_next_word(tail):
             return None
-        if self.is_abbreviation(head, tail):
+        if self.is_abbreviation(head, tail, match.group(0)):
             return None
         if self.is_exclamation_word(head, tail):
             return None
