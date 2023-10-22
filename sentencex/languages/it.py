@@ -1,4 +1,4 @@
-import re
+import regex
 
 from sentencex.base import Language
 
@@ -2238,5 +2238,5 @@ class Italian(Language):
     }
 
     def get_lastword(self, text: str):
-        lastword = re.split(r"[\s\.]+", text)[-1]
+        lastword = regex.split(r"[\s\.]+", text)[-1]
         return lastword.split("l'")[-1]

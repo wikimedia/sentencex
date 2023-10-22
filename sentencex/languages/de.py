@@ -1,4 +1,4 @@
-import re
+import regex
 
 from .en import English
 
@@ -176,7 +176,7 @@ class Deutsch(English):
     )
 
     def continue_in_next_word(self, text_after_boundary) -> bool:
-        if re.match(r"^\W*[0-9a-z]", text_after_boundary):
+        if regex.match(r"^\W*[0-9a-z]", text_after_boundary):
             return True
         next_word = text_after_boundary.strip().split(" ")[0]
         next_word = next_word.strip("?!.")

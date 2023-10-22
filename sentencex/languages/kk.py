@@ -1,4 +1,4 @@
-import re
+import regex
 
 from sentencex.base import Language
 
@@ -300,4 +300,4 @@ class Kazakh(Language):
     }
 
     def continue_in_next_word(self, text_after_boundary) -> bool:
-        return re.match(r"^\W*[0-9a-zа-я]", text_after_boundary)
+        return regex.match(r"^\W*[0-9a-zа-я]", text_after_boundary)

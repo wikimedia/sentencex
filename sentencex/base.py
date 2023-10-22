@@ -1,7 +1,6 @@
-import re
 from typing import Dict, Iterator, Tuple
 
-from .terminators import GLOBAL_SENTENCE_TERMINATORS
+import regex
 
 
 class Languages(type):
@@ -44,11 +43,11 @@ class Language(object, metaclass=Languages):
 
     language = "base"
     abbreviations: set = set()
-    GLOBAL_SENTENCE_BOUNDARY_REGEX = re.compile(r"[%s]+" % "".join(GLOBAL_SENTENCE_TERMINATORS))
+    GLOBAL_SENTENCE_BOUNDARY_REGEX = regex.compile(r"\p{Sentence_Terminal}+")
     quotes_regx_str = r"|".join([f"{left}(\n|.)*?{right}" for left, right in quote_pairs.items()])
-    quotes_regex = re.compile(r"%s+" % quotes_regx_str)
-    parens_regex = re.compile(r"([\(（<{\[])(?:\\\1|.)*?[\)\]}）]")
-    email_regex = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}")
+    quotes_regex = regex.compile(r"%s+" % quotes_regx_str)
+    parens_regex = regex.compile(r"([\(（<{\[])(?:\\\1|.)*?[\)\]}）]")
+    email_regex = regex.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}")
     abbreviation_char = "."
     EXCLAMATION_WORDS = set(
         (
@@ -57,7 +56,7 @@ class Language(object, metaclass=Languages):
         ).split()
     )
 
-    numbered_reference_regex = re.compile(r"^(\[\d+])+")
+    numbered_reference_regex = regex.compile(r"^(\[\d+])+")
     sentence_break_regex = GLOBAL_SENTENCE_BOUNDARY_REGEX
 
     def is_abbreviation(self, head: str, tail: str, seperator: str) -> bool:
@@ -87,14 +86,14 @@ class Language(object, metaclass=Languages):
         return lastword + "!" in self.EXCLAMATION_WORDS
 
     def get_lastword(self, text: str):
-        return re.split(r"[\s\.]+", text)[-1]
+        return regex.split(r"[\s\.]+", text)[-1]
 
     def findBoundary(self, text, match):
         tail = text[match.start() + 1 :]
         head = text[: match.start()]
 
         # Trailing non-final punctuation: not a sentence boundary
-        # if re.match(r"^[,;:]", tail):
+        # if regex.match(r"^[,;:]", tail):
         #     return None
 
         # If next word is numbered reference, expand boundary to that.'
@@ -117,7 +116,7 @@ class Language(object, metaclass=Languages):
         return match.start() + match_len
 
     def continue_in_next_word(self, text_after_boundary) -> bool:
-        return re.match(r"^[0-9a-z]", text_after_boundary)
+        return regex.match(r"^[0-9a-z]", text_after_boundary)
 
     def get_skippable_ranges(self, text) -> Tuple[int, int]:
         # Create a list of skippable ranges, such as quotes, parentheses, and email addresses.
@@ -138,7 +137,7 @@ class Language(object, metaclass=Languages):
 
         """
         # Split the text into paragraphs using consecutive newlines as delimiters.
-        paragraphs = re.split(r"(\n{2,})", text)
+        paragraphs = regex.split(r"(\n{2,})", text)
 
         # Iterate over each paragraph.
         for paragraph in paragraphs:
