@@ -29,7 +29,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-version = "0.5.0"
+version = "0.5.1"
 requires-python = ">=3.8"
 dependencies = []
 
