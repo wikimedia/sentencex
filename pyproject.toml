@@ -44,13 +44,10 @@ tests = [
     "pytest"
 ]
 dev = [
-    "black",
     "ruff",
     "tox",
 ]
 
-[tool.black]
-line-length = 100
 
 [tool.ruff]
 line-length = 100
