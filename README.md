@@ -25,7 +25,7 @@ The accurate splitting of this sentence is
 
 However, to achieve this level precision, complex rules need to be added and it could create side effects. Instead, if we just don't segment between `I. Did`, it is ok for most of downstream applications.
 
-The sentence segmentation in this library is **non-distructive**. This means, if the sentences are combined together, you can reconstruct the original text. Line breaks, punctuations and whitespaces are preserved in the output.
+The sentence segmentation in this library is **non-destructive**. This means, if the sentences are combined together, you can reconstruct the original text. Line breaks, punctuations and whitespaces are preserved in the output.
 
 ## Usage
 
@@ -55,7 +55,7 @@ The aim is to support all languages where there is a wikipedia. Instead of falli
 
 ## Performance
 
-Measured on Golden Rule Set(GRS) for English. Lists are excempted(1. sentence 2. another sentence).
+Measured on Golden Rule Set(GRS) for English. Lists are exempted (1. sentence 2. another sentence).
 
 The following libraries are used for benchmarking:
 
