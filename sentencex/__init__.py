@@ -1,7 +1,7 @@
 from typing import List
 
 from . import languages
-from .base import Language, Languages
+from .base import Language, Languages, SentenceBoundary
 from .fallbacks import LANGUAGE_FALLBACKS
 
 
@@ -30,4 +30,4 @@ def segment(language, text: str) -> List[str]:
     return get_language_class(language)().segment(text)
 
 
-__all__ = ["languages", "segment"]
+__all__ = ["languages", "segment", "SentenceBoundary"]
