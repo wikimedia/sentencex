@@ -1,5 +1,6 @@
 # unicode code points generated with Unicode::Tussle perl script:
 # unichars -aBbs '[\p{Sentence_Break=STerm}\p{Sentence_Break=ATerm}]' | awk '$2="\""$2"\", #"'
+# Refer: https://www.unicode.org/Public/UCD/latest/ucd/auxiliary/SentenceBreakProperty.txt
 # ruff: noqa: E501
 GLOBAL_SENTENCE_TERMINATORS = (
     [
@@ -159,7 +160,7 @@ GLOBAL_SENTENCE_TERMINATORS = (
     ]
     + [
         # Additional manual entries.
-        "...",  #  U+2026 HORIZONTAL ELLIPSIS
         "。",  # U+3002 IDEOGRAPHIC FULL STOP
+        "｡",  # U+FF61 HALFWIDTH IDEOGRAPHIC FULL STOP
     ]
 )
