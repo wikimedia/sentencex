@@ -9,5 +9,4 @@ class Armenian(Language):
 
     hy_terminators = GLOBAL_SENTENCE_TERMINATORS + ["։", "՜", ":"]
     hy_terminators.remove(".")
-    hy_terminators.remove("...")
     sentence_break_regex = re.compile(r"[%s]+" % "".join(hy_terminators))
