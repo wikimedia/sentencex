@@ -72,6 +72,7 @@ class English(Language):
         "fed",
         "fig",
         "fla",
+        "fr",
         "ft",
         "fwy",
         "fy",
