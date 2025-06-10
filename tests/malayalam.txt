@@ -1,0 +1,28 @@
+# Each test case is defined as:
+# Input text
+# ---
+# Expected segments (one per line)
+# ===
+
+Roses Are Red. Violets Are Blue
+---
+Roses Are Red.
+Violets Are Blue
+===
+ഇത് ഡോ. ശിവൻ. ഇദ്ദേഹമാണ് ഞാൻ പറഞ്ഞയാൾ
+---
+ഇത് ഡോ. ശിവൻ.
+ഇദ്ദേഹമാണ് ഞാൻ പറഞ്ഞയാൾ
+===
+ഇത് മി. കെ. പി. മോഹനൻ
+---
+ഇത് മി. കെ. പി. മോഹനൻ
+===
+ഇത് പ്രൊ. കെ.പി. മോഹനൻ
+---
+ഇത് പ്രൊ. കെ.പി. മോഹനൻ
+===
+ഇത് Dr. മോഹനൻ
+---
+ഇത് Dr. മോഹനൻ
+===
