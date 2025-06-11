@@ -5,6 +5,7 @@ pub struct Malayalam {}
 
 impl Language for Malayalam {
     fn get_abbreviations(&self) -> Vec<String> {
+        // Use ./en.abbreviations.txt and ./ml.abbreviations.txt. AI!
         include_str!("./ml.abbreviations.txt")
             .lines()
             .map(|line| line.trim().to_string())
