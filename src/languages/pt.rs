@@ -27,6 +27,6 @@ mod tests {
 
     #[test]
     fn test_segment() {
-        run_language_tests(Portuguese {}, "tests/portuguese.txt");
+        run_language_tests(Portuguese {}, "tests/pt.txt");
     }
 }
