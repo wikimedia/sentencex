@@ -24,6 +24,7 @@ fn main() {
         "malayalam" => LanguageOption::Malayalam,
         "portuguese" => LanguageOption::Portuguese,
         "italian" => LanguageOption::Italian,
+        "amharic" => LanguageOption::Amharic,
         _ => {
             eprintln!("Unsupported language: {}", cli.language);
             std::process::exit(1);

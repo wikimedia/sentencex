@@ -1,4 +1,4 @@
-use languages::{English, Italian, Language, Malayalam, Portuguese, Spanish};
+use languages::{Amharic, English, Italian, Language, Malayalam, Portuguese, Spanish};
 
 mod constants;
 pub mod languages;
@@ -15,6 +15,7 @@ pub enum LanguageOption {
     Malayalam,
     Portuguese,
     Italian,
+    Amharic,
 }
 
 impl SentenceSegmenter {
@@ -29,6 +30,7 @@ impl SentenceSegmenter {
             LanguageOption::Malayalam => Malayalam {}.segment(text),
             LanguageOption::Portuguese => Portuguese {}.segment(text),
             LanguageOption::Italian => Italian {}.segment(text),
+            LanguageOption::Amharic => Amharic {}.segment(text),
         }
     }
 }

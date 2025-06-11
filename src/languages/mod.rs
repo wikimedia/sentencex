@@ -1,8 +1,10 @@
+mod am;
 mod en;
 mod es;
 mod it;
 mod ml;
 mod pt;
+pub use am::Amharic;
 pub use en::English;
 pub use es::Spanish;
 pub use it::Italian;
@@ -134,6 +136,7 @@ pub trait Language {
     }
 
     fn find_boundary(&self, text: &str, start: usize, end: usize) -> Option<usize> {
+        // FIXME: This slicing does not work well with multibyte unicode characters
         let head = &text[..start];
         let tail = &text[(start + 1)..];
 
