@@ -1,6 +1,5 @@
 use clap::Parser;
-use sentencex::LanguageOption;
-use sentencex::SentenceSegmenter;
+use sentencex::{LanguageOption, SentenceSegmenter};
 
 /// CLI for Sentence Segmentation
 #[derive(Parser)]

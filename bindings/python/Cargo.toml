@@ -1,0 +1,12 @@
+[package]
+name = "sentencex-py"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "sentencex"
+crate-type = ["cdylib"]
+
+[dependencies]
+sentencex = { path = "../../" }
+pyo3 = { version = "0.18", features = ["extension-module"] }

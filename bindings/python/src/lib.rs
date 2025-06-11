@@ -1,14 +1,14 @@
-use languages::{English, Italian, Language, Malayalam, Portuguese, Spanish};
+use ::sentencex::languages::*;
+use pyo3::prelude::*;
 
-mod constants;
-pub mod languages;
-
+#[pyclass]
 #[derive(Debug, Clone)]
 pub struct SentenceSegmenter {
     language: LanguageOption,
 }
 
 #[derive(Debug, Clone)]
+#[pyclass]
 pub enum LanguageOption {
     English,
     Spanish,
@@ -17,7 +17,9 @@ pub enum LanguageOption {
     Italian,
 }
 
+#[pymethods]
 impl SentenceSegmenter {
+    #[new]
     pub fn new(language: LanguageOption) -> Self {
         SentenceSegmenter { language }
     }
@@ -31,4 +33,11 @@ impl SentenceSegmenter {
             LanguageOption::Italian => Italian {}.segment(text),
         }
     }
+}
+
+#[pymodule]
+fn sentencex(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<SentenceSegmenter>()?;
+    m.add_class::<LanguageOption>()?;
+    Ok(())
 }
