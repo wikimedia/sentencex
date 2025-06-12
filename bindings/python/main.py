@@ -1,3 +1,3 @@
-import sentencex 
+import sentencex
 
-print(sentencex.SentenceSegmenter(sentencex.LanguageOption.English).segment('Hello world. This is a test.'))
+print(sentencex.segment('en', 'Hello world. This is a test.'))

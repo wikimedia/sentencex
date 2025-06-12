@@ -1,23 +1,14 @@
+use ::sentencex::segment as _segment;
 use pyo3::prelude::*;
-use sentencex::segment;
+use pyo3::wrap_pyfunction;
 
-#[pyclass]
-struct SentenceSegmenter;
-
-#[pymethods]
-impl SentenceSegmenter {
-    #[new]
-    pub fn new() -> Self {
-        SentenceSegmenter
-    }
-
-    pub fn segment(&self, language: &str, text: &str) -> Vec<String> {
-        segment(language, text)
-    }
+#[pyfunction]
+pub fn segment(language: &str, text: &str) -> Vec<String> {
+    _segment(language, text)
 }
 
 #[pymodule]
-fn bindings(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<SentenceSegmenter>()?;
+fn sentencex(py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_wrapped(wrap_pyfunction!(segment))?;
     Ok(())
 }

@@ -1,5 +1,5 @@
 use clap::Parser;
-use sentencex::{LanguageOption, SentenceSegmenter};
+use sentencex::segment;
 
 /// CLI for Sentence Segmentation
 #[derive(Parser, Debug)]
@@ -12,15 +12,14 @@ struct Cli {
     text: String,
 
     /// The language of the text
-    #[arg(short, long, default_value_t, value_enum)]
-    language: LanguageOption,
+    #[arg(short, long, default_value = "en")]
+    language: String,
 }
 
 fn main() {
     let cli = Cli::parse();
 
-    let segmenter = SentenceSegmenter::new(cli.language);
-    let sentences = segmenter.segment(&cli.text);
+    let sentences = segment(&cli.language, &cli.text);
 
     for (i, sentence) in sentences.iter().enumerate() {
         println!("{}. {}", i + 1, sentence);

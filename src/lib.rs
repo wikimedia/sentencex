@@ -1,6 +1,6 @@
 use languages::{
-    Amharic, Arabic, Bulgarian, English, Italian, Kannada, Kazakh, LANGUAGE_FALLBACKS, Language,
-    Malayalam, Portuguese, Spanish, Tamil,
+    Amharic, Arabic, Bulgarian, English, Italian, Kannada, Kazakh, Language, Malayalam, Portuguese,
+    Spanish, Tamil,
 };
 
 mod constants;
@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 lazy_static::lazy_static! {
     static ref LANGUAGE_FALLBACKS: HashMap<&'static str, Vec<&'static str>> = {
-        let yaml_data = include_str!("../languages/fallbacks.yaml");
+        let yaml_data = include_str!("./languages/fallbacks.yaml");
         serde_yaml::from_str(yaml_data).expect("Failed to parse fallbacks.yaml")
     };
 }
