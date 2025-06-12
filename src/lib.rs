@@ -6,10 +6,17 @@ use languages::{
 mod constants;
 pub mod languages;
 
+use std::collections::HashMap;
+
+lazy_static::lazy_static! {
+    static ref LANGUAGE_FALLBACKS: HashMap<&'static str, Vec<&'static str>> = {
+        let yaml_data = include_str!("../languages/fallbacks.yaml");
+        serde_yaml::from_str(yaml_data).expect("Failed to parse fallbacks.yaml")
+    };
+}
+
 fn language_factory(language_code: &str) -> Box<dyn Language> {
     let mut current_code = language_code;
-    // READ languages/fallbacks.yaml (using include! syntax) to LANGUAGE_FALLBACKS which is
-    // a hashmap with key as string, value as array of strings. AI!
     loop {
         match current_code {
             "en" => return Box::new(English {}),
