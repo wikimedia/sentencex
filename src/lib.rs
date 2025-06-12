@@ -1,6 +1,6 @@
 use languages::{
     Amharic, Arabic, Bulgarian, English, Italian, Kannada, Kazakh, Language, Malayalam, Portuguese,
-    Spanish, Tamil,
+    Spanish, Tamil, Telegu,
 };
 
 mod constants;
@@ -27,11 +27,13 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
             "am" => return Box::new(Amharic {}),
             "ar" => return Box::new(Arabic {}),
             "ta" => return Box::new(Tamil {}),
+            "te" => return Box::new(Telegu {}),
             "kn" => return Box::new(Kannada {}),
             "kk" => return Box::new(Kazakh {}),
             "bg" => return Box::new(Bulgarian {}),
             _ => {
                 if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
+                    // Instead of using .first, try all fallbacks till the list exhausted. AI!
                     if let Some(next_code) = fallbacks.first() {
                         current_code = next_code;
                         continue;
