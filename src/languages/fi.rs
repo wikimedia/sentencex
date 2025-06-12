@@ -22,11 +22,7 @@ impl Language for Finnish {
         }
 
         // Extract the next word
-        let next_word = text_after_boundary
-            .trim()
-            .split_whitespace()
-            .next()
-            .unwrap_or("");
+        let next_word = text_after_boundary.split_whitespace().next().unwrap_or("");
 
         // Check conditions for the next word
         if next_word.is_empty() {
