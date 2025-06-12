@@ -17,32 +17,30 @@ lazy_static::lazy_static! {
 
 fn language_factory(language_code: &str) -> Box<dyn Language> {
     let mut current_code = language_code;
-    loop {
-        match current_code {
-            "en" => return Box::new(English {}),
-            "es" => return Box::new(Spanish {}),
-            "ml" => return Box::new(Malayalam {}),
-            "pt" => return Box::new(Portuguese {}),
-            "it" => return Box::new(Italian {}),
-            "am" => return Box::new(Amharic {}),
-            "ar" => return Box::new(Arabic {}),
-            "ta" => return Box::new(Tamil {}),
-            "te" => return Box::new(Telegu {}),
-            "kn" => return Box::new(Kannada {}),
-            "kk" => return Box::new(Kazakh {}),
-            "bg" => return Box::new(Bulgarian {}),
-            _ => {
-                if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
-                    for next_code in fallbacks {
-                        let instance = language_factory(next_code);
-                        // Fix the if condition below. AI!
-                        if instance {
-                            return instance;
-                        }
+    match current_code {
+        "en" => return Box::new(English {}),
+        "es" => return Box::new(Spanish {}),
+        "ml" => return Box::new(Malayalam {}),
+        "pt" => return Box::new(Portuguese {}),
+        "it" => return Box::new(Italian {}),
+        "am" => return Box::new(Amharic {}),
+        "ar" => return Box::new(Arabic {}),
+        "ta" => return Box::new(Tamil {}),
+        "te" => return Box::new(Telegu {}),
+        "kn" => return Box::new(Kannada {}),
+        "kk" => return Box::new(Kazakh {}),
+        "bg" => return Box::new(Bulgarian {}),
+        _ => {
+            if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
+                for next_code in fallbacks {
+                    let instance = language_factory(next_code);
+                    // Fix the if condition below. AI!
+                    if instance {
+                        return instance;
                     }
                 }
-                return Box::new(English {}); // Default to English
             }
+            return Box::new(English {}); // Default to English
         }
     }
 }
