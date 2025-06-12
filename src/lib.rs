@@ -34,7 +34,11 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
             _ => {
                 if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
                     for next_code in fallbacks {
-                        return language_factory(next_code);
+                        let instance = language_factory(next_code);
+                        // Fix the if condition below. AI!
+                        if instance {
+                            return instance;
+                        }
                     }
                 }
                 return Box::new(English {}); // Default to English
