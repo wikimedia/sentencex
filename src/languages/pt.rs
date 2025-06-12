@@ -7,7 +7,7 @@ pub struct Portuguese {}
 
 impl Language for Portuguese {
     fn get_abbreviations(&self) -> Vec<String> {
-        let mut abbreviations: Vec<String> = include_str!("./pt.abbreviations.txt")
+        let mut abbreviations: Vec<String> = include_str!("./abbrev/pt.abbreviations.txt")
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())

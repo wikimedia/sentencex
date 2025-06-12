@@ -5,7 +5,7 @@ pub struct Italian {}
 
 impl Language for Italian {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./it.abbreviations.txt")
+        include_str!("./abbrev/it.abbreviations.txt")
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())

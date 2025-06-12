@@ -5,9 +5,9 @@ pub struct Arabic {}
 
 impl Language for Arabic {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./ar.abbreviations.txt")
+        include_str!("./abbrev/ar.abbreviations.txt")
             .lines()
-            .chain(include_str!("./en.abbreviations.txt").lines())
+            .chain(include_str!("./abbrev/en.abbreviations.txt").lines())
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
             .collect()

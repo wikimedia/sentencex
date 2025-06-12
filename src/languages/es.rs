@@ -5,7 +5,7 @@ pub struct Spanish {}
 
 impl Language for Spanish {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./es.abbreviations.txt")
+        include_str!("./abbrev/es.abbreviations.txt")
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
