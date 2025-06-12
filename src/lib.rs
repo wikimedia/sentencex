@@ -16,32 +16,38 @@ lazy_static::lazy_static! {
 
 }
 
+lazy_static::lazy_static! {
+    static ref LANGUAGE_MAP: HashMap<&'static str, fn() -> Box<dyn Language>> = {
+        let mut map = HashMap::new();
+        map.insert("en", || Box::new(English {}));
+        map.insert("es", || Box::new(Spanish {}));
+        map.insert("ml", || Box::new(Malayalam {}));
+        map.insert("pt", || Box::new(Portuguese {}));
+        map.insert("it", || Box::new(Italian {}));
+        map.insert("am", || Box::new(Amharic {}));
+        map.insert("ar", || Box::new(Arabic {}));
+        map.insert("ta", || Box::new(Tamil {}));
+        map.insert("te", || Box::new(Telegu {}));
+        map.insert("kn", || Box::new(Kannada {}));
+        map.insert("kk", || Box::new(Kazakh {}));
+        map.insert("bg", || Box::new(Bulgarian {}));
+        map
+    };
+}
+
 fn language_factory(language_code: &str) -> Box<dyn Language> {
-    let mut current_code = language_code;
-    match current_code {
-        // move the blow mapping to a static hashmap. AI!
-        "en" => return Box::new(English {}),
-        "es" => return Box::new(Spanish {}),
-        "ml" => return Box::new(Malayalam {}),
-        "pt" => return Box::new(Portuguese {}),
-        "it" => return Box::new(Italian {}),
-        "am" => return Box::new(Amharic {}),
-        "ar" => return Box::new(Arabic {}),
-        "ta" => return Box::new(Tamil {}),
-        "te" => return Box::new(Telegu {}),
-        "kn" => return Box::new(Kannada {}),
-        "kk" => return Box::new(Kazakh {}),
-        "bg" => return Box::new(Bulgarian {}),
-        _ => {
-            if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
-                for next_code in fallbacks {
-                    let instance = language_factory(next_code);
-                    return instance;
-                }
-            }
-            return Box::new(English {}); // Default to English
+    if let Some(language_constructor) = LANGUAGE_MAP.get(language_code) {
+        return language_constructor();
+    }
+
+    if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(language_code) {
+        for next_code in fallbacks {
+            let instance = language_factory(next_code);
+            return instance;
         }
     }
+
+    Box::new(English {}) // Default to English
 }
 
 pub fn segment(language_code: &str, text: &str) -> Vec<String> {
