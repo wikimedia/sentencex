@@ -29,6 +29,10 @@ pub enum LanguageOption {
     Bulgarian,
 }
 
+// Create a LanguageFactory which takes language 2 letter language codes and returns a Language
+// class as used in the segment method below. If there is no direct class, use Fallbacks defined in
+// fallback.rs to resolve and find a class. Final fallback class is English. AI!
+
 impl SentenceSegmenter {
     pub fn new(language: LanguageOption) -> Self {
         SentenceSegmenter { language }
