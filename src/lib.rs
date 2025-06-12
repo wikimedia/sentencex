@@ -33,7 +33,8 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
             "bg" => return Box::new(Bulgarian {}),
             _ => {
                 if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
-                    // Instead of using .first, try all fallbacks till the list exhausted. AI!
+                    // Instead of using .first, try all fallbacks till the list exhausted. Call
+                    // language_factory recurively. AI!
                     if let Some(next_code) = fallbacks.first() {
                         current_code = next_code;
                         continue;
