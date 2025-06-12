@@ -1,5 +1,6 @@
 use languages::{
-    Amharic, Arabic, English, Italian, Kannada, Language, Malayalam, Portuguese, Spanish, Tamil,
+    Amharic, Arabic, English, Italian, Kannada, Kazakh, Language, Malayalam, Portuguese, Spanish,
+    Tamil,
 };
 use serde::Serialize;
 
@@ -24,6 +25,7 @@ pub enum LanguageOption {
     Arabic,
     Tamil,
     Kannada,
+    Kazakh,
 }
 
 impl SentenceSegmenter {
@@ -42,6 +44,7 @@ impl SentenceSegmenter {
             LanguageOption::Arabic => Arabic {}.segment(text),
             LanguageOption::Tamil => Tamil {}.segment(text),
             LanguageOption::Kannada => Kannada {}.segment(text),
+            LanguageOption::Kazakh => Kazakh {}.segment(text),
         }
     }
 }
