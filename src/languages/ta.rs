@@ -12,12 +12,13 @@ impl Language for Tamil {
             "ன",
         ];
 
-// Rewrite below loop in Rust. AI!
-        for _, consonant := range consonants {
-		for _, vowelSign := range vowelSigns {
-			consonantVowels = append(consonantVowels, consonant+vowelSign)
-		}
-	}
+        let mut consonant_vowels = Vec::new();
+        for consonant in &consonants {
+            for vowel_sign in &vowel_signs {
+                consonant_vowels.push(format!("{}{}", consonant, vowel_sign));
+            }
+        }
+
         include_str!("./ta.abbreviations.txt")
             .lines()
             .chain(include_str!("./en.abbreviations.txt").lines())
