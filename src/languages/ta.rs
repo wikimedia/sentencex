@@ -19,9 +19,9 @@ impl Language for Tamil {
             }
         }
 
-        include_str!("./abbrev/ta.abbreviations.txt")
+        include_str!("./abbrev/ta.txt")
             .lines()
-            .chain(include_str!("./abbrev/en.abbreviations.txt").lines())
+            .chain(include_str!("./abbrev/en.txt").lines())
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
             .collect::<Vec<String>>()

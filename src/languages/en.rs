@@ -5,7 +5,7 @@ pub struct English {}
 
 impl Language for English {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/en.abbreviations.txt")
+        include_str!("./abbrev/en.txt")
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())

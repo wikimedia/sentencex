@@ -1,5 +1,6 @@
 mod am;
 mod ar;
+mod bg;
 mod en;
 mod es;
 mod it;
@@ -12,6 +13,7 @@ mod ta;
 
 pub use am::Amharic;
 pub use ar::Arabic;
+pub use bg::Bulgarian;
 pub use en::English;
 pub use es::Spanish;
 pub use it::Italian;
@@ -21,7 +23,6 @@ pub use language::Language;
 pub use ml::Malayalam;
 pub use pt::Portuguese;
 pub use ta::Tamil;
-
 #[cfg(test)]
 mod tests {
     use std::fs;

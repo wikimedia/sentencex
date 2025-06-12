@@ -5,7 +5,7 @@ pub struct Kazakh {}
 
 impl Language for Kazakh {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/kk.abbreviations.txt")
+        include_str!("./abbrev/kk.txt")
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())

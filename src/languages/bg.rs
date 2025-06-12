@@ -1,13 +1,12 @@
 use super::Language;
 
 #[derive(Debug, Clone)]
-pub struct Arabic {}
+pub struct Bulgarian {}
 
-impl Language for Arabic {
+impl Language for Bulgarian {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/ar.txt")
+        include_str!("./abbrev/bg.txt")
             .lines()
-            .chain(include_str!("./abbrev/en.txt").lines())
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
             .collect()
@@ -22,6 +21,6 @@ mod tests {
 
     #[test]
     fn test_segment() {
-        run_language_tests(Arabic {}, "tests/ar.txt");
+        run_language_tests(Bulgarian {}, "tests/bg.txt");
     }
 }
