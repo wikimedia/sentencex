@@ -24,9 +24,12 @@ impl Language for Tamil {
             .chain(include_str!("./en.abbreviations.txt").lines())
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
+            .collect::<Vec<String>>()
+            .into_iter()
+            .chain(vowels.into_iter().map(String::from))
+            .chain(consonants.into_iter().map(String::from))
+            .chain(consonant_vowels.into_iter())
             .collect()
-
-        // Append vowels, consonants, consonant_vowels to abbreviations and return. AI!
     }
 
     fn is_punctuation_between_quotes(&self) -> bool {
