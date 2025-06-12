@@ -13,6 +13,7 @@ lazy_static::lazy_static! {
         let yaml_data = include_str!("./languages/fallbacks.yaml");
         serde_yaml::from_str(yaml_data).expect("Failed to parse fallbacks.yaml")
     };
+
 }
 
 fn language_factory(language_code: &str) -> Box<dyn Language> {
