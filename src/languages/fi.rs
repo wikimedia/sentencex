@@ -13,16 +13,42 @@ impl Language for Finnish {
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        // Rewrite the below python code in Rust. AI!
-        if re.match(r"^\W*[0-9a-z]", text_after_boundary):
-            return True
-        next_word = text_after_boundary.strip().split(" ")[0]
+        use regex::Regex;
 
-        if len(next_word) == 0:
-            return False
-        if next_word in self.MONTHS or (next_word[0].upper() + next_word[1:] in self.MONTHS):
-            return True
-        return False
+        // Check if the text matches the regex pattern
+        let regex = Regex::new(r"^\W*[0-9a-z]").unwrap();
+        if regex.is_match(text_after_boundary) {
+            return true;
+        }
+
+        // Extract the next word
+        let next_word = text_after_boundary
+            .trim()
+            .split_whitespace()
+            .next()
+            .unwrap_or("");
+
+        // Check conditions for the next word
+        if next_word.is_empty() {
+            return false;
+        }
+
+        let months = vec![
+            "January", "February", "March", "April", "May", "June", "July", "August", "September",
+            "October", "November", "December",
+        ];
+
+        if months.contains(&next_word)
+            || months.contains(&format!(
+                "{}{}",
+                next_word.chars().next().unwrap_or_default().to_uppercase(),
+                &next_word[1..]
+            ))
+        {
+            return true;
+        }
+
+        false
     }
 }
 
