@@ -1,18 +1,24 @@
 mod am;
+mod ar;
 mod en;
 mod es;
 mod it;
+mod kn;
 mod language;
 mod ml;
 mod pt;
+mod ta;
 
 pub use am::Amharic;
+pub use ar::Arabic;
 pub use en::English;
 pub use es::Spanish;
 pub use it::Italian;
+pub use kn::Kannada;
 pub use language::Language;
 pub use ml::Malayalam;
 pub use pt::Portuguese;
+pub use ta::Tamil;
 
 #[cfg(test)]
 mod tests {

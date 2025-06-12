@@ -28,7 +28,7 @@ impl Language for Tamil {
             .into_iter()
             .chain(vowels.into_iter().map(String::from))
             .chain(consonants.into_iter().map(String::from))
-            .chain(consonant_vowels.into_iter())
+            .chain(consonant_vowels)
             .collect()
     }
 

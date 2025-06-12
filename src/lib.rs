@@ -1,4 +1,7 @@
-use languages::{Amharic, English, Italian, Language, Malayalam, Portuguese, Spanish};
+use languages::{
+    Amharic, Arabic, English, Italian, Kannada, Language, Malayalam, Portuguese, Spanish, Tamil,
+};
+use serde::Serialize;
 
 mod constants;
 pub mod languages;
@@ -8,14 +11,19 @@ pub struct SentenceSegmenter {
     language: LanguageOption,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Default, clap::ValueEnum)]
+#[serde(rename_all = "kebab-case")]
 pub enum LanguageOption {
+    #[default]
     English,
     Spanish,
     Malayalam,
     Portuguese,
     Italian,
     Amharic,
+    Arabic,
+    Tamil,
+    Kannada,
 }
 
 impl SentenceSegmenter {
@@ -31,6 +39,9 @@ impl SentenceSegmenter {
             LanguageOption::Portuguese => Portuguese {}.segment(text),
             LanguageOption::Italian => Italian {}.segment(text),
             LanguageOption::Amharic => Amharic {}.segment(text),
+            LanguageOption::Arabic => Arabic {}.segment(text),
+            LanguageOption::Tamil => Tamil {}.segment(text),
+            LanguageOption::Kannada => Kannada {}.segment(text),
         }
     }
 }

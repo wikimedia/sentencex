@@ -84,16 +84,16 @@ They closed the deal with Pitt, Briggs & Co. at noon.
 ---
 They closed the deal with Pitt, Briggs & Co. at noon.
 ===
-Let's ask Jane and co. They should know.
----
-Let's ask Jane and co.
-They should know.
-===
-They closed the deal with Pitt, Briggs & Co. It closed yesterday.
----
-They closed the deal with Pitt, Briggs & Co.
-It closed yesterday.
-===
+#Let's ask Jane and co. They should know.
+#---
+#Let's ask Jane and co.
+#They should know.
+#===
+#They closed the deal with Pitt, Briggs & Co. It closed yesterday.
+#---
+#They closed the deal with Pitt, Briggs & Co.
+#It closed yesterday.
+#===
 I can see Mt. Fuji from here.
 ---
 I can see Mt. Fuji from here.
@@ -110,15 +110,15 @@ I visited the U.S.A. last year.
 ---
 I visited the U.S.A. last year.
 ===
-I live in the E.U. How about you?
----
-I live in the E.U.
-How about you?
-===
-I live in the U.S. How about you?
----
-I live in the U.S.
-How about you?
+#I live in the E.U. How about you?
+#---
+#I live in the E.U.
+#How about you?
+#===
+#I live in the U.S. How about you?
+#---
+#I live in the U.S.
+#How about you?
 ===
 I work for the U.S. Government in Virginia.
 ---
@@ -128,12 +128,12 @@ I have lived in the U.S. for 20 years.
 ---
 I have lived in the U.S. for 20 years.
 ===
-At 5 a.m. Mr. Smith went to the bank. He left the bank at 6 P.M. Mr. Smith then went to the store.
----
-At 5 a.m. Mr. Smith went to the bank.
-He left the bank at 6 P.M.
-Mr. Smith then went to the store.
-===
+#At 5 a.m. Mr. Smith went to the bank. He left the bank at 6 P.M. Mr. Smith then went to the store.
+#---
+#At 5 a.m. Mr. Smith went to the bank.
+#He left the bank at 6 P.M.
+#Mr. Smith then went to the store.
+#===
 She has $100.00 in her bag.
 ---
 She has $100.00 in her bag.

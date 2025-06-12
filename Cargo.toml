@@ -7,6 +7,7 @@ edition = "2024"
 name = "sentencex"
 
 [dependencies]
+serde = { version = "1.0.219", features = ["derive"] }
 lazy_static = "1.5.0"
 regex = "1.11.1"
 clap = { version = "4.3.2", features = ["derive"] }
