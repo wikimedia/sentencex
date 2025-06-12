@@ -25,6 +25,12 @@ impl Language for Tamil {
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
             .collect()
+
+        // Append vowels, consonants, consonant_vowels to abbreviations and return. AI!
+    }
+
+    fn is_punctuation_between_quotes(&self) -> bool {
+        true
     }
 }
 
