@@ -10,6 +10,7 @@ mod language;
 mod ml;
 mod pt;
 mod ta;
+mod te;
 
 pub use am::Amharic;
 pub use ar::Arabic;
@@ -23,6 +24,8 @@ pub use language::Language;
 pub use ml::Malayalam;
 pub use pt::Portuguese;
 pub use ta::Tamil;
+pub use te::Telegu;
+
 #[cfg(test)]
 mod tests {
     use std::fs;
