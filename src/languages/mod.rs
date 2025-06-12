@@ -3,6 +3,7 @@ mod ar;
 mod bg;
 mod en;
 mod es;
+mod fi;
 mod fr;
 mod it;
 mod kk;
@@ -18,6 +19,7 @@ pub use ar::Arabic;
 pub use bg::Bulgarian;
 pub use en::English;
 pub use es::Spanish;
+pub use fi::Finnish;
 pub use fr::French;
 pub use it::Italian;
 pub use kk::Kazakh;
@@ -27,6 +29,7 @@ pub use ml::Malayalam;
 pub use pt::Portuguese;
 pub use ta::Tamil;
 pub use te::Telegu;
+
 #[cfg(test)]
 mod tests {
     use std::fs;

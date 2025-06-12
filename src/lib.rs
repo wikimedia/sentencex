@@ -1,6 +1,6 @@
 use languages::{
-    Amharic, Arabic, Bulgarian, English, Italian, Kannada, Kazakh, Language, Malayalam, Portuguese,
-    Spanish, Tamil,
+    Amharic, Arabic, Bulgarian, English, Finnish, French, Italian, Kannada, Kazakh, Language,
+    Malayalam, Portuguese, Spanish, Tamil,
 };
 
 mod constants;
@@ -31,6 +31,8 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
             "kn" => return Box::new(Kannada {}),
             "kk" => return Box::new(Kazakh {}),
             "bg" => return Box::new(Bulgarian {}),
+            "fr" => return Box::new(French {}),
+            "fi" => return Box::new(Finnish {}),
             _ => {
                 if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
                     if let Some(next_code) = fallbacks.first() {

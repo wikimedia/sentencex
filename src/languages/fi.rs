@@ -5,7 +5,7 @@ pub struct Finnish {}
 
 impl Language for Finnish {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/it.txt")
+        include_str!("./abbrev/fi.txt")
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
@@ -33,17 +33,30 @@ impl Language for Finnish {
             return false;
         }
 
-        let months = vec![
-            "January", "February", "March", "April", "May", "June", "July", "August", "September",
-            "October", "November", "December",
+        let months = [
+            "tammikuu",
+            "helmikuu",
+            "maaliskuu",
+            "huhtikuu",
+            "toukokuu",
+            "kesäkuu",
+            "heinäkuu",
+            "elokuu",
+            "syyskuu",
+            "lokakuu",
+            "marraskuu",
+            "joulukuu",
         ];
 
         if months.contains(&next_word)
-            || months.contains(&format!(
-                "{}{}",
-                next_word.chars().next().unwrap_or_default().to_uppercase(),
-                &next_word[1..]
-            ))
+            || months.contains(
+                &format!(
+                    "{}{}",
+                    next_word.chars().next().unwrap_or_default().to_uppercase(),
+                    &next_word[1..]
+                )
+                .as_str(),
+            )
         {
             return true;
         }
