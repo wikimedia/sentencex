@@ -19,8 +19,12 @@ impl Language for Armenian {
     }
 
     fn get_sentence_break_regex(&self) -> Regex {
-        let hy_terminators = ; // remove '.' from GLOBAL_SENTENCE_TERMINATORS. AI!
-        let pattern = format!("[{};։՜:]]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
+        let hy_terminators: Vec<&str> = GLOBAL_SENTENCE_TERMINATORS
+            .iter()
+            .filter(|&&c| c != ".")
+            .cloned()
+            .collect();
+        let pattern = format!("[{};։՜:]]+", hy_terminators.join(""));
         Regex::new(&pattern).unwrap()
     }
 }
