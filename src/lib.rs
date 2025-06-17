@@ -1,6 +1,6 @@
 use languages::{
     Amharic, Arabic, Bengali, Bulgarian, Catalan, Danish, Deutch, English, Finnish, French, Greek,
-    Italian, Kannada, Kazakh, Language, Malayalam, Portuguese, Spanish, Tamil,
+    Gujarati, Italian, Kannada, Kazakh, Language, Malayalam, Portuguese, Spanish, Tamil,
 };
 
 mod constants;
@@ -36,6 +36,7 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
             "en" => return Box::new(English {}),
             "es" => return Box::new(Spanish {}),
             "el" => return Box::new(Greek {}),
+            "gu" => return Box::new(Gujarati {}),
             "ml" => return Box::new(Malayalam {}),
             "pt" => return Box::new(Portuguese {}),
             "it" => return Box::new(Italian {}),
