@@ -14,10 +14,17 @@ lazy_static::lazy_static! {
         serde_yaml::from_str(yaml_data).expect("Failed to parse fallbacks.yaml")
     };
 }
-
 fn language_factory(language_code: &str) -> Box<dyn Language> {
     let mut current_code = language_code;
+    let mut visited = std::collections::HashSet::new();
+
     loop {
+        if visited.contains(current_code) {
+            current_code = "en"; // Default to English if a cycle is detected
+        } else {
+            visited.insert(current_code);
+        }
+
         match current_code {
             "en" => return Box::new(English {}),
             "es" => return Box::new(Spanish {}),
@@ -35,12 +42,15 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
             "fi" => return Box::new(Finnish {}),
             _ => {
                 if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
-                    if let Some(next_code) = fallbacks.first() {
-                        current_code = next_code;
-                        continue;
+                    for next_code in fallbacks {
+                        if !visited.contains(next_code) {
+                            current_code = next_code;
+                            break;
+                        }
                     }
+                } else {
+                    current_code = "en"; // Default to English if no fallbacks are found
                 }
-                return Box::new(English {}); // Default to English
             }
         }
     }
