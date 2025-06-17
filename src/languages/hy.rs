@@ -2,20 +2,14 @@ use regex::Regex;
 
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 
-use super::Language;
+use super::{English, Language};
 
 #[derive(Debug, Clone)]
 pub struct Armenian {}
 
 impl Language for Armenian {
     fn get_abbreviations(&self) -> Vec<String> {
-        fn get_abbreviations(&self) -> Vec<String> {
-            include_str!("./abbrev/en.txt")
-                .lines()
-                .map(|line| line.trim().to_string())
-                .filter(|line| !line.starts_with("//") && !line.is_empty())
-                .collect()
-        }
+        English {}.get_abbreviations()
     }
 
     fn get_sentence_break_regex(&self) -> Regex {
@@ -24,7 +18,7 @@ impl Language for Armenian {
             .filter(|&&c| c != ".")
             .cloned()
             .collect();
-        let pattern = format!("[{};։՜:]]+", hy_terminators.join(""));
+        let pattern = format!("[{};։՜:]+", hy_terminators.join(""));
         Regex::new(&pattern).unwrap()
     }
 }
