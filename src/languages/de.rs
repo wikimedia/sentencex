@@ -1,5 +1,3 @@
-use regex::Regex;
-
 use super::Language;
 
 #[derive(Debug, Clone)]
