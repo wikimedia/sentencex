@@ -1,6 +1,7 @@
 mod am;
 mod ar;
 mod bg;
+mod bn;
 mod en;
 mod es;
 mod fi;
@@ -17,6 +18,7 @@ mod te;
 pub use am::Amharic;
 pub use ar::Arabic;
 pub use bg::Bulgarian;
+pub use bn::Bengali;
 pub use en::English;
 pub use es::Spanish;
 pub use fi::Finnish;
