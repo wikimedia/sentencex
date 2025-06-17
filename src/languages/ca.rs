@@ -3,11 +3,11 @@ use regex::Regex;
 use super::Language;
 
 #[derive(Debug, Clone)]
-pub struct Danish {}
+pub struct Catalan {}
 
-impl Language for Danish {
+impl Language for Catalan {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/da.txt")
+        include_str!("./abbrev/es.txt")
             .lines()
             .map(|line| line.trim().to_string())
             .filter(|line| !line.starts_with("//") && !line.is_empty())
@@ -28,6 +28,6 @@ mod tests {
 
     #[test]
     fn test_segment() {
-        run_language_tests(Danish {}, "tests/da.txt");
+        run_language_tests(Catalan {}, "tests/ca.txt");
     }
 }
