@@ -17,12 +17,11 @@ impl Language for Russian {
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        // Check if the first character of the text matches the pattern
-        if let Some(first_char) = text_after_boundary.chars().next() {
-            first_char.is_alphanumeric() || ('а'..='я').contains(&first_char)
-        } else {
-            false
-        }
+        static PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
+            regex::Regex::new(r"^[0-9a-zа-я]").expect("Failed to compile regex")
+        });
+
+        PATTERN.is_match(text_after_boundary)
     }
 }
 
