@@ -76,3 +76,43 @@ pub fn segment(language_code: &str, text: &str) -> Vec<String> {
     let language = language_factory(language_code);
     language.segment(text)
 }
+
+#[cfg(test)]
+mod tests {
+
+    use std::fs;
+
+    use super::*;
+
+    pub fn run_language_tests_for_language(language: &str, test_file: &str) {
+        let content = fs::read_to_string(test_file).expect("Failed to read test file");
+        let test_cases: Vec<&str> = content.split("===\n").collect();
+
+        for case in test_cases {
+            if case.trim().starts_with('#') {
+                continue; // Skip comment lines
+            }
+            let parts: Vec<&str> = case.split("---\n").collect();
+            if parts.len() != 2 {
+                continue; // Skip malformed test cases
+            }
+
+            let input = parts[0].trim();
+            let expected: Vec<&str> = parts[1].lines().map(|line| line.trim()).collect();
+            let result = segment(language, input);
+            let trimmed_result: Vec<String> =
+                result.iter().map(|item| item.trim().to_string()).collect();
+
+            assert_eq!(trimmed_result, expected, "Failed for input: \n{}", input);
+        }
+    }
+
+    #[test]
+    fn test_urdu_segment() {
+        run_language_tests_for_language("ur", "tests/ur.txt");
+    }
+    #[test]
+    fn test_chinese_segment() {
+        run_language_tests_for_language("zh", "tests/zh.txt");
+    }
+}

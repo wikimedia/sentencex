@@ -67,6 +67,7 @@ mod tests {
     use std::fs;
 
     use super::*;
+
     pub fn run_language_tests<T: Language>(language: T, test_file: &str) {
         let content = fs::read_to_string(test_file).expect("Failed to read test file");
         let test_cases: Vec<&str> = content.split("===\n").collect();
