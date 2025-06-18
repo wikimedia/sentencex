@@ -17,8 +17,12 @@ impl Language for Russian {
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        //rewrite below js code in Rust. AI!
-return textAfterBoundary.match(/^[0-9a-zа-я]/)
+        // Check if the first character of the text matches the pattern
+        if let Some(first_char) = text_after_boundary.chars().next() {
+            first_char.is_alphanumeric() || ('а'..='я').contains(&first_char)
+        } else {
+            false
+        }
     }
 }
 
