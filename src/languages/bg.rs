@@ -1,15 +1,20 @@
+use once_cell::sync::Lazy;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Bulgarian {}
+static BULGARIAN_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    include_str!("./abbrev/bg.txt")
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.starts_with("//") && !line.is_empty())
+        .collect()
+});
 
 impl Language for Bulgarian {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/bg.txt")
-            .lines()
-            .map(|line| line.trim().to_string())
-            .filter(|line| !line.starts_with("//") && !line.is_empty())
-            .collect()
+        BULGARIAN_ABBREVIATIONS.clone()
     }
 }
 

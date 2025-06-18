@@ -1,17 +1,21 @@
+use once_cell::sync::Lazy;
 use regex::Regex;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Danish {}
+static DANISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    include_str!("./abbrev/da.txt")
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.starts_with("//") && !line.is_empty())
+        .collect()
+});
 
 impl Language for Danish {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/da.txt")
-            .lines()
-            .map(|line| line.trim().to_string())
-            .filter(|line| !line.starts_with("//") && !line.is_empty())
-            .collect()
+        DANISH_ABBREVIATIONS.clone()
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {

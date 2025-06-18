@@ -1,11 +1,14 @@
+use once_cell::sync::Lazy;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Japanese {}
+static JAPANESE_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| Vec::new());
 
 impl Language for Japanese {
     fn get_abbreviations(&self) -> Vec<String> {
-        Vec::new()
+        JAPANESE_ABBREVIATIONS.clone()
     }
 }
 

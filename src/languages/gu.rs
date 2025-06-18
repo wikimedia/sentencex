@@ -1,16 +1,21 @@
+use once_cell::sync::Lazy;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Gujarati {}
 
+static GUJARATI_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    include_str!("./abbrev/gu.txt")
+        .lines()
+        .chain(include_str!("./abbrev/en.txt").lines())
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.starts_with("//") && !line.is_empty())
+        .collect()
+});
 impl Language for Gujarati {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/gu.txt")
-            .lines()
-            .chain(include_str!("./abbrev/en.txt").lines())
-            .map(|line| line.trim().to_string())
-            .filter(|line| !line.starts_with("//") && !line.is_empty())
-            .collect()
+        GUJARATI_ABBREVIATIONS.clone()
     }
 }
 

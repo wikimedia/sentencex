@@ -1,15 +1,21 @@
+use once_cell::sync::Lazy;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Finnish {}
 
+static FINNISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    include_str!("./abbrev/fi.txt")
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.starts_with("//") && !line.is_empty())
+        .collect()
+});
+
 impl Language for Finnish {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/fi.txt")
-            .lines()
-            .map(|line| line.trim().to_string())
-            .filter(|line| !line.starts_with("//") && !line.is_empty())
-            .collect()
+        FINNISH_ABBREVIATIONS.clone()
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {

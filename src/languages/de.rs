@@ -1,15 +1,20 @@
+use once_cell::sync::Lazy;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Deutch {}
+static DEUTCH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    include_str!("./abbrev/de.txt")
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.starts_with("//") && !line.is_empty())
+        .collect()
+});
 
 impl Language for Deutch {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/de.txt")
-            .lines()
-            .map(|line| line.trim().to_string())
-            .filter(|line| !line.starts_with("//") && !line.is_empty())
-            .collect()
+        DEUTCH_ABBREVIATIONS.clone()
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {

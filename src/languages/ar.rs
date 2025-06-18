@@ -1,16 +1,21 @@
+use once_cell::sync::Lazy;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Arabic {}
+static ARABIC_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    include_str!("./abbrev/ar.txt")
+        .lines()
+        .chain(include_str!("./abbrev/en.txt").lines())
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.starts_with("//") && !line.is_empty())
+        .collect()
+});
 
 impl Language for Arabic {
     fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/ar.txt")
-            .lines()
-            .chain(include_str!("./abbrev/en.txt").lines())
-            .map(|line| line.trim().to_string())
-            .filter(|line| !line.starts_with("//") && !line.is_empty())
-            .collect()
+        ARABIC_ABBREVIATIONS.clone()
     }
 }
 
