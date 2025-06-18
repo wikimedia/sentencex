@@ -25,8 +25,10 @@ mod nl;
 mod pa;
 mod pl;
 mod pt;
+mod ru;
 mod ta;
 mod te;
+
 pub use am::Amharic;
 pub use ar::Arabic;
 pub use bg::Bulgarian;
@@ -54,6 +56,7 @@ pub use nl::Dutch;
 pub use pa::Punjabi;
 pub use pl::Polish;
 pub use pt::Portuguese;
+pub use ru::Russian;
 pub use ta::Tamil;
 pub use te::Telegu;
 

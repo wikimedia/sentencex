@@ -4,6 +4,9 @@ use once_cell::sync::Lazy;
 #[derive(Debug, Clone)]
 pub struct Russian {}
 
+static PATTERN: Lazy<regex::Regex> =
+    Lazy::new(|| regex::Regex::new(r"^[0-9a-zа-я]").expect("Failed to compile regex"));
+
 static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
     include_str!("./abbrev/ru.txt")
         .lines()
@@ -11,16 +14,13 @@ static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .filter(|line| !line.starts_with("//") && !line.is_empty())
         .collect()
 });
+
 impl Language for Russian {
     fn get_abbreviations(&self) -> Vec<String> {
         ABBREVIATIONS.clone()
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        static PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
-            regex::Regex::new(r"^[0-9a-zа-я]").expect("Failed to compile regex")
-        });
-
         PATTERN.is_match(text_after_boundary)
     }
 }
