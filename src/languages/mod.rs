@@ -26,6 +26,7 @@ mod pa;
 mod pl;
 mod pt;
 mod ru;
+mod sk;
 mod ta;
 mod te;
 
@@ -57,6 +58,7 @@ pub use pa::Punjabi;
 pub use pl::Polish;
 pub use pt::Portuguese;
 pub use ru::Russian;
+pub use sk::Slovak;
 pub use ta::Tamil;
 pub use te::Telegu;
 
