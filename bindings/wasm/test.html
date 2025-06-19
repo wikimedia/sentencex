@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM Binding Test</title>
+    <script type="module">
+        import init, { segment } from './pkg/your_wasm_package.js';
+
+        async function run() {
+            await init();
+
+            const language = "en";
+            const text = "Hello world. This is a test.";
+            const sentences = segment(language, text);
+
+            console.log("Segmented sentences:", sentences);
+
+            const output = document.getElementById("output");
+            output.textContent = `Segmented sentences: ${sentences.join(" | ")}`;
+        }
+
+        run();
+    </script>
+</head>
+<body>
+    <h1>WASM Binding Test</h1>
+    <p id="output">Loading...</p>
+</body>
+</html>
