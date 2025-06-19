@@ -2,7 +2,8 @@
 	"name": "sentencex",
 	"version": "0.1.0",
 	"description": "sentence segmentation library",
-	"main": "index.node",
+	"main": "index.js",
+	"type": "module",
 	"repository": {
 		"type": "git",
 		"url": "https//github.com/wikimedia/sentencex"

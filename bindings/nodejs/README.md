@@ -4,8 +4,6 @@
 
 A sentence segmentation library in Go language with wide language support optimized for speed and utility.
 
-> This is a Rust language port of the original [sentencex](https://github.com/wikimedia/sentencex) library. A javascript/node port also exists [sentencex-js](https://github.com/wikimedia/sentencex-js)
-
 ## Approach
 
 - If it's a period, it ends a sentence.
@@ -34,22 +32,16 @@ The sentence segmentation in this library is **non-destructive**. This means, if
 Install the library using
 
 ```bash
-cargo add sentencex
+npm install sentencex
 ```
 
 Then, any text can be segmented as follows.
 
-```rust
-use sentencex::segment;
+```javascript
 
-fn main() {
-    let text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
-    let sentences = segment("en", text);
+import {segment}} from 'sentencex';
 
-    for (i, sentence) in sentences.iter().enumerate() {
-        println!("{}. {}", i + 1, sentence);
-    }
-}
+console.log(segment("en", "This is first sentence. This is another one."));
 ```
 
 The first argument is language code, second argument is text to segment. The `segment` method returns an array of identified sentences.

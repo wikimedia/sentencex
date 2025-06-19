@@ -4,8 +4,6 @@
 
 A sentence segmentation library in Go language with wide language support optimized for speed and utility.
 
-> This is a Rust language port of the original [sentencex](https://github.com/wikimedia/sentencex) library. A javascript/node port also exists [sentencex-js](https://github.com/wikimedia/sentencex-js)
-
 ## Approach
 
 - If it's a period, it ends a sentence.
@@ -40,13 +38,11 @@ cargo add sentencex
 Then, any text can be segmented as follows.
 
 ```rust
-use sentencex::{LanguageOption, SentenceSegmenter};
+use sentencex::segment;
 
 fn main() {
     let text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
-    let language = LanguageOption::English;
-    let segmenter = SentenceSegmenter::new(language);
-    let sentences = segmenter.segment(text);
+    let sentences = segment("en", text);
 
     for (i, sentence) in sentences.iter().enumerate() {
         println!("{}. {}", i + 1, sentence);
@@ -75,8 +71,7 @@ The following libraries are used for benchmarking:
 
 | Tokenizer Library    | English Golden Rule Set score | Speed(Avg over 100 runs) in seconds |
 | -------------------- | ----------------------------- | ----------------------------------- |
-| sentencex(go)        | 74.36                         | **0.1357**                          |
-| sentencex(python)    | 74.36                         | 0.93                                |
+| sentencex            | 74.36                         | **0.1357**                          |
 | mwtokenizer_tokenize | 30.77                         | 1.54                                |
 | blingfire_tokenize   | 89.74                         | 0.27                                |
 | nltk_tokenize        | 66.67                         | 1.86                                |
