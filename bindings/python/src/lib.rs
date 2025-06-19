@@ -8,7 +8,7 @@ pub fn segment(language: &str, text: &str) -> Vec<String> {
 }
 
 #[pymodule]
-fn sentencex(py: Python, m: &PyModule) -> PyResult<()> {
+fn sentencex(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(segment))?;
     Ok(())
 }
