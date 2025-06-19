@@ -1,0 +1,17 @@
+[package]
+name = "sentencex-js"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+exclude = ["index.node"]
+
+[lib]
+name = "sentencex"
+crate-type = ["cdylib"]
+
+[dependencies]
+sentencex = { path = "../../" }
+neon = { version = "1.1.1", features = ["napi-6"], default-features = false }
+
+[build-dependencies]
+neon-build = "0.10.1"
