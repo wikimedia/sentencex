@@ -1,3 +1,5 @@
-import { segment } from "./index.js";
+const sentencex = require(".");
 
-console.log(segment("en", "This is first sentence. This is another one."));
+console.log(
+	sentencex.segment("en", "This is first sentence. This is another one."),
+);

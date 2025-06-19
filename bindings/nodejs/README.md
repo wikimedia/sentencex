@@ -38,10 +38,11 @@ npm install sentencex
 Then, any text can be segmented as follows.
 
 ```javascript
+const sentencex = require(".");
 
-import {segment}} from 'sentencex';
-
-console.log(segment("en", "This is first sentence. This is another one."));
+console.log(
+  sentencex.segment("en", "This is first sentence. This is another one."),
+);
 ```
 
 The first argument is language code, second argument is text to segment. The `segment` method returns an array of identified sentences.
