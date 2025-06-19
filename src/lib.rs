@@ -71,7 +71,29 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
         }
     }
 }
-// Add elaborate RUst documentation with example usage. AI!
+
+/// Segments a given text into sentences based on the specified language.
+///
+/// # Arguments
+///
+/// * `language_code` - A string slice that holds the language code (e.g., "en" for English, "fr" for French).
+/// * `text` - A string slice that holds the text to be segmented.
+///
+/// # Returns
+///
+/// A `Vec<String>` containing the segmented sentences.
+///
+/// # Example
+///
+/// ```
+/// use sentencex::segment;
+///
+/// let language_code = "en";
+/// let text = "Hello world. This is a test.";
+/// let sentences = segment(language_code, text);
+///
+/// assert_eq!(sentences, vec!["Hello world.", "This is a test."]);
+/// ```
 pub fn segment(language_code: &str, text: &str) -> Vec<String> {
     let language = language_factory(language_code);
     language.segment(text)
