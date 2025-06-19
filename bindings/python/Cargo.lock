@@ -377,6 +377,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "lazy_static",
+ "once_cell",
  "regex",
  "serde",
  "serde_yaml",
