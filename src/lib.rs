@@ -71,7 +71,7 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
         }
     }
 }
-
+// Add elaborate RUst documentation with example usage. AI!
 pub fn segment(language_code: &str, text: &str) -> Vec<String> {
     let language = language_factory(language_code);
     language.segment(text)
