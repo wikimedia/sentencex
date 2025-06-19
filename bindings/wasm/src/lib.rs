@@ -1,5 +1,5 @@
-use wasm_bindgen::prelude::*;
 use ::sentencex::segment as _segment;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 /// Segments a given text into sentences based on the specified language.
 ///
@@ -27,5 +27,5 @@ use ::sentencex::segment as _segment;
 #[wasm_bindgen]
 pub fn segment(language: &str, text: &str) -> JsValue {
     let sentences = _segment(language, text);
-    JsValue::from_serde(&sentences).expect("Failed to serialize sentences")
+    serde_wasm_bindgen::to_value(&sentences).expect("")
 }
