@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml/badge.svg)](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml)
 
-A sentence segmentation library in Go language with wide language support optimized for speed and utility.
+A sentence segmentation library written in Rust language with wide language support optimized for speed and utility.
 
 > This is a Rust language port of the original [sentencex](https://github.com/wikimedia/sentencex) library. A javascript/node port also exists [sentencex-js](https://github.com/wikimedia/sentencex-js)
 
