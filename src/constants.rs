@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::collections::HashMap;
 
 pub const ROMAN_NUMERALS: [&str; 20] = [
@@ -21,7 +22,6 @@ pub fn get_quote_pairs() -> HashMap<&'static str, &'static str> {
     quote_pairs.insert("「", "」");
     quote_pairs
 }
-use regex::Regex;
 
 lazy_static::lazy_static! {
     pub static ref PARENS_REGEX: Regex = Regex::new(r"\([^)]+\)").unwrap();
