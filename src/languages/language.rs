@@ -1,5 +1,6 @@
 use regex::Regex;
 
+use crate::SentenceBoundary;
 use crate::constants::EMAIL_REGEX;
 use crate::constants::EXCLAMATION_WORDS;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
@@ -12,16 +13,30 @@ pub trait Language {
         Regex::new(&pattern).unwrap()
     }
 
-    fn segment(&self, text: &str) -> Vec<String> {
-        let mut sentences = Vec::new();
+    fn get_sentence_boundaries<'a>(&self, text: &'a str) -> Vec<SentenceBoundary<'a>> {
+        let mut boundaries = Vec::new();
         let paragraphs: Vec<&str> = text.split("\n\n").collect();
 
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
             if pindex > 0 {
-                sentences.push("\n\n".to_string());
+                let paragraph_start =
+                    paragraphs[..pindex].iter().map(|p| p.len()).sum::<usize>() + (pindex * 2);
+                boundaries.push(SentenceBoundary {
+                    start_index: paragraph_start,
+                    end_index: paragraph_start + 2,
+                    text: "\n\n",
+                    boundary_symbol: None,
+                    is_paragraph_break: true,
+                });
             }
 
-            let mut boundaries = vec![0];
+            let paragraph_start_offset = if pindex == 0 {
+                0
+            } else {
+                paragraphs[..pindex].iter().map(|p| p.len()).sum::<usize>() + (pindex * 2) + 2
+            };
+
+            let mut sentence_boundaries = vec![0];
             let matches: Vec<(usize, usize)> = self
                 .get_sentence_break_regex()
                 .find_iter(paragraph)
@@ -55,27 +70,51 @@ pub trait Language {
                     continue;
                 }
 
-                boundaries.push(boundary);
+                sentence_boundaries.push(boundary);
             }
 
-            if *boundaries.last().unwrap() != paragraph.len() {
-                boundaries.push(paragraph.len());
+            if *sentence_boundaries.last().unwrap() != paragraph.len() {
+                sentence_boundaries.push(paragraph.len());
             }
 
-            for i in 0..boundaries.len() - 1 {
-                let start = boundaries[i];
-                let end = boundaries[i + 1];
+            for i in 0..sentence_boundaries.len() - 1 {
+                let start = sentence_boundaries[i];
+                let end = sentence_boundaries[i + 1];
 
                 if start >= paragraph.len() || end > paragraph.len() || start > end {
                     continue;
                 }
 
-                let sentence = &paragraph[start..end];
-                sentences.push(sentence.to_string());
+                let sentence_text = &paragraph[start..end];
+                let boundary_symbol = if end < paragraph.len() {
+                    let boundary_chars = &paragraph[end - 1..end];
+                    if GLOBAL_SENTENCE_TERMINATORS.contains(&boundary_chars) {
+                        Some(boundary_chars.to_string())
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                boundaries.push(SentenceBoundary {
+                    start_index: paragraph_start_offset + start,
+                    end_index: paragraph_start_offset + end,
+                    text: sentence_text,
+                    boundary_symbol,
+                    is_paragraph_break: false,
+                });
             }
         }
 
-        sentences
+        boundaries
+    }
+
+    fn segment(&self, text: &str) -> Vec<String> {
+        self.get_sentence_boundaries(text)
+            .into_iter()
+            .map(|boundary| boundary.text.to_string())
+            .collect()
     }
 
     fn get_abbreviation_char(&self) -> &str {

@@ -15,7 +15,17 @@ lazy_static::lazy_static! {
         serde_yaml::from_str(yaml_data).expect("Failed to parse fallbacks.yaml")
     };
 }
-fn language_factory(language_code: &str) -> Box<dyn Language> {
+
+#[derive(Debug, Clone)]
+pub struct SentenceBoundary<'a> {
+    pub start_index: usize,
+    pub end_index: usize,
+    pub text: &'a str,
+    pub boundary_symbol: Option<String>,
+    pub is_paragraph_break: bool,
+}
+
+pub fn language_factory(language_code: &str) -> Box<dyn Language> {
     let mut current_code = language_code;
     let mut visited = std::collections::HashSet::new();
 
@@ -97,6 +107,49 @@ fn language_factory(language_code: &str) -> Box<dyn Language> {
 pub fn segment(language_code: &str, text: &str) -> Vec<String> {
     let language = language_factory(language_code);
     language.segment(text)
+}
+
+/// Returns detailed sentence boundaries for a given text based on the specified language.
+///
+/// This function provides low-level access to sentence boundary detection, returning
+/// detailed information about each boundary including start/end indices, the text content,
+/// boundary symbols, and whether the boundary represents a paragraph break.
+///
+/// # Arguments
+///
+/// * `language_code` - A string slice that holds the language code (e.g., "en" for English, "fr" for French).
+/// * `text` - A string slice that holds the text to be analyzed.
+///
+/// # Returns
+///
+/// A `Vec<SentenceBoundary>` containing detailed information about each sentence boundary.
+/// Each `SentenceBoundary` includes:
+/// - `start_index`: The byte index where the sentence starts
+/// - `end_index`: The byte index where the sentence ends
+/// - `text`: A reference to the sentence text (zero-copy)
+/// - `boundary_symbol`: The punctuation mark that ended the sentence (if any)
+/// - `is_paragraph_break`: Whether this boundary represents a paragraph break ("\n\n")
+///
+/// # Example
+///
+/// ```
+/// use sentencex::get_sentence_boundaries;
+///
+/// let language_code = "en";
+/// let text = "Hello world. This is a test.\n\nNew paragraph.";
+/// let boundaries = get_sentence_boundaries(language_code, text);
+///
+/// for boundary in boundaries {
+///     println!("Text: {:?}, Start: {}, End: {}",
+///              boundary.text, boundary.start_index, boundary.end_index);
+/// }
+/// ```
+pub fn get_sentence_boundaries<'a>(
+    language_code: &str,
+    text: &'a str,
+) -> Vec<SentenceBoundary<'a>> {
+    let language = language_factory(language_code);
+    language.get_sentence_boundaries(text)
 }
 
 #[cfg(test)]

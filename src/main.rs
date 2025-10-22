@@ -1,5 +1,5 @@
 use clap::Parser;
-use sentencex::segment;
+use sentencex::{get_sentence_boundaries, segment};
 use std::fs;
 use std::io::{self, Read};
 
@@ -16,6 +16,10 @@ struct Cli {
     /// The language of the text
     #[arg(short, long, default_value = "en")]
     language: String,
+
+    /// Print debug information including boundary details
+    #[arg(short, long)]
+    debug: bool,
 }
 
 fn main() {
@@ -33,9 +37,23 @@ fn main() {
         }
     };
 
-    let sentences = segment(&cli.language, &text);
+    if cli.debug {
+        let boundaries = get_sentence_boundaries(&cli.language, &text);
 
-    for (i, sentence) in sentences.iter().enumerate() {
-        println!("{}", sentence);
+        for (i, boundary) in boundaries.iter().enumerate() {
+            println!("Boundary {}: ", i + 1);
+            println!("  Start Index: {}", boundary.start_index);
+            println!("  End Index: {}", boundary.end_index);
+            println!("  Text: {:?}", boundary.text);
+            println!("  Boundary Symbol: {:?}", boundary.boundary_symbol);
+            println!("  Is Paragraph Break: {}", boundary.is_paragraph_break);
+            println!();
+        }
+    } else {
+        let sentences = segment(&cli.language, &text);
+
+        for sentence in sentences.iter() {
+            println!("{}", sentence);
+        }
     }
 }
