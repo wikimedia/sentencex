@@ -1,0 +1,16 @@
+# Each test case is defined as:
+# Input text
+# ---
+# Expected segments (one per line)
+# ===
+
+Hola mundo. ¿Cómo estás?
+---
+Hola mundo.
+¿Cómo estás?
+===
+Esto es una prueba. Solo una prueba.
+---
+Esto es una prueba.
+Solo una prueba.
+===

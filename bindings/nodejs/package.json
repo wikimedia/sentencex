@@ -1,0 +1,16 @@
+{
+	"name": "sentencex",
+	"version": "0.1.0",
+	"description": "sentence segmentation library",
+	"main": "index.node",
+	"repository": {
+		"type": "git",
+		"url": "https//github.com/wikimedia/sentencex"
+	},
+	"author": "Santhosh Thottingal <santhosh.thottingal@gmail.com>",
+	"license": "MIT",
+	"scripts": {
+		"build": "cargo build --release",
+		"test": "cargo test"
+	}
+}
