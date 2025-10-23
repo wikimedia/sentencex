@@ -3,6 +3,7 @@ use languages::{
     English, Finnish, French, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
     Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil,
 };
+use serde::Serialize;
 
 mod constants;
 pub mod languages;
@@ -16,7 +17,7 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SentenceBoundary<'a> {
     pub start_index: usize,
     pub end_index: usize,
