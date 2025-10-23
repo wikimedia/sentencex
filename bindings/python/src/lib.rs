@@ -18,6 +18,8 @@ pub fn get_sentence_boundaries(py: Python, language: &str, text: &str) -> PyResu
         dict.set_item("start_index", boundary.start_index)?;
         dict.set_item("end_index", boundary.end_index)?;
         dict.set_item("text", boundary.text)?;
+        dict.set_item("boundary_symbol", boundary.boundary_symbol)?;
+        dict.set_item("is_paragraph_break", boundary.is_paragraph_break)?;
         result.push(dict.into());
     }
 

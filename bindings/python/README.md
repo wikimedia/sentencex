@@ -1,8 +1,13 @@
 # Sentence segmenter
 
-[![tests](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml/badge.svg)](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml)
-
 A sentence segmentation library in Go language with wide language support optimized for speed and utility.
+
+## Bindings
+
+Besides native Rust, bindings for the following programming languages are available:
+
+* Python
+* Nodejs
 
 ## Approach
 
