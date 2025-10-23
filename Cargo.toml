@@ -33,4 +33,5 @@ harness = false
 members = [
     "bindings/python",
     "bindings/nodejs",
+    "bindings/wasm",
 ]
