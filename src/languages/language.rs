@@ -87,9 +87,16 @@ pub trait Language {
 
                 let sentence_text = &paragraph[start..end];
                 let boundary_symbol = if end < paragraph.len() {
-                    let boundary_chars = &paragraph[end - 1..end];
-                    if GLOBAL_SENTENCE_TERMINATORS.contains(&boundary_chars) {
-                        Some(boundary_chars.to_string())
+                    // Find the last character before the boundary, accounting for multibyte characters
+                    let chars: Vec<char> = paragraph[..end].chars().collect();
+
+                    if let Some(&last_char) = chars.last() {
+                        let last_char_str = last_char.to_string();
+                        if GLOBAL_SENTENCE_TERMINATORS.contains(&last_char_str.as_str()) {
+                            Some(last_char_str)
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     }
