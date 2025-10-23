@@ -47,6 +47,21 @@ console.log(
 
 The first argument is language code, second argument is text to segment. The `segment` method returns an array of identified sentences.
 
+If you need more detailed information about sentence boundaries, you can use the `get_sentence_boundaries` method:
+
+```javascript
+const sentencex = require(".");
+
+console.log(
+  sentencex.get_sentence_boundaries("en", "This is first sentence. This is another one."),
+);
+```
+
+This method returns an array of objects with the following properties:
+- `start_index`: The starting position of the sentence in the original text
+- `end_index`: The ending position of the sentence in the original text
+- `text`: The actual sentence text
+
 ## Language support
 
 The aim is to support all languages where there is a wikipedia. Instead of falling back on English for languages not defined in the library, a fallback chain is used. The closest language which is defined in the library will be used. Fallbacks for ~244 languages are defined.
