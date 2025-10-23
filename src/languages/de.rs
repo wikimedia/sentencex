@@ -7,6 +7,7 @@ pub struct Deutch {}
 static DEUTCH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
     include_str!("./abbrev/de.txt")
         .lines()
+        .chain(include_str!("./abbrev/en.txt").lines())
         .map(|line| line.trim().to_string())
         .filter(|line| !line.starts_with("//") && !line.is_empty())
         .collect()
