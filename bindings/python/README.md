@@ -32,25 +32,33 @@ The sentence segmentation in this library is **non-destructive**. This means, if
 Install the library using
 
 ```bash
-cargo add sentencex
+pip install sentencex
 ```
 
 Then, any text can be segmented as follows.
 
-```rust
-use sentencex::segment;
+```python
+import sentencex
 
-fn main() {
-    let text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
-    let sentences = segment("en", text);
-
-    for (i, sentence) in sentences.iter().enumerate() {
-        println!("{}. {}", i + 1, sentence);
-    }
-}
+sentences = sentencex.segment("en", "This is first sentence. This is another one.")
+print(sentences)
 ```
 
 The first argument is language code, second argument is text to segment. The `segment` method returns an array of identified sentences.
+
+If you need more detailed information about sentence boundaries, you can use the `get_sentence_boundaries` method:
+
+```python
+import sentencex
+
+boundaries = sentencex.get_sentence_boundaries("en", "This is first sentence. This is another one.")
+print(boundaries)
+```
+
+This method returns a list of dictionaries with the following properties:
+- `start_index`: The starting position of the sentence in the original text
+- `end_index`: The ending position of the sentence in the original text
+- `text`: The actual sentence text
 
 ## Language support
 
