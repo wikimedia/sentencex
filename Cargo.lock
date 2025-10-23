@@ -328,6 +328,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link",
+]
+
+[[package]]
+name = "linkme"
+version = "0.3.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e3283ed2d0e50c06dd8602e0ab319bb048b6325d0bba739db64ed8205179898"
+dependencies = [
+ "linkme-impl",
+]
+
+[[package]]
+name = "linkme-impl"
+version = "0.3.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5cec0ec4228b4853bb129c84dbf093a27e6c7a20526da046defc334a1b017f7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.102",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -356,6 +386,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d61c719bcfbcf5d62b3a09efa6088de8c54bc0bfcd3ea7ae39fcc186108b8de1"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "neon"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74c1d298c79e60a3f5a1e638ace1f9c1229d2a97bd3a9e40a63b67c8efa0f1e1"
+dependencies = [
+ "either",
+ "libloading",
+ "linkme",
+ "neon-macros",
+ "once_cell",
+ "semver",
+ "send_wrapper",
+ "smallvec",
+]
+
+[[package]]
+name = "neon-build"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bac98a702e71804af3dacfde41edde4a16076a7bbe889ae61e56e18c5b1c811"
+
+[[package]]
+name = "neon-macros"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c39e43767817fc963f90f400600967a2b2403602c6440685d09a6bc4e02b70b1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.102",
 ]
 
 [[package]]
@@ -545,9 +608,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.11.1"
+version = "1.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b544ef1b4eac5dc2db33ea63606ae9ffcfac26c1416a2806ae0bf5f56b201191"
+checksum = "843bc0191f75f3e22651ae5f1e72939ab2f72a4bc30fa80a066bd66edefc24d4"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -557,9 +620,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.9"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "809e8dc61f6de73b46c85f4c96486310fe304c434cfa43669d7b40f711150908"
+checksum = "5276caf25ac86c8d810222b3dbb938e512c55c6831a10f3e6ed1c93b84041f1c"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -600,6 +663,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
+name = "semver"
+version = "1.0.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
+
+[[package]]
+name = "send_wrapper"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd0b0ec5f1c1ca621c432a25813d8d60c88abe6d3e08a3eb9cf37d97a0fe3d73"
+
+[[package]]
 name = "sentencex"
 version = "0.1.0"
 dependencies = [
@@ -613,6 +688,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sentencex-js"
+version = "0.1.0"
+dependencies = [
+ "neon",
+ "neon-build",
+ "sentencex",
+]
+
+[[package]]
 name = "sentencex-py"
 version = "0.1.0"
 dependencies = [
@@ -621,40 +705,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "sentencex-wasm"
-version = "0.1.0"
+name = "serde"
+version = "1.0.228"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
 dependencies = [
- "sentencex",
- "serde",
- "serde-wasm-bindgen",
- "wasm-bindgen",
+ "serde_core",
+ "serde_derive",
 ]
 
 [[package]]
-name = "serde"
-version = "1.0.219"
+name = "serde_core"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f0e2c6ed6606019b4e29e69dbaba95b11854410e5347d525002456dbbb786b6"
+checksum = "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
-name = "serde-wasm-bindgen"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
-dependencies = [
- "js-sys",
- "serde",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "serde_derive"
-version = "1.0.219"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00"
+checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -846,6 +919,12 @@ checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
  "windows-sys",
 ]
+
+[[package]]
+name = "windows-link"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 
 [[package]]
 name = "windows-sys"
