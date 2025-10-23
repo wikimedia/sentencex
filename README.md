@@ -4,8 +4,14 @@
 
 A sentence segmentation library written in Rust language with wide language support optimized for speed and utility.
 
-> This library is also available for python and nodejs
+## Bindings
 
+Besides native Rust, bindings for the following programming languages are available:
+
+* Python
+* Nodejs
+
+## Approach
 
 - If it's a period, it ends a sentence.
 - If the preceding token is in the hand-compiled list of abbreviations, then it doesn't end a sentence.
