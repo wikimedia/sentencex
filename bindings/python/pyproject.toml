@@ -3,9 +3,9 @@ name = "sentencex"
 version = "1.0.0"
 requires-python = ">=3.10"
 description = "Sentence segmenter that supports ~300 languages"
-readme = "README.md"
 authors = [{name = "Santhosh Thottingal", email = "santhosh.thottingal@gmail.com"}]
 license = "MIT"
+readme = "README.md"
 keywords = [
   "NLP",
   "Natural Language Processing",
@@ -27,6 +27,14 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "sentencex"
+
+[project.urls]
+Homepage = "https://github.com/wikimedia/sentencex"
+Issues = "https://github.com/wikimedia/sentencex/issues"
 
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
