@@ -5,7 +5,6 @@ requires-python = ">=3.10"
 description = "Sentence segmenter that supports ~300 languages"
 authors = [{name = "Santhosh Thottingal", email = "santhosh.thottingal@gmail.com"}]
 license = "MIT"
-readme = "README.md"
 keywords = [
   "NLP",
   "Natural Language Processing",
@@ -31,6 +30,7 @@ classifiers = [
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "sentencex"
+sdist-include = ["README.md", "LICENSE"]
 
 [project.urls]
 Homepage = "https://github.com/wikimedia/sentencex"

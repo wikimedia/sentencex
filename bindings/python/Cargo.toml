@@ -2,6 +2,12 @@
 name = "sentencex-py"
 version = "0.1.0"
 edition = "2024"
+description = "Sentence segmentation library with wide language support optimized for speed and utility."
+authors = ["Santhosh Thottingal <santhosh.thottingal@gmail.com>"]
+keywords = ["nlp", "sentences", "multilingual"]
+categories = ["text-processing"]
+license = "MIT"
+repository = "https://github.com/wikimedia/sentencex"
 
 [lib]
 name = "sentencex"
