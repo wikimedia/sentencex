@@ -1,4 +1,6 @@
 use regex::Regex;
+use std::collections::HashMap;
+use std::sync::Mutex;
 
 use crate::SentenceBoundary;
 use crate::constants::EMAIL_REGEX;
@@ -7,14 +9,37 @@ use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
 use crate::constants::QUOTES_REGEX;
 
+lazy_static::lazy_static! {
+    static ref SENTENCE_BREAK_REGEX_CACHE: Mutex<HashMap<String, Regex>> = Mutex::new(HashMap::new());
+}
+
 pub trait Language {
     fn get_sentence_break_regex(&self) -> Regex {
         let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
-        Regex::new(&pattern).unwrap()
+
+        // Try to get from cache first
+        {
+            let cache = SENTENCE_BREAK_REGEX_CACHE.lock().unwrap();
+            if let Some(regex) = cache.get(&pattern) {
+                return regex.clone();
+            }
+        }
+
+        // Create new regex and cache it
+        let regex = Regex::new(&pattern).unwrap();
+        {
+            let mut cache = SENTENCE_BREAK_REGEX_CACHE.lock().unwrap();
+            cache.insert(pattern, regex.clone());
+        }
+
+        regex
     }
 
     fn get_sentence_boundaries<'a>(&self, text: &'a str) -> Vec<SentenceBoundary<'a>> {
-        let mut boundaries = Vec::new();
+        // Pre-allocate boundaries with estimated capacity (rough estimate: 1 sentence per 50 characters)
+        let estimated_sentences = (text.len() / 50).max(1);
+        let mut boundaries = Vec::with_capacity(estimated_sentences);
+
         let paragraphs: Vec<&str> = text.split("\n\n").collect();
 
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
@@ -36,7 +61,11 @@ pub trait Language {
                 paragraphs[..pindex].iter().map(|p| p.len()).sum::<usize>() + (pindex * 2) + 2
             };
 
-            let mut sentence_boundaries = vec![0];
+            // Pre-allocate sentence_boundaries with estimated capacity (typical paragraph has 3-5 sentences)
+            let estimated_paragraph_sentences = (paragraph.len() / 100).max(1).min(10);
+            let mut sentence_boundaries = Vec::with_capacity(estimated_paragraph_sentences + 1);
+            sentence_boundaries.push(0);
+
             let matches: Vec<(usize, usize)> = self
                 .get_sentence_break_regex()
                 .find_iter(paragraph)
@@ -118,10 +147,16 @@ pub trait Language {
     }
 
     fn segment(&self, text: &str) -> Vec<String> {
-        self.get_sentence_boundaries(text)
-            .into_iter()
-            .map(|boundary| boundary.text.to_string())
-            .collect()
+        // Pre-allocate with estimated capacity based on text length
+        let estimated_sentences = (text.len() / 50).max(1);
+        let mut sentences = Vec::with_capacity(estimated_sentences);
+
+        let boundaries = self.get_sentence_boundaries(text);
+        for boundary in boundaries {
+            sentences.push(boundary.text.to_string());
+        }
+
+        sentences
     }
 
     fn get_abbreviation_char(&self) -> &str {
@@ -208,7 +243,9 @@ pub trait Language {
     }
 
     fn get_skippable_ranges(&self, text: &str) -> Vec<(usize, usize)> {
-        let mut skippable_ranges = Vec::new();
+        // Pre-allocate with estimated capacity based on text length (rough estimate: 1 range per 200 characters)
+        let estimated_ranges = (text.len() / 200).max(1);
+        let mut skippable_ranges = Vec::with_capacity(estimated_ranges);
 
         for mat in QUOTES_REGEX.find_iter(text) {
             skippable_ranges.push((mat.start(), mat.end()));
