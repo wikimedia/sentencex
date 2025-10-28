@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github -o ../../.github/workflows/python.yaml
 #
-name: CI
+name: Python binding CI
 
 on:
   push:
@@ -28,8 +28,6 @@ jobs:
             target: x86_64
           - runner: ubuntu-24.04
             target: x86
-          - runner: ubuntu-24.04
-            target: aarch64
 
     steps:
       - uses: actions/checkout@v4
@@ -65,8 +63,6 @@ jobs:
             target: x86_64
           - runner: ubuntu-24.04
             target: x86
-          - runner: ubuntu-22.04
-            target: aarch64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
