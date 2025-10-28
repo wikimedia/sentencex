@@ -1,6 +1,6 @@
 # Sentence segmenter
 
-[![tests](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml/badge.svg)](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml)
+[![tests](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/node.yml)
 
 A sentence segmentation library written in Rust language with wide language support optimized for speed and utility.
 
@@ -8,8 +8,9 @@ A sentence segmentation library written in Rust language with wide language supp
 
 Besides native Rust, bindings for the following programming languages are available:
 
-* Python
-* Nodejs
+* [Python](https://pypi.org/project/sentencex/)
+* [Nodejs](https://www.npmjs.com/package/sentencex)
+* [Web(Wasm)](https://www.npmjs.com/package/sentencex-wasm)
 
 ## Approach
 
@@ -36,6 +37,8 @@ The sentence segmentation in this library is **non-destructive**. This means, if
 
 ## Usage
 
+### Rust
+
 Install the library using
 
 ```bash
@@ -58,6 +61,103 @@ fn main() {
 ```
 
 The first argument is language code, second argument is text to segment. The `segment` method returns an array of identified sentences.
+
+### Python
+
+Install from PyPI:
+
+```bash
+pip install sentencex
+```
+
+```python
+import sentencex
+
+text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development."
+
+# Segment text into sentences
+sentences = sentencex.segment("en", text)
+for i, sentence in enumerate(sentences, 1):
+    print(f"{i}. {sentence}")
+
+# Get sentence boundaries with indices
+boundaries = sentencex.get_sentence_boundaries("en", text)
+for boundary in boundaries:
+    print(f"Sentence: '{boundary['text']}' (indices: {boundary['start_index']}-{boundary['end_index']})")
+```
+
+See [bindings/python/example.py](bindings/python/example.py) for more examples.
+
+### Node.js
+
+Install from npm:
+
+```bash
+npm install sentencex
+```
+
+```javascript
+import { segment, get_sentence_boundaries } from 'sentencex';
+
+const text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
+
+// Segment text into sentences
+const sentences = segment("en", text);
+sentences.forEach((sentence, i) => {
+    console.log(`${i + 1}. ${sentence}`);
+});
+
+// Get sentence boundaries with indices
+const boundaries = get_sentence_boundaries("en", text);
+boundaries.forEach(boundary => {
+    console.log(`Sentence: '${boundary.text}' (indices: ${boundary.start_index}-${boundary.end_index})`);
+});
+```
+
+For CommonJS usage:
+
+```javascript
+const { segment, get_sentence_boundaries } = require('sentencex');
+```
+
+See [bindings/nodejs/example.js](bindings/nodejs/example.js) for more examples.
+
+### WebAssembly (Browser)
+
+Install from npm:
+
+```bash
+npm install sentencex-wasm
+```
+
+or use a CDN like `https://esm.sh/sentencex-wasm`
+
+```javascript
+import init, { segment, get_sentence_boundaries } from 'https://esm.sh/sentencex-wasm;
+
+async function main() {
+    // Initialize the WASM module
+    await init();
+
+    const text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
+
+    // Segment text into sentences
+    const sentences = segment("en", text);
+    sentences.forEach((sentence, i) => {
+        console.log(`${i + 1}. ${sentence}`);
+    });
+
+    // Get sentence boundaries with indices
+    const boundaries = get_sentence_boundaries("en", text);
+    boundaries.forEach(boundary => {
+        console.log(`Sentence: '${boundary.text}' (indices: ${boundary.start_index}-${boundary.end_index})`);
+    });
+}
+
+main();
+```
+
+See [bindings/wasm/example.js](bindings/wasm/example.js) for more examples.
 
 ## Language support
 
