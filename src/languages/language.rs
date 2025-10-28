@@ -11,6 +11,7 @@ use crate::constants::QUOTES_REGEX;
 
 lazy_static::lazy_static! {
     static ref SENTENCE_BREAK_REGEX_CACHE: Mutex<HashMap<String, Regex>> = Mutex::new(HashMap::new());
+    static ref CONTINUE_REGEX: Regex = Regex::new(r"^[0-9a-z]").unwrap();
 }
 
 pub trait Language {
@@ -257,8 +258,7 @@ pub trait Language {
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        let regex = regex::Regex::new(r"^[0-9a-z]").unwrap();
-        regex.is_match(text_after_boundary)
+        CONTINUE_REGEX.is_match(text_after_boundary)
     }
 
     fn get_skippable_ranges(&self, text: &str) -> Vec<(usize, usize)> {
