@@ -207,15 +207,10 @@ pub trait Language {
     }
 
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {
-        let words: Vec<&str> = text
-            .split(|c: char| c.is_whitespace() || c == '.')
-            .collect();
-
-        if let Some(&last_word) = words.last() {
-            return last_word;
-        }
-
-        text
+        // Find the last word without collecting all words
+        text.split(|c: char| c.is_whitespace() || c == '.')
+            .last()
+            .unwrap_or("")
     }
 
     fn is_exclamation(&self, head: &str, _tail: &str) -> bool {
