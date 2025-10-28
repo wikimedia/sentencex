@@ -1,6 +1,8 @@
 # Sentence segmenter
 
-[![tests](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/node.yml)
+[![Rust Tests](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml)
+[![Node.js Tests](https://github.com/wikimedia/sentencex/actions/workflows/node.yaml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/node.yaml)
+[![Python Tests](https://github.com/wikimedia/sentencex/actions/workflows/python.yaml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/python.yaml)
 
 A sentence segmentation library written in Rust language with wide language support optimized for speed and utility.
 
