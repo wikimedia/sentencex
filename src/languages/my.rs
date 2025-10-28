@@ -8,7 +8,7 @@ use super::{English, Language};
 pub struct Burmese {}
 
 impl Language for Burmese {
-    fn get_abbreviations(&self) -> Vec<String> {
+    fn get_abbreviations(&self) -> &[String] {
         English {}.get_abbreviations()
     }
 

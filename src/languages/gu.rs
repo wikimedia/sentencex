@@ -14,8 +14,8 @@ static GUJARATI_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .collect()
 });
 impl Language for Gujarati {
-    fn get_abbreviations(&self) -> Vec<String> {
-        GUJARATI_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &GUJARATI_ABBREVIATIONS
     }
 }
 

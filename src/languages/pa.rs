@@ -13,8 +13,8 @@ static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .collect()
 });
 impl Language for Punjabi {
-    fn get_abbreviations(&self) -> Vec<String> {
-        ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &ABBREVIATIONS
     }
 }
 

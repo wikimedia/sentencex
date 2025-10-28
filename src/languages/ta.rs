@@ -5,7 +5,7 @@ use super::Language;
 #[derive(Debug, Clone)]
 pub struct Tamil {}
 static TAMIL_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
-    let vowel_signs = vec!["ா", "ி", "ீ", "ு", "ூ", "ெ", "ே", "ை", "ொ", "ோ", "ௌ"];
+    let vowel_signs = vec!["ா", "ி", "ீ", "ু", "ূ", "ে", "ে", "ৈ", "ও", "ো", "ৌ"];
     let vowels = vec!["அ", "ஆ", "இ", "ஈ", "உ", "ஊ", "எ", "ஏ", "ஐ", "ஒ", "ஓ", "ஔ"];
     let consonants = vec![
         "க", "ங", "ச", "ஞ", "ட", "ண", "த", "ந", "ப", "ம", "ய", "ர", "ல", "வ", "ழ", "ள", "ற", "ன",
@@ -32,8 +32,8 @@ static TAMIL_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Tamil {
-    fn get_abbreviations(&self) -> Vec<String> {
-        TAMIL_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &TAMIL_ABBREVIATIONS
     }
 
     fn is_punctuation_between_quotes(&self) -> bool {

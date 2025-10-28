@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 
 use super::Language;
+use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct Finnish {}
@@ -14,13 +15,11 @@ static FINNISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Finnish {
-    fn get_abbreviations(&self) -> Vec<String> {
-        FINNISH_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &FINNISH_ABBREVIATIONS
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        use regex::Regex;
-
         // Check if the text matches the regex pattern
         let regex = Regex::new(r"^\W*[0-9a-z]").unwrap();
         if regex.is_match(text_after_boundary) {

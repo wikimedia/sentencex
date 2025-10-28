@@ -13,8 +13,8 @@ static ITALIAN_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .collect()
 });
 impl Language for Italian {
-    fn get_abbreviations(&self) -> Vec<String> {
-        ITALIAN_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &ITALIAN_ABBREVIATIONS
     }
 
     fn is_punctuation_between_quotes(&self) -> bool {

@@ -1,15 +1,22 @@
+use once_cell::sync::Lazy;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Kazakh {}
 
+static KAZAKH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    include_str!("./abbrev/kk.txt")
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.starts_with("//") && !line.is_empty())
+        .collect()
+});
+
 impl Language for Kazakh {
-    fn get_abbreviations(&self) -> Vec<String> {
-        include_str!("./abbrev/kk.txt")
-            .lines()
-            .map(|line| line.trim().to_string())
-            .filter(|line| !line.starts_with("//") && !line.is_empty())
-            .collect()
+    fn get_abbreviations(&self) -> &[String] {
+        // Return a reference to a static empty slice since we don't have a lazy static here
+        &KAZAKH_ABBREVIATIONS
     }
 
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {

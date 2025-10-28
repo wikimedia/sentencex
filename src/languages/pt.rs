@@ -20,8 +20,8 @@ static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 pub struct Portuguese {}
 
 impl Language for Portuguese {
-    fn get_abbreviations(&self) -> Vec<String> {
-        ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &ABBREVIATIONS
     }
 }
 

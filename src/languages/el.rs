@@ -8,8 +8,8 @@ use super::Language;
 pub struct Greek {}
 
 impl Language for Greek {
-    fn get_abbreviations(&self) -> Vec<String> {
-        Vec::new()
+    fn get_abbreviations(&self) -> &[String] {
+        &[]
     }
 
     fn get_sentence_break_regex(&self) -> Regex {

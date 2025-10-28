@@ -14,12 +14,16 @@ static SLOVAK_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .collect()
 });
 
+static SLOVAK_ALL_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+    let mut abbreviations = SLOVAK_ABBREVIATIONS.clone();
+    abbreviations.extend(ROMAN_NUMERALS.iter().map(|&s| s.to_string()));
+    abbreviations.extend(ROMAN_NUMERALS.iter().map(|&s| s.to_uppercase()));
+    abbreviations
+});
+
 impl Language for Slovak {
-    fn get_abbreviations(&self) -> Vec<String> {
-        let mut abbreviations = SLOVAK_ABBREVIATIONS.clone();
-        abbreviations.extend(ROMAN_NUMERALS.iter().map(|&s| s.to_string()));
-        abbreviations.extend(ROMAN_NUMERALS.iter().map(|&s| s.to_uppercase()));
-        abbreviations
+    fn get_abbreviations(&self) -> &[String] {
+        &SLOVAK_ALL_ABBREVIATIONS
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {

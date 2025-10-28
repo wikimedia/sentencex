@@ -14,8 +14,8 @@ static TELEGU_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .collect()
 });
 impl Language for Telegu {
-    fn get_abbreviations(&self) -> Vec<String> {
-        TELEGU_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &TELEGU_ABBREVIATIONS
     }
 }
 

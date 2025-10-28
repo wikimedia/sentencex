@@ -14,8 +14,8 @@ static AMHARIC_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Amharic {
-    fn get_abbreviations(&self) -> Vec<String> {
-        AMHARIC_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &AMHARIC_ABBREVIATIONS
     }
 }
 

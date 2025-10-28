@@ -13,8 +13,8 @@ static DUTCH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .collect()
 });
 impl Language for Dutch {
-    fn get_abbreviations(&self) -> Vec<String> {
-        DUTCH_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &DUTCH_ABBREVIATIONS
     }
 }
 

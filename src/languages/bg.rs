@@ -13,8 +13,8 @@ static BULGARIAN_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Bulgarian {
-    fn get_abbreviations(&self) -> Vec<String> {
-        BULGARIAN_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &BULGARIAN_ABBREVIATIONS
     }
 }
 

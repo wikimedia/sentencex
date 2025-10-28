@@ -4,7 +4,7 @@ use super::{Hindi, Language};
 pub struct Marathi {}
 
 impl Language for Marathi {
-    fn get_abbreviations(&self) -> Vec<String> {
+    fn get_abbreviations(&self) -> &[String] {
         Hindi {}.get_abbreviations()
     }
 }

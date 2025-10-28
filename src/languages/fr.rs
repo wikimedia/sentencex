@@ -13,8 +13,8 @@ static FRENCH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for French {
-    fn get_abbreviations(&self) -> Vec<String> {
-        FRENCH_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &FRENCH_ABBREVIATIONS
     }
 }
 

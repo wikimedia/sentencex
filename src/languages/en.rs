@@ -13,8 +13,8 @@ static ENGLISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for English {
-    fn get_abbreviations(&self) -> Vec<String> {
-        ENGLISH_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &ENGLISH_ABBREVIATIONS
     }
 }
 

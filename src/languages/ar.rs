@@ -14,8 +14,8 @@ static ARABIC_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Arabic {
-    fn get_abbreviations(&self) -> Vec<String> {
-        ARABIC_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &ARABIC_ABBREVIATIONS
     }
 }
 

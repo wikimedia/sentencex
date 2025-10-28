@@ -14,8 +14,8 @@ static HINDI_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Hindi {
-    fn get_abbreviations(&self) -> Vec<String> {
-        HINDI_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &HINDI_ABBREVIATIONS
     }
 }
 

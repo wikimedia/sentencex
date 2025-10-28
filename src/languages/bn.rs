@@ -14,8 +14,8 @@ static BENGALI_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Bengali {
-    fn get_abbreviations(&self) -> Vec<String> {
-        BENGALI_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &BENGALI_ABBREVIATIONS
     }
 }
 

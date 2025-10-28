@@ -16,8 +16,8 @@ static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Russian {
-    fn get_abbreviations(&self) -> Vec<String> {
-        ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &ABBREVIATIONS
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {

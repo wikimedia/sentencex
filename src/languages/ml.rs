@@ -14,8 +14,8 @@ static MALAYALAM_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Malayalam {
-    fn get_abbreviations(&self) -> Vec<String> {
-        MALAYALAM_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &MALAYALAM_ABBREVIATIONS
     }
 }
 

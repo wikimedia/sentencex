@@ -14,8 +14,8 @@ static DANISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Danish {
-    fn get_abbreviations(&self) -> Vec<String> {
-        DANISH_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &DANISH_ABBREVIATIONS
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {

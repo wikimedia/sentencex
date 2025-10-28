@@ -13,8 +13,8 @@ static SPANISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
 });
 
 impl Language for Spanish {
-    fn get_abbreviations(&self) -> Vec<String> {
-        SPANISH_ABBREVIATIONS.clone()
+    fn get_abbreviations(&self) -> &[String] {
+        &SPANISH_ABBREVIATIONS
     }
 }
 #[cfg(test)]

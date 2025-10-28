@@ -128,8 +128,8 @@ pub trait Language {
         "."
     }
 
-    fn get_abbreviations(&self) -> Vec<String> {
-        Vec::new()
+    fn get_abbreviations(&self) -> &[String] {
+        &[]
     }
 
     fn is_abbreviation(&self, head: &str, _tail: &str, separator: &str) -> bool {
