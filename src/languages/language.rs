@@ -54,6 +54,10 @@ pub trait Language {
             }
         }
 
+        // Pre-allocate sentence_boundaries once and reuse for all paragraphs
+        let estimated_paragraph_sentences = 10; // reasonable default for typical paragraphs
+        let mut sentence_boundaries = Vec::with_capacity(estimated_paragraph_sentences);
+
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
             if pindex > 0 {
                 let paragraph_start = paragraph_offsets[pindex];
@@ -71,10 +75,7 @@ pub trait Language {
             } else {
                 paragraph_offsets[pindex] + 2
             };
-
-            // Pre-allocate sentence_boundaries with estimated capacity (typical paragraph has 3-5 sentences)
-            let estimated_paragraph_sentences = (paragraph.len() / 100).max(1).min(10);
-            let mut sentence_boundaries = Vec::with_capacity(estimated_paragraph_sentences + 1);
+            sentence_boundaries.clear();
             sentence_boundaries.push(0);
 
             let matches: Vec<(usize, usize)> = self
