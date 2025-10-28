@@ -42,10 +42,20 @@ pub trait Language {
 
         let paragraphs: Vec<&str> = text.split("\n\n").collect();
 
+        // Pre-calculate all paragraph offsets in one pass
+        let mut paragraph_offsets = Vec::with_capacity(paragraphs.len());
+        let mut current_offset = 0;
+        for (i, paragraph) in paragraphs.iter().enumerate() {
+            paragraph_offsets.push(current_offset);
+            current_offset += paragraph.len();
+            if i < paragraphs.len() - 1 {
+                current_offset += 2; // for "\n\n"
+            }
+        }
+
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
             if pindex > 0 {
-                let paragraph_start =
-                    paragraphs[..pindex].iter().map(|p| p.len()).sum::<usize>() + (pindex * 2);
+                let paragraph_start = paragraph_offsets[pindex];
                 boundaries.push(SentenceBoundary {
                     start_index: paragraph_start,
                     end_index: paragraph_start + 2,
@@ -58,7 +68,7 @@ pub trait Language {
             let paragraph_start_offset = if pindex == 0 {
                 0
             } else {
-                paragraphs[..pindex].iter().map(|p| p.len()).sum::<usize>() + (pindex * 2) + 2
+                paragraph_offsets[pindex] + 2
             };
 
             // Pre-allocate sentence_boundaries with estimated capacity (typical paragraph has 3-5 sentences)
