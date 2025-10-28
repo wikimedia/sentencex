@@ -23,11 +23,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
-        platform:
-          - runner: ubuntu-24.04
-            target: x86_64
-          - runner: ubuntu-24.04
-            target: x86
+        target: [x86_64, i686]
 
     steps:
       - uses: actions/checkout@v4
@@ -58,11 +54,7 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
-        platform:
-          - runner: windows-latest
-            target: x64
-          - runner: windows-latest
-            target: x86
+        target: [x64, x86]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
