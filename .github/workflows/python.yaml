@@ -54,40 +54,6 @@ jobs:
           name: wheels-linux-${{ matrix.platform.target }}
           path: bindings/python/dist
 
-  musllinux:
-    runs-on: ${{ matrix.platform.runner }}
-    strategy:
-      matrix:
-        platform:
-          - runner: ubuntu-24.04
-            target: x86_64
-          - runner: ubuntu-24.04
-            target: x86
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: musllinux_1_2
-          working-directory: bindings/python
-      - name: Install pytest
-        run: pip install pytest
-      - name: Install wheel for testing
-        run: pip install --find-links bindings/python/dist sentencex --force-reinstall
-      - name: Run tests
-        run: pytest bindings/python/tests/ -v
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-musllinux-${{ matrix.platform.target }}
-          path: bindings/python/dist
-
   windows:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
