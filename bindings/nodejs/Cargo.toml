@@ -1,7 +1,14 @@
 [package]
 name = "sentencex-js"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
+description = "Sentence segmentation library with wide language support optimized for speed and utility."
+authors = ["Santhosh Thottingal <santhosh.thottingal@gmail.com>"]
+keywords = ["nlp", "sentences", "multilingual"]
+categories = ["text-processing"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/wikimedia/sentencex"
 build = "build.rs"
 exclude = ["index.node"]
 

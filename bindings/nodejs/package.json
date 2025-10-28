@@ -1,8 +1,9 @@
 {
   "name": "sentencex",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "sentence segmentation library",
-  "main": "index.node",
+  "type": "module",
+  "main": "index.cjs",
   "repository": {
     "type": "git",
     "url": "https//github.com/wikimedia/sentencex"
@@ -17,7 +18,21 @@
     "url": "https://github.com/wikimedia/sentencex/issues"
   },
   "engines": {
-    "node": ">=14"
+    "node": ">=20"
+  },
+  "files": [
+    "*.cjs",
+    "*.mjs",
+    "*.js",
+    "*.md",
+    "LICENSE",
+    "*.node"
+  ],
+  "exports": {
+    ".": {
+    "require": "./index.node",
+    "import": "./index.mjs"
+    }
   },
   "scripts": {
     "build": "cargo build --release",

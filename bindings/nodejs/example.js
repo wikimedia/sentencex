@@ -1,5 +1,4 @@
-const sentencex = require(".");
-
+import segment from "sentencex";
 console.log(
-	sentencex.segment("en", "This is first sentence. This is another one."),
+  segment("en", "This is first sentence. This is another one."),
 );
