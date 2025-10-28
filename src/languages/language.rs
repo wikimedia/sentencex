@@ -125,14 +125,23 @@ pub trait Language {
                 }
 
                 let sentence_text = &paragraph[start..end];
-                let boundary_symbol = if end < paragraph.len() {
-                    // Find the last character before the boundary, accounting for multibyte characters
-                    let chars: Vec<char> = paragraph[..end].chars().collect();
+                let boundary_symbol = if end > 0 && end <= paragraph.len() {
+                    // Work backwards to find the last character without collecting all chars
+                    let mut char_end = end;
+                    while char_end > 0 && !paragraph.is_char_boundary(char_end) {
+                        char_end -= 1;
+                    }
 
-                    if let Some(&last_char) = chars.last() {
-                        let last_char_str = last_char.to_string();
-                        if GLOBAL_SENTENCE_TERMINATORS.contains(&last_char_str.as_str()) {
-                            Some(last_char_str)
+                    if char_end > 0 {
+                        // Find start of the character
+                        let mut char_start = char_end - 1;
+                        while char_start > 0 && !paragraph.is_char_boundary(char_start) {
+                            char_start -= 1;
+                        }
+
+                        let last_char_str = &paragraph[char_start..char_end];
+                        if GLOBAL_SENTENCE_TERMINATORS.contains(&last_char_str) {
+                            Some(last_char_str.to_string())
                         } else {
                             None
                         }
