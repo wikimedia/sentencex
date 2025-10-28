@@ -27,6 +27,17 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+]
+dev = [
+    "ruff>=0.1.0",
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+]
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "sentencex"
@@ -39,3 +50,7 @@ Issues = "https://github.com/wikimedia/sentencex/issues"
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
