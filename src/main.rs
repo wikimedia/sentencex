@@ -2,6 +2,7 @@ use clap::Parser;
 use sentencex::{get_sentence_boundaries, segment};
 use std::fs;
 use std::io::{self, Read};
+use std::time::Instant;
 
 /// CLI for Sentence Segmentation
 #[derive(Parser, Debug)]
@@ -38,7 +39,11 @@ fn main() {
     };
 
     if cli.debug {
+        let start_time = Instant::now();
         let boundaries = get_sentence_boundaries(&cli.language, &text);
+        let elapsed = start_time.elapsed();
+
+        eprintln!("Time taken for get_sentence_boundaries(): {:?}", elapsed);
 
         for (i, boundary) in boundaries.iter().enumerate() {
             println!("Boundary {}: ", i + 1);
@@ -50,7 +55,11 @@ fn main() {
             println!();
         }
     } else {
+        let start_time = Instant::now();
         let sentences = segment(&cli.language, &text);
+        let elapsed = start_time.elapsed();
+
+        eprintln!("Time taken for segment(): {:?}", elapsed);
 
         for sentence in sentences.iter() {
             println!("{}", sentence);
