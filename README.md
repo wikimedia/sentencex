@@ -159,7 +159,6 @@ async function main() {
 main();
 ```
 
-See [bindings/wasm/example.js](bindings/wasm/example.js) for more examples.
 
 ## Language support
 
