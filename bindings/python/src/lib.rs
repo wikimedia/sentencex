@@ -4,7 +4,7 @@ mod sentencex {
     use pyo3::{prelude::*, types::PyDict};
 
     #[pyfunction]
-    pub fn segment(language: &str, text: &str) -> Vec<String> {
+    pub fn segment<'a>(language: &str, text: &'a str) -> Vec<&'a str> {
         _segment(language, text)
     }
 
