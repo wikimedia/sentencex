@@ -24,8 +24,9 @@ The original implementation showed excellent performance for small texts but had
 **What it does**: Returns `Vec<&str>` instead of `Vec<String>`
 
 **Impact**:
-- **8x faster** for small texts (1KB: 1.1ms → 0.17ms)
+- **6.5x faster** for very small texts (< 1KB: 1.1ms → 0.17ms)
 - Zero memory allocations for sentence strings
+- Performance benefit diminishes for larger texts as regex processing dominates
 - Same correctness guarantees as original API
 
 **Code**:
@@ -47,17 +48,22 @@ let sentences: Vec<&str> = segment_borrowed("en", text);
 
 **Code change**:
 ```rust
-// Before
+// Before: Linear scan through all ranges
 for (range_start, range_end) in &skippable_ranges {
     if boundary > *range_start && boundary < *range_end {
         // ...
     }
 }
 
-// After
+// After: Binary search to find ranges near the boundary
 skippable_ranges.sort_unstable_by_key(|r| r.0);
+// partition_point finds the insertion point for a boundary
 let idx = skippable_ranges.partition_point(|r| r.0 <= boundary);
-// Check only nearby ranges
+// Check only the ranges immediately before and after the insertion point
+// since those are the only ones that could contain the boundary
+for i in idx.saturating_sub(1)..idx.min(skippable_ranges.len()).saturating_add(1) {
+    // Check if boundary is within this range
+}
 ```
 
 ### 3. Optimized Character Boundary Detection

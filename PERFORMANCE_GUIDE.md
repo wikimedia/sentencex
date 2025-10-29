@@ -23,14 +23,16 @@ let sentences = segment_borrowed("en", text);
 ```
 
 **Benefits:**
-- 8x faster for small texts (< 1KB)
+- **6.5x faster** for very small texts (< 1KB)
 - Zero memory allocations for sentences
 - Ideal when you don't need to modify sentences
 
 **When to use:**
 - Processing text that stays in memory
 - Read-only operations
-- Performance-critical paths
+- Performance-critical paths with small text snippets
+
+**Note:** For larger texts (> 10KB), the performance benefit is minimal since regex processing dominates over allocation overhead.
 
 ### 2. `segment_chunked()` - Memory-Efficient Large File Processing
 
@@ -59,22 +61,24 @@ println!("Found {} sentences", sentences.len());
 
 ### Throughput by Text Size
 
+| Text Size | segment() | segment_borrowed() | Note |
+|-----------|-----------|-------------------|------|
+| 100B      | 6.7 MiB/s | 6.6 MiB/s        | Similar throughput |
+| 1KB       | 8.8 MiB/s | 8.9 MiB/s        | Similar throughput |
+| 10KB      | 1.7 MiB/s | 1.7 MiB/s        | Similar throughput |
+| 50KB      | 364 KiB/s | 364 KiB/s        | Similar throughput |
+
+*Note: Throughput is similar because regex processing dominates. The time difference is in allocation overhead.*
+
+### Time Measurements (Absolute Performance)
+
 | Text Size | segment() | segment_borrowed() | Speedup |
 |-----------|-----------|-------------------|---------|
-| 100B      | 6.7 MiB/s | 6.6 MiB/s        | ~1x     |
-| 1KB       | 8.8 MiB/s | 8.9 MiB/s        | ~1x     |
-| 10KB      | 1.7 MiB/s | 1.7 MiB/s        | ~1x     |
-| 50KB      | 364 KiB/s | 364 KiB/s        | ~1x     |
+| 1KB       | ~1.1ms    | ~0.17ms           | 6.5x    |
+| 100KB     | ~12ms     | ~12ms             | ~1x     |
+| 1MB       | ~120ms    | ~120ms            | ~1x     |
 
-*Note: segment_borrowed() shows significant time improvements for small texts due to reduced allocation overhead*
-
-### Time Measurements
-
-| Text Size | segment() | segment_borrowed() |
-|-----------|-----------|-------------------|
-| 1KB       | ~1.1ms    | ~0.17ms           |
-| 100KB     | ~12ms     | ~12ms             |
-| 1MB       | ~120ms    | ~120ms            |
+*The speedup is most visible for small texts where allocation overhead is significant relative to processing time.*
 
 ### Memory Usage
 

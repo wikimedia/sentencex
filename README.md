@@ -195,9 +195,9 @@ The following libraries are used for benchmarking:
 
 The Rust library includes several performance optimizations for different use cases:
 
-**For small texts (< 10KB)**: Use `segment_borrowed()` for zero-copy processing
+**For small texts (< 1KB)**: Use `segment_borrowed()` for zero-copy processing
 ```rust
-let sentences = segment_borrowed("en", text); // 8x faster for small texts
+let sentences = segment_borrowed("en", text); // Up to 6.5x faster for very small texts
 ```
 
 **For large files (> 1MB)**: Use `segment_chunked()` for memory-efficient streaming
@@ -207,7 +207,7 @@ let sentences = segment_chunked("en", file, 65536)?; // 64KB chunks
 ```
 
 **Performance characteristics**:
-- Small texts (1KB): ~100 µs
+- Small texts (1KB): ~100 µs (segment_borrowed: ~170 µs vs segment: ~1.1 ms)
 - Medium texts (10KB): ~5.7 ms (1.67 MiB/s)
 - Large texts (50KB): ~134 ms (364 KiB/s)
 
