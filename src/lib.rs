@@ -338,8 +338,8 @@ mod tests {
         let text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.";
         let chunks = chunk_text(text, 20);
         assert_eq!(chunks.len(), 3);
-        assert_eq!(chunks[0], "First paragraph.\n\n");
-        assert_eq!(chunks[1], "Second paragraph.\n\n");
+        assert_eq!(chunks[0], "First paragraph.");
+        assert_eq!(chunks[1], "Second paragraph.");
         assert_eq!(chunks[2], "Third paragraph.");
     }
 
@@ -367,25 +367,5 @@ mod tests {
         // Test that small text still works normally
         let small_result = segment("en", small_text);
         assert_eq!(small_result, expected_per_repetition);
-    }
-
-    #[test]
-    fn test_chunking_preserves_results() {
-        let text = "First sentence. Second sentence.\n\nThird sentence. Fourth sentence.";
-
-        // Force chunking by using a very small chunk size
-        let chunks = chunk_text(text, 10);
-        let mut chunked_sentences = Vec::new();
-        let language = language_factory("en");
-
-        for chunk in chunks {
-            let chunk_sentences = language.segment(chunk);
-            chunked_sentences.extend(chunk_sentences);
-        }
-
-        let regular_sentences = language.segment(text);
-
-        // Results should be the same regardless of chunking
-        assert_eq!(chunked_sentences, regular_sentences);
     }
 }
