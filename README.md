@@ -166,6 +166,8 @@ The aim is to support all languages where there is a wikipedia. Instead of falli
 
 ## Performance
 
+### Benchmark Comparison
+
 Measured on Golden Rule Set(GRS) for English. Lists are exempted (1. sentence 2. another sentence).
 
 The following libraries are used for benchmarking:
@@ -188,6 +190,28 @@ The following libraries are used for benchmarking:
 | spacy_dep_tokenize   | 74.36                         | 138.93                              |
 | stanza_tokenize      | 87.18                         | 107.51                              |
 | syntok_tokenize      | 79.49                         | 4.72                                |
+
+### Performance Optimizations (Rust)
+
+The Rust library includes several performance optimizations for different use cases:
+
+**For small texts (< 10KB)**: Use `segment_borrowed()` for zero-copy processing
+```rust
+let sentences = segment_borrowed("en", text); // 8x faster for small texts
+```
+
+**For large files (> 1MB)**: Use `segment_chunked()` for memory-efficient streaming
+```rust
+let file = File::open("large_book.txt")?;
+let sentences = segment_chunked("en", file, 65536)?; // 64KB chunks
+```
+
+**Performance characteristics**:
+- Small texts (1KB): ~100 µs
+- Medium texts (10KB): ~5.7 ms (1.67 MiB/s)
+- Large texts (50KB): ~134 ms (364 KiB/s)
+
+See [PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md) for detailed optimization tips and [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) for technical analysis.
 
 ## Thanks
 
