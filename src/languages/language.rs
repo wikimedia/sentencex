@@ -274,6 +274,8 @@ pub trait Language {
             skippable_ranges.push((mat.start(), mat.end()));
         }
 
+        // Sort ranges by start position for more efficient lookups
+        skippable_ranges.sort_unstable_by_key(|r| r.0);
         skippable_ranges
     }
 
