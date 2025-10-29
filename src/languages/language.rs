@@ -94,16 +94,27 @@ pub trait Language {
                     continue;
                 }
 
+                // Use binary search for more efficient range checking since ranges are sorted
                 let mut in_range = false;
-                for (range_start, range_end) in &skippable_ranges {
-                    if boundary > *range_start && boundary < *range_end {
-                        if boundary + 1 == *range_end && self.is_punctuation_between_quotes() {
-                            boundary = *range_end;
-                            in_range = false;
-                        } else {
-                            in_range = true;
+                if !skippable_ranges.is_empty() {
+                    // Binary search to find the first range that could contain this boundary
+                    let idx = skippable_ranges.partition_point(|r| r.0 <= boundary);
+                    
+                    // Check the range at idx and the one before it (if exists)
+                    for i in idx.saturating_sub(1)..idx.min(skippable_ranges.len()).saturating_add(1) {
+                        if i >= skippable_ranges.len() {
+                            break;
                         }
-                        break;
+                        let (range_start, range_end) = skippable_ranges[i];
+                        if boundary > range_start && boundary < range_end {
+                            if boundary + 1 == range_end && self.is_punctuation_between_quotes() {
+                                boundary = range_end;
+                                in_range = false;
+                            } else {
+                                in_range = true;
+                            }
+                            break;
+                        }
                     }
                 }
 
@@ -128,28 +139,18 @@ pub trait Language {
 
                 let sentence_text = &paragraph[start..end];
                 let boundary_symbol = if end > 0 && end <= paragraph.len() {
-                    // Work backwards to find the last character without collecting all chars
-                    let mut char_end = end;
-                    while char_end > 0 && !paragraph.is_char_boundary(char_end) {
-                        char_end -= 1;
-                    }
-
-                    if char_end > 0 {
-                        // Find start of the character
-                        let mut char_start = char_end - 1;
-                        while char_start > 0 && !paragraph.is_char_boundary(char_start) {
-                            char_start -= 1;
-                        }
-
-                        let last_char_str = &paragraph[char_start..char_end];
-                        if GLOBAL_SENTENCE_TERMINATORS.contains(&last_char_str) {
-                            Some(last_char_str.to_string())
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
+                    // Use char_indices for more efficient character iteration
+                    paragraph[..end]
+                        .char_indices()
+                        .next_back()
+                        .and_then(|(idx, _)| {
+                            let char_str = &paragraph[idx..end];
+                            if GLOBAL_SENTENCE_TERMINATORS.contains(&char_str) {
+                                Some(char_str.to_string())
+                            } else {
+                                None
+                            }
+                        })
                 } else {
                     None
                 };
@@ -175,6 +176,19 @@ pub trait Language {
         let boundaries = self.get_sentence_boundaries(text);
         for boundary in boundaries {
             sentences.push(boundary.text.to_string());
+        }
+
+        sentences
+    }
+
+    fn segment_borrowed<'a>(&self, text: &'a str) -> Vec<&'a str> {
+        // Pre-allocate with estimated capacity based on text length
+        let estimated_sentences = (text.len() / 50).max(1);
+        let mut sentences = Vec::with_capacity(estimated_sentences);
+
+        let boundaries = self.get_sentence_boundaries(text);
+        for boundary in boundaries {
+            sentences.push(boundary.text);
         }
 
         sentences
@@ -273,6 +287,9 @@ pub trait Language {
         for mat in EMAIL_REGEX.find_iter(text) {
             skippable_ranges.push((mat.start(), mat.end()));
         }
+
+        // Sort ranges by start position for more efficient lookups
+        skippable_ranges.sort_unstable_by_key(|r| r.0);
 
         skippable_ranges
     }

@@ -4,6 +4,7 @@ use languages::{
     Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil,
 };
 use serde::Serialize;
+use std::io::Read;
 
 mod constants;
 pub mod languages;
@@ -110,6 +111,36 @@ pub fn segment(language_code: &str, text: &str) -> Vec<String> {
     language.segment(text)
 }
 
+/// Segments a given text into sentences based on the specified language, returning borrowed slices.
+///
+/// This is a zero-copy variant that returns references to the original text instead of allocating
+/// new strings. This is significantly more efficient for large texts.
+///
+/// # Arguments
+///
+/// * `language_code` - A string slice that holds the language code (e.g., "en" for English, "fr" for French).
+/// * `text` - A string slice that holds the text to be segmented.
+///
+/// # Returns
+///
+/// A `Vec<&str>` containing references to the segmented sentences.
+///
+/// # Example
+///
+/// ```
+/// use sentencex::segment_borrowed;
+///
+/// let language_code = "en";
+/// let text = "Hello world. This is a test.";
+/// let sentences = segment_borrowed(language_code, text);
+///
+/// assert_eq!(sentences, vec!["Hello world. ", "This is a test."]);
+/// ```
+pub fn segment_borrowed<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
+    let language = language_factory(language_code);
+    language.segment_borrowed(text)
+}
+
 /// Returns detailed sentence boundaries for a given text based on the specified language.
 ///
 /// This function provides low-level access to sentence boundary detection, returning
@@ -151,6 +182,81 @@ pub fn get_sentence_boundaries<'a>(
 ) -> Vec<SentenceBoundary<'a>> {
     let language = language_factory(language_code);
     language.get_sentence_boundaries(text)
+}
+
+/// Segments text from a reader in chunks for efficient processing of large files.
+///
+/// This function is designed for processing very large files (>10MB) that might not fit
+/// comfortably in memory. It reads the input in chunks and processes them incrementally.
+///
+/// # Arguments
+///
+/// * `language_code` - A string slice that holds the language code (e.g., "en" for English, "fr" for French).
+/// * `reader` - Any type implementing `Read` (e.g., `File`, `&[u8]`, etc.)
+/// * `chunk_size` - Size of chunks to process at once (recommended: 64KB - 1MB)
+///
+/// # Returns
+///
+/// A `Result<Vec<String>>` containing the segmented sentences or an IO error.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::fs::File;
+/// use sentencex::segment_chunked;
+///
+/// let file = File::open("large_document.txt").unwrap();
+/// let sentences = segment_chunked("en", file, 65536).unwrap();
+/// println!("Found {} sentences", sentences.len());
+/// ```
+pub fn segment_chunked<R: Read>(
+    language_code: &str,
+    mut reader: R,
+    chunk_size: usize,
+) -> std::io::Result<Vec<String>> {
+    let language = language_factory(language_code);
+    let mut sentences = Vec::new();
+    let mut buffer = vec![0u8; chunk_size];
+    let mut leftover = String::new();
+
+    loop {
+        let bytes_read = reader.read(&mut buffer)?;
+        if bytes_read == 0 {
+            // Process any remaining text
+            if !leftover.is_empty() {
+                let final_sentences = language.segment(&leftover);
+                sentences.extend(final_sentences);
+            }
+            break;
+        }
+
+        // Combine leftover with new chunk
+        let mut chunk_text = leftover.clone();
+        chunk_text.push_str(&String::from_utf8_lossy(&buffer[..bytes_read]));
+
+        // Find last sentence boundary to avoid cutting mid-sentence
+        // Look for last newline or period followed by space
+        let split_pos = if bytes_read == chunk_size {
+            // Not at EOF, find a good split point
+            chunk_text.rfind(|c| c == '\n' || c == '.')
+                .map(|pos| pos + 1)
+                .unwrap_or(chunk_text.len())
+        } else {
+            // At EOF, process everything
+            chunk_text.len()
+        };
+
+        let (to_process, remainder) = chunk_text.split_at(split_pos);
+        
+        if !to_process.is_empty() {
+            let chunk_sentences = language.segment(to_process);
+            sentences.extend(chunk_sentences);
+        }
+        
+        leftover = remainder.to_string();
+    }
+
+    Ok(sentences)
 }
 
 #[cfg(test)]

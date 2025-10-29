@@ -29,6 +29,10 @@ criterion = { version = "0.7", features = ["html_reports"] }
 name = "segment_benchmark"
 harness = false
 
+[[bench]]
+name = "comprehensive_benchmark"
+harness = false
+
 [workspace]
 members = [
     "bindings/python",
