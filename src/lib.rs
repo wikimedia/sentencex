@@ -105,7 +105,7 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
 ///
 /// assert_eq!(sentences, vec!["Hello world. ", "This is a test."]);
 /// ```
-pub fn segment(language_code: &str, text: &str) -> Vec<String> {
+pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
     let language = language_factory(language_code);
     language.segment(text)
 }

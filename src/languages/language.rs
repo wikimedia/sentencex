@@ -167,14 +167,14 @@ pub trait Language {
         boundaries
     }
 
-    fn segment(&self, text: &str) -> Vec<String> {
+    fn segment<'a>(&self, text: &'a str) -> Vec<&'a str> {
         // Pre-allocate with estimated capacity based on text length
         let estimated_sentences = (text.len() / 50).max(1);
         let mut sentences = Vec::with_capacity(estimated_sentences);
 
         let boundaries = self.get_sentence_boundaries(text);
         for boundary in boundaries {
-            sentences.push(boundary.text.to_string());
+            sentences.push(boundary.text);
         }
 
         sentences
