@@ -95,15 +95,27 @@ pub trait Language {
                 }
 
                 let mut in_range = false;
-                for (range_start, range_end) in &skippable_ranges {
-                    if boundary > *range_start && boundary < *range_end {
-                        if boundary + 1 == *range_end && self.is_punctuation_between_quotes() {
-                            boundary = *range_end;
-                            in_range = false;
-                        } else {
-                            in_range = true;
+                if !skippable_ranges.is_empty() {
+                    // Binary search to find the first range that could contain this boundary
+                    let idx = skippable_ranges.partition_point(|r| r.0 <= boundary);
+
+                    // Check the range at idx and the one before it (if exists)
+                    for i in
+                        idx.saturating_sub(1)..idx.min(skippable_ranges.len()).saturating_add(1)
+                    {
+                        if i >= skippable_ranges.len() {
+                            break;
                         }
-                        break;
+                        let (range_start, range_end) = skippable_ranges[i];
+                        if boundary > range_start && boundary < range_end {
+                            if boundary + 1 == range_end && self.is_punctuation_between_quotes() {
+                                boundary = range_end;
+                                in_range = false;
+                            } else {
+                                in_range = true;
+                            }
+                            break;
+                        }
                     }
                 }
 
