@@ -58,11 +58,11 @@ fn main() {
         let start_time = Instant::now();
         let sentences = segment(&cli.language, &text);
         let elapsed = start_time.elapsed();
-
-        eprintln!("Time taken for segment(): {:?}", elapsed);
-
         for sentence in sentences.iter() {
             println!("{}", sentence);
         }
+
+        eprintln!("Time taken for segment(): {:?}", elapsed);
+        eprintln!("Total sentences: {:?}", sentences.len());
     }
 }

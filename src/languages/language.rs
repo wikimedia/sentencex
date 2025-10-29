@@ -41,7 +41,9 @@ pub trait Language {
         let estimated_sentences = (text.len() / 50).max(1);
         let mut boundaries = Vec::with_capacity(estimated_sentences);
 
-        let paragraphs: Vec<&str> = text.split("\n\n").collect();
+        // Split by paragraph breaks (one or more newlines with optional whitespace)
+        let para_split_re = Regex::new(r"\n[\r\s]*\n").unwrap();
+        let paragraphs: Vec<&str> = para_split_re.split(text).collect();
 
         // Pre-calculate all paragraph offsets in one pass
         let mut paragraph_offsets = Vec::with_capacity(paragraphs.len());

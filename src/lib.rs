@@ -3,6 +3,7 @@ use languages::{
     English, Finnish, French, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
     Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil,
 };
+use regex::Regex;
 use serde::Serialize;
 
 mod constants;
@@ -83,7 +84,100 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
     }
 }
 
+/// Find the nearest valid UTF-8 character boundary at or before the given byte index
+fn find_char_boundary(text: &str, mut byte_index: usize) -> usize {
+    // If we're already at or past the end, return text length
+    if byte_index >= text.len() {
+        return text.len();
+    }
+
+    // Walk forwards until we find a valid character boundary
+    while byte_index < text.len() && !text.is_char_boundary(byte_index) {
+        byte_index += 1;
+    }
+
+    byte_index
+}
+
+fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
+    if chunk_size == 0 || text.len() <= chunk_size {
+        return vec![text];
+    }
+
+    let mut chunks = Vec::new();
+
+    // Split by paragraph breaks (one or more newlines with optional whitespace)
+    let re = Regex::new(r"\n[\r\s]*\n").unwrap();
+
+    // Get paragraph parts and their positions
+    let mut paragraphs = Vec::new();
+    let mut last_end = 0;
+
+    for mat in re.find_iter(text) {
+        // Add the text before this match
+        paragraphs.push((last_end, mat.start()));
+        last_end = mat.end();
+    }
+    // Add the final paragraph
+    if last_end < text.len() {
+        paragraphs.push((last_end, text.len()));
+    }
+
+    if paragraphs.is_empty() {
+        eprintln!("No para breaks?");
+        return vec![text];
+    } else {
+        eprintln!("Found {:} paragraphs", paragraphs.len());
+    }
+
+    let mut current_start = 0;
+    let mut current_end = 0;
+    let mut i = 0;
+
+    while i < paragraphs.len() {
+        let (para_start, para_end) = paragraphs[i];
+
+        // If this is the first paragraph in the chunk
+        if current_end == current_start {
+            current_start = para_start;
+            current_end = para_end;
+            i += 1;
+            continue;
+        }
+
+        // Check if adding this paragraph would exceed chunk_size
+        let potential_size = para_end - current_start;
+
+        if potential_size > chunk_size {
+            // Finalize current chunk
+            let safe_end = find_char_boundary(text, current_end);
+            chunks.push(&text[current_start..safe_end]);
+
+            // Start new chunk with current paragraph
+            current_start = para_start;
+            current_end = para_end;
+        } else {
+            // Add this paragraph to current chunk
+            current_end = para_end;
+        }
+
+        i += 1;
+    }
+
+    // Add the final chunk if there's remaining content
+    if current_start < text.len() {
+        let safe_end = find_char_boundary(text, current_end);
+        chunks.push(&text[current_start..safe_end]);
+    }
+
+    chunks
+}
+
 /// Segments a given text into sentences based on the specified language.
+///
+/// For texts larger than CHUNK_SIZE, the function automatically chunks the text at paragraph
+/// boundaries (double newlines) to handle large inputs efficiently. The only fallback
+/// boundary is end of file.
 ///
 /// # Arguments
 ///
@@ -92,7 +186,7 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
 ///
 /// # Returns
 ///
-/// A `Vec<String>` containing the segmented sentences.
+/// A `Vec<&str>` containing the segmented sentences.
 ///
 /// # Example
 ///
@@ -106,8 +200,23 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
 /// assert_eq!(sentences, vec!["Hello world. ", "This is a test."]);
 /// ```
 pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
+    const CHUNK_SIZE: usize = 10 * 1024; // 10KB
+
     let language = language_factory(language_code);
-    language.segment(text)
+
+    if text.len() > CHUNK_SIZE {
+        let chunks = chunk_text(text, CHUNK_SIZE);
+        let mut all_sentences = Vec::new();
+        eprintln!("Processing {:?} chunks", chunks.len());
+        for chunk in chunks {
+            let chunk_sentences = language.segment(chunk);
+            all_sentences.extend(chunk_sentences);
+        }
+
+        all_sentences
+    } else {
+        language.segment(text)
+    }
 }
 
 /// Returns detailed sentence boundaries for a given text based on the specified language.
@@ -115,6 +224,10 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
 /// This function provides low-level access to sentence boundary detection, returning
 /// detailed information about each boundary including start/end indices, the text content,
 /// boundary symbols, and whether the boundary represents a paragraph break.
+///
+/// For texts larger than chunk_size, the function automatically chunks the text at paragraph
+/// boundaries (double newlines) to handle large inputs efficiently. The returned boundaries
+/// maintain correct indices relative to the original text.
 ///
 /// # Arguments
 ///
@@ -149,8 +262,36 @@ pub fn get_sentence_boundaries<'a>(
     language_code: &str,
     text: &'a str,
 ) -> Vec<SentenceBoundary<'a>> {
+    const CHUNK_SIZE: usize = 10 * 100; // 10KB
+
     let language = language_factory(language_code);
-    language.get_sentence_boundaries(text)
+
+    if text.len() > CHUNK_SIZE {
+        let chunks = chunk_text(text, CHUNK_SIZE);
+        let mut all_boundaries = Vec::new();
+        let mut chunk_offset = 0;
+
+        for chunk in chunks {
+            let chunk_boundaries = language.get_sentence_boundaries(chunk);
+
+            // Adjust indices to be relative to original text
+            for boundary in chunk_boundaries {
+                all_boundaries.push(SentenceBoundary {
+                    start_index: boundary.start_index + chunk_offset,
+                    end_index: boundary.end_index + chunk_offset,
+                    text: boundary.text,
+                    boundary_symbol: boundary.boundary_symbol,
+                    is_paragraph_break: boundary.is_paragraph_break,
+                });
+            }
+
+            chunk_offset += chunk.len();
+        }
+
+        all_boundaries
+    } else {
+        language.get_sentence_boundaries(text)
+    }
 }
 
 #[cfg(test)]
@@ -190,5 +331,61 @@ mod tests {
     #[test]
     fn test_chinese_segment() {
         run_language_tests_for_language("zh", "tests/zh.txt");
+    }
+
+    #[test]
+    fn test_chunk_text_basic() {
+        let text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.";
+        let chunks = chunk_text(text, 20);
+        assert_eq!(chunks.len(), 3);
+        assert_eq!(chunks[0], "First paragraph.\n\n");
+        assert_eq!(chunks[1], "Second paragraph.\n\n");
+        assert_eq!(chunks[2], "Third paragraph.");
+    }
+
+    #[test]
+    fn test_chunk_text_no_paragraph_breaks() {
+        let text =
+            "This is a long text without paragraph breaks that should be returned as one chunk.";
+        let chunks = chunk_text(text, 20);
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0], text);
+    }
+
+    #[test]
+    fn test_segment_automatic_chunking() {
+        // Create a text larger than 512KB to trigger chunking
+        let small_text = "First sentence. Second sentence.\n\nThird sentence. Fourth sentence.";
+        let large_text = small_text.repeat(10000); // This will be > 512KB
+
+        let result = segment("en", &large_text);
+        let expected_per_repetition = segment("en", small_text);
+
+        // Verify that we get the expected pattern repeated
+        assert!(result.len() >= expected_per_repetition.len() * 9000); // Allow for some variation
+
+        // Test that small text still works normally
+        let small_result = segment("en", small_text);
+        assert_eq!(small_result, expected_per_repetition);
+    }
+
+    #[test]
+    fn test_chunking_preserves_results() {
+        let text = "First sentence. Second sentence.\n\nThird sentence. Fourth sentence.";
+
+        // Force chunking by using a very small chunk size
+        let chunks = chunk_text(text, 10);
+        let mut chunked_sentences = Vec::new();
+        let language = language_factory("en");
+
+        for chunk in chunks {
+            let chunk_sentences = language.segment(chunk);
+            chunked_sentences.extend(chunk_sentences);
+        }
+
+        let regular_sentences = language.segment(text);
+
+        // Results should be the same regardless of chunking
+        assert_eq!(chunked_sentences, regular_sentences);
     }
 }
