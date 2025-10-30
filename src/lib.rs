@@ -107,7 +107,7 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
     let mut chunks = Vec::new();
 
     // Split by paragraph breaks (one or more newlines with optional whitespace)
-    let re = Regex::new(r"\n[\r\s]*\n").unwrap();
+    let re = Regex::new(r"\n[\r]*\n").unwrap();
 
     // Get paragraph parts and their positions
     let mut paragraphs = Vec::new();
