@@ -59,6 +59,9 @@ pub const EXCLAMATION_WORDS: [&str; 17] = [
     "Yum!",
 ];
 
+// unicode code points generated with Unicode::Tussle perl script:
+// unichars -aBbs '[\p{Sentence_Break=STerm}\p{Sentence_Break=ATerm}]' | awk '$2="\""$2"\", //"'
+// Refer: https://www.unicode.org/Public/UCD/latest/ucd/auxiliary/SentenceBreakProperty.txt
 pub const GLOBAL_SENTENCE_TERMINATORS: [&str; 155] = [
     "!",  // U+00021 BC=ON BLK=Basic_Latin SC=Common EXCLAMATION MARK
     ".",  // U+0002E BC=CS BLK=Basic_Latin SC=Common FULL STOP
