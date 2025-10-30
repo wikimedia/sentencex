@@ -203,9 +203,9 @@ She works at Yahoo! in the accounting department.
 #We make a good team, you and I.
 #Did you see Albert I. Jones yesterday?
 ===
-Thoreau argues that by simplifying one’s life, “the laws of the universe will appear less complex. . . .”
+Thoreau argues that by simplifying one's life, "the laws of the universe will appear less complex. . . ."
 ---
-Thoreau argues that by simplifying one’s life, “the laws of the universe will appear less complex. . . .”
+Thoreau argues that by simplifying one's life, "the laws of the universe will appear less complex. . . ."
 ===
 "Bohr [...] used the analogy of parallel stairways [...]" (Smith 55).
 ---
@@ -221,9 +221,9 @@ I never meant that.... She left the store.
 I never meant that....
 She left the store.
 ===
-#I wasn’t really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn’t mean it.
+#I wasn't really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn't mean it.
 #---
-#I wasn’t really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn’t mean it.
+#I wasn't really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn't mean it.
 ===
 #One further habit which was somewhat weakened . . . was that of combining words into self-interpreting compounds. . . . The practice was not abandoned. . . .
 #---
@@ -250,11 +250,61 @@ Thus increasing the desire for political reform both in Lancashire and in the co
 This was a serious misdemeanour,[16] encouraging them to declare the assembly illegal as soon as it was announced on 31 July.[17][18]
 The radicals sought a second opinion on the meeting's legality.
 ===
-“How many? I don’t know.”
+"How many? I don't know."
 ---
-“How many? I don’t know.”
+"How many? I don't know."
 ===
 Hydrogen is a gas. [1] It is colorless, odorless, tasteless and highly flammable
 ---
 Hydrogen is a gas. [1]
 It is colorless, odorless, tasteless and highly flammable
+===
+This function (see. section 4.2) is important. Let's continue.
+---
+This function (see. section 4.2) is important.
+Let's continue.
+===
+The book <War and Peace> is famous. I recommend reading it.
+---
+The book <War and Peace> is famous.
+I recommend reading it.
+===
+The array {1, 2, 3} contains integers. Each element has a value.
+---
+The array {1, 2, 3} contains integers.
+Each element has a value.
+===
+Check the reference [page. 42] for details. You'll find it helpful.
+---
+Check the reference [page. 42] for details.
+You'll find it helpful.
+===
+The Japanese quote 「こんにちは」 means hello. It's a common greeting.
+---
+The Japanese quote 「こんにちは」 means hello.
+It's a common greeting.
+===
+In Chinese 《红楼梦》 is a classic novel. Many people have read it.
+---
+In Chinese 《红楼梦》 is a classic novel.
+Many people have read it.
+===
+The fullwidth parentheses （like. these） are used in Asian text. They serve the same purpose.
+---
+The fullwidth parentheses （like. these） are used in Asian text.
+They serve the same purpose.
+===
+Mixed brackets (normal) and [square] and {cur. ly} work too. This is the next sentence.
+---
+Mixed brackets (normal) and [square] and {cur. ly} work too.
+This is the next sentence.
+===
+Nested brackets (with [inner. brackets] inside) should work. This tests complex cases.
+---
+Nested brackets (with [inner. brackets] inside) should work.
+This tests complex cases.
+===
+Unblanaced bracket with period (. in it will break.
+---
+Unblanaced bracket with period (.
+in it will break.
