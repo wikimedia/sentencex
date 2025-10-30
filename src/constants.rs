@@ -26,7 +26,7 @@ pub fn get_quote_pairs() -> HashMap<&'static str, &'static str> {
 lazy_static::lazy_static! {
     pub static ref PARENS_REGEX: Regex = Regex::new(r"\([^)]+\)").unwrap();
     pub static ref EMAIL_REGEX: Regex = Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}").unwrap();
-    pub static ref NUMBERED_REFERENCE_REGEX: Regex = Regex::new(r"^(\[\d+])+").unwrap();
+    pub static ref NUMBERED_REFERENCE_REGEX: Regex = Regex::new(r"^ ?(\[\d+])+").unwrap();
     pub static ref SPACE_AFTER_SEPARATOR: Regex = Regex::new(r"^\s+").unwrap();
     pub static ref QUOTES_REGEX: Regex = {
         let quote_pairs = get_quote_pairs();
