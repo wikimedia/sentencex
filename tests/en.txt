@@ -259,6 +259,11 @@ Hydrogen is a gas. [1] It is colorless, odorless, tasteless and highly flammable
 Hydrogen is a gas. [1]
 It is colorless, odorless, tasteless and highly flammable
 ===
+Hydrogen is a gas. [1][2] [3] It is colorless, odorless, tasteless and highly flammable
+---
+Hydrogen is a gas. [1][2] [3]
+It is colorless, odorless, tasteless and highly flammable
+===
 This function (see. section 4.2) is important. Let's continue.
 ---
 This function (see. section 4.2) is important.
