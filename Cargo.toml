@@ -1,6 +1,6 @@
 [package]
 name = "sentencex"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "Sentence segmentation library with wide language support optimized for speed and utility."
 authors = ["Santhosh Thottingal <santhosh.thottingal@gmail.com>"]
