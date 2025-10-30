@@ -59,7 +59,7 @@ fn main() {
         let sentences = segment(&cli.language, &text);
         let elapsed = start_time.elapsed();
         for sentence in sentences.iter() {
-            println!("{}", sentence);
+            println!("* {}", sentence);
         }
 
         eprintln!("Time taken for segment(): {:?}", elapsed);
