@@ -17,10 +17,6 @@ impl Language for Italian {
         &ITALIAN_ABBREVIATIONS
     }
 
-    fn is_punctuation_between_quotes(&self) -> bool {
-        false
-    }
-
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {
         let words: Vec<&str> = text
             .split(|c: char| c.is_whitespace() || c == '.')

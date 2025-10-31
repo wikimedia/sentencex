@@ -75,10 +75,6 @@ impl Language for Deutch {
 
         false
     }
-
-    fn is_punctuation_between_quotes(&self) -> bool {
-        true
-    }
 }
 
 #[cfg(test)]

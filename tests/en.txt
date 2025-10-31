@@ -167,7 +167,8 @@ She turned to him, "This is great." she said.
 ===
 She turned to him, "This is great." She held the book out to show him.
 ---
-She turned to him, "This is great." She held the book out to show him.
+She turned to him, "This is great."
+She held the book out to show him.
 ===
 Hello!! Long time no see.
 ---
@@ -316,5 +317,12 @@ in it will break.
 ===
 Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; however, further tests (e.g., MRI, CT scan) are required." Meanwhile, the nurse—who had been on duty since 7:00 a.m.—noted that the patient's vitals (BP: 120/80, HR: 75) were within normal limits. "Let's proceed with the tests ASAP," she added.
 ---
-Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; however, further tests (e.g., MRI, CT scan) are required." Meanwhile, the nurse—who had been on duty since 7:00 a.m.—noted that the patient's vitals (BP: 120/80, HR: 75) were within normal limits.
+Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; however, further tests (e.g., MRI, CT scan) are required."
+Meanwhile, the nurse—who had been on duty since 7:00 a.m.—noted that the patient's vitals (BP: 120/80, HR: 75) were within normal limits.
+"Let's proceed with the tests ASAP," she added.
+===
+Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; however, further tests (e.g., MRI, CT scan) are required.". Meanwhile, the nurse—who had been on duty since 7:00 a.m.—noted that the patient's vitals (BP: 120/80, HR: 75) were within normal limits. "Let's proceed with the tests ASAP," she added.
+---
+Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; however, further tests (e.g., MRI, CT scan) are required.".
+Meanwhile, the nurse—who had been on duty since 7:00 a.m.—noted that the patient's vitals (BP: 120/80, HR: 75) were within normal limits.
 "Let's proceed with the tests ASAP," she added.

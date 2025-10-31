@@ -35,10 +35,6 @@ impl Language for Tamil {
     fn get_abbreviations(&self) -> &[String] {
         &TAMIL_ABBREVIATIONS
     }
-
-    fn is_punctuation_between_quotes(&self) -> bool {
-        true
-    }
 }
 
 #[cfg(test)]
