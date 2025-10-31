@@ -85,7 +85,6 @@ pub trait Language {
                 .map(|m| (m.start(), m.end()))
                 .collect();
             let skippable_ranges = self.get_skippable_ranges(paragraph);
-
             for (start, end) in matches {
                 let mut boundary = self
                     .find_boundary(paragraph, start, end)
@@ -98,12 +97,9 @@ pub trait Language {
                 let mut in_range = false;
                 if !skippable_ranges.is_empty() {
                     // Binary search to find the first range that could contain this boundary
-                    let idx = skippable_ranges.partition_point(|r| r.0 <= boundary);
-
+                    // let idx = skippable_ranges.partition_point(|r| r.0 <= boundary);
                     // Check the range at idx and the one before it (if exists)
-                    for i in
-                        idx.saturating_sub(1)..idx.min(skippable_ranges.len()).saturating_add(1)
-                    {
+                    for i in 0..skippable_ranges.len() {
                         if i >= skippable_ranges.len() {
                             break;
                         }
@@ -225,12 +221,8 @@ pub trait Language {
 
     fn find_boundary(&self, text: &str, start: usize, end: usize) -> Option<usize> {
         let head = &text[..start];
-        let mut next = start + 1;
+        let next = text.ceil_char_boundary(start + 1);
 
-        while !text.is_char_boundary(next) {
-            // Move forward till next char boundary. Applies for multibyte unicode chars
-            next += 1;
-        }
         let tail = &text[next..];
 
         if let Some(number_ref_match) = crate::constants::NUMBERED_REFERENCE_REGEX.find(tail) {
