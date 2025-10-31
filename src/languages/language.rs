@@ -14,6 +14,38 @@ lazy_static::lazy_static! {
     static ref CONTINUE_REGEX: Regex = Regex::new(r"^[0-9a-z]").unwrap();
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SkippableRangeType {
+    Quote,
+    Parentheses,
+    Email,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct SkippableRange {
+    pub start: usize,
+    pub end: usize,
+    pub range_type: SkippableRangeType,
+}
+
+impl SkippableRange {
+    pub fn new(start: usize, end: usize, range_type: SkippableRangeType) -> Self {
+        Self {
+            start,
+            end,
+            range_type,
+        }
+    }
+
+    pub fn contains(&self, position: usize) -> bool {
+        position > self.start && position < self.end
+    }
+
+    pub fn is_quote(&self) -> bool {
+        self.range_type == SkippableRangeType::Quote
+    }
+}
+
 pub trait Language {
     fn get_sentence_break_regex(&self) -> Regex {
         let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
@@ -85,6 +117,7 @@ pub trait Language {
                 .map(|m| (m.start(), m.end()))
                 .collect();
             let skippable_ranges = self.get_skippable_ranges(paragraph);
+
             for (start, end) in matches {
                 let mut boundary = self
                     .find_boundary(paragraph, start, end)
@@ -95,21 +128,19 @@ pub trait Language {
                 }
 
                 let mut in_range = false;
-                if !skippable_ranges.is_empty() {
-                    for i in 0..skippable_ranges.len() {
-                        if i >= skippable_ranges.len() {
-                            break;
+
+                for range in &skippable_ranges {
+                    if range.contains(boundary) {
+                        if range.is_quote()
+                            && boundary + 1 == range.end
+                            && self.is_punctuation_between_quotes()
+                        {
+                            boundary = range.end;
+                            in_range = false;
+                        } else {
+                            in_range = true;
                         }
-                        let (range_start, range_end) = skippable_ranges[i];
-                        if boundary > range_start && boundary < range_end {
-                            if boundary + 1 == range_end && self.is_punctuation_between_quotes() {
-                                boundary = range_end;
-                                in_range = false;
-                            } else {
-                                in_range = true;
-                            }
-                            break;
-                        }
+                        break;
                     }
                 }
 
@@ -216,30 +247,44 @@ pub trait Language {
         EXCLAMATION_WORDS.contains(&exclamation_word.as_str())
     }
 
+    fn get_next_word_approx<'a>(&self, text: &'a str, start: usize) -> &'a str {
+        if start >= text.len() {
+            return "";
+        }
+
+        let max_chars = 30;
+        let end_pos = (start + max_chars).min(text.len());
+        &text[start..text.floor_char_boundary(end_pos)]
+    }
+
     fn find_boundary(&self, text: &str, start: usize, end: usize) -> Option<usize> {
         let head = &text[..start];
-        let next = text.ceil_char_boundary(start + 1);
+        let next_index = text.ceil_char_boundary(start + 1);
 
-        let tail = &text[next..];
+        let next_word_approx = self.get_next_word_approx(text, next_index);
 
-        if let Some(number_ref_match) = crate::constants::NUMBERED_REFERENCE_REGEX.find(tail) {
-            return Some(next + number_ref_match.end());
+        if let Some(number_ref_match) =
+            crate::constants::NUMBERED_REFERENCE_REGEX.find(next_word_approx)
+        {
+            return Some(next_index + number_ref_match.end());
         }
 
-        if self.continue_in_next_word(tail) {
+        if self.continue_in_next_word(next_word_approx) {
             return None;
         }
 
-        if self.is_abbreviation(head, tail, &text[start..end]) {
+        if self.is_abbreviation(head, next_word_approx, &text[start..end]) {
             return None;
         }
 
-        if self.is_exclamation(head, tail) {
+        if self.is_exclamation(head, next_word_approx) {
             return None;
         }
 
-        if let Some(space_after_sep_match) = crate::constants::SPACE_AFTER_SEPARATOR.find(tail) {
-            return Some(next + space_after_sep_match.end());
+        if let Some(space_after_sep_match) =
+            crate::constants::SPACE_AFTER_SEPARATOR.find(next_word_approx)
+        {
+            return Some(next_index + space_after_sep_match.end());
         }
 
         Some(end)
@@ -249,25 +294,37 @@ pub trait Language {
         CONTINUE_REGEX.is_match(text_after_boundary)
     }
 
-    fn get_skippable_ranges(&self, text: &str) -> Vec<(usize, usize)> {
+    fn get_skippable_ranges(&self, text: &str) -> Vec<SkippableRange> {
         // Pre-allocate with estimated capacity based on text length (rough estimate: 1 range per 200 characters)
         let estimated_ranges = (text.len() / 200).max(1);
         let mut skippable_ranges = Vec::with_capacity(estimated_ranges);
 
         for mat in QUOTES_REGEX.find_iter(text) {
-            skippable_ranges.push((mat.start(), mat.end()));
+            skippable_ranges.push(SkippableRange::new(
+                mat.start(),
+                mat.end(),
+                SkippableRangeType::Quote,
+            ));
         }
 
         for mat in PARENS_REGEX.find_iter(text) {
-            skippable_ranges.push((mat.start(), mat.end()));
+            skippable_ranges.push(SkippableRange::new(
+                mat.start(),
+                mat.end(),
+                SkippableRangeType::Parentheses,
+            ));
         }
 
         for mat in EMAIL_REGEX.find_iter(text) {
-            skippable_ranges.push((mat.start(), mat.end()));
+            skippable_ranges.push(SkippableRange::new(
+                mat.start(),
+                mat.end(),
+                SkippableRangeType::Email,
+            ));
         }
 
         // Sort ranges by start position for more efficient lookups
-        skippable_ranges.sort_unstable_by_key(|r| r.0);
+        skippable_ranges.sort_unstable_by_key(|r| r.start);
         skippable_ranges
     }
 
