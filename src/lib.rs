@@ -84,21 +84,6 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
     }
 }
 
-/// Find the nearest valid UTF-8 character boundary at or before the given byte index
-fn find_char_boundary(text: &str, mut byte_index: usize) -> usize {
-    // If we're already at or past the end, return text length
-    if byte_index >= text.len() {
-        return text.len();
-    }
-
-    // Walk forwards until we find a valid character boundary
-    while byte_index < text.len() && !text.is_char_boundary(byte_index) {
-        byte_index += 1;
-    }
-
-    byte_index
-}
-
 fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
     if chunk_size == 0 || text.len() <= chunk_size {
         return vec![text];
@@ -150,7 +135,7 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
 
         if potential_size > chunk_size {
             // Finalize current chunk
-            let safe_end = find_char_boundary(text, current_end);
+            let safe_end = text.ceil_char_boundary(current_end);
             chunks.push(&text[current_start..safe_end]);
 
             // Start new chunk with current paragraph
@@ -166,7 +151,7 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
 
     // Add the final chunk if there's remaining content
     if current_start < text.len() {
-        let safe_end = find_char_boundary(text, current_end);
+        let safe_end = text.ceil_char_boundary(current_end);
         chunks.push(&text[current_start..safe_end]);
     }
 
