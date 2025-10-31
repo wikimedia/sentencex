@@ -96,9 +96,6 @@ pub trait Language {
 
                 let mut in_range = false;
                 if !skippable_ranges.is_empty() {
-                    // Binary search to find the first range that could contain this boundary
-                    // let idx = skippable_ranges.partition_point(|r| r.0 <= boundary);
-                    // Check the range at idx and the one before it (if exists)
                     for i in 0..skippable_ranges.len() {
                         if i >= skippable_ranges.len() {
                             break;
