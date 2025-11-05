@@ -15,10 +15,9 @@ rust-version = "1.91"
 name = "sentencex"
 
 [dependencies]
-serde = { version = "1.0.228", features = ["derive"] }
 regex = "1.12.2"
 clap = { version = "4.5.2", features = ["derive"] }
-serde_yaml = "0.9.33"
+serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 criterion = { version = "0.7", features = ["html_reports"] }

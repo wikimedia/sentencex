@@ -4,19 +4,11 @@ use languages::{
     Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil,
 };
 use regex::Regex;
-use serde::Serialize;
 
 mod constants;
 pub mod languages;
 
-use std::collections::HashMap;
-use std::sync::LazyLock;
-
-static LANGUAGE_FALLBACKS: LazyLock<HashMap<&'static str, Vec<&'static str>>> =
-    LazyLock::new(|| {
-        let yaml_data = include_str!("./languages/fallbacks.yaml");
-        serde_yaml::from_str(yaml_data).expect("Failed to parse fallbacks.yaml")
-    });
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SentenceBoundary<'a> {
@@ -69,7 +61,7 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
             "fr" => return Box::new(French {}),
             "fi" => return Box::new(Finnish {}),
             _ => {
-                if let Some(fallbacks) = LANGUAGE_FALLBACKS.get(current_code) {
+                if let Some(fallbacks) = languages::get_fallbacks(current_code) {
                     for next_code in fallbacks {
                         if !visited.contains(next_code) {
                             current_code = next_code;
