@@ -227,3 +227,139 @@ pub const GLOBAL_SENTENCE_TERMINATORS: [&str; 155] = [
     "。", // U+3002 IDEOGRAPHIC FULL STOP
     "｡",  // U+FF61 HALFWIDTH IDEOGRAPHIC FULL STOP
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_quotes_regex_greek_basic() {
+        let text = "Ο γιατρός είπε: «Η κατάσταση είναι σταθερή».";
+        let matches: Vec<_> = QUOTES_REGEX
+            .find_iter(text)
+            .map(|m| &text[m.start()..m.end()])
+            .collect();
+        assert_eq!(matches, vec!["«Η κατάσταση είναι σταθερή»"]);
+    }
+
+    #[test]
+    fn test_quotes_regex_greek_multiple() {
+        let text = "«Καλημέρα» είπε. «Πώς είσαι;»";
+        let matches: Vec<_> = QUOTES_REGEX
+            .find_iter(text)
+            .map(|m| &text[m.start()..m.end()])
+            .collect();
+        assert_eq!(matches, vec!["«Καλημέρα»", "«Πώς είσαι;»"]);
+    }
+
+    #[test]
+    fn test_quotes_regex_greek_multiline() {
+        let text = "Παράδειγμα:\n«Πρώτη γραμμή\nΔεύτερη γραμμή» τέλος.";
+        let matches: Vec<_> = QUOTES_REGEX
+            .find_iter(text)
+            .map(|m| &text[m.start()..m.end()])
+            .collect();
+        assert_eq!(matches, vec!["«Πρώτη γραμμή\nΔεύτερη γραμμή»"]);
+    }
+
+    #[test]
+    fn test_quotes_regex_other_double_quotes() {
+        // Ensure standard ASCII quotes still work
+        let text = r#"He said, "Hello" and left."#;
+        let matches: Vec<_> = QUOTES_REGEX
+            .find_iter(text)
+            .map(|m| &text[m.start()..m.end()])
+            .collect();
+        assert_eq!(matches, vec!["\"Hello\""]);
+    }
+
+    #[test]
+    fn test_quotes_regex_all_quote_types() {
+        // Test all quote pairs defined in get_quote_pairs
+        let test_cases = vec![
+            ("Standard double: \"Hello\"", vec!["\"Hello\""]),
+            ("Greek: «Γεια σου»", vec!["«Γεια σου»"]),
+            ("Curved single: 'Hi'", vec![" 'Hi'"]),
+            ("German-style: „Hallo“", vec!["„Hallo“"]),
+            ("Single angular: ‹Bonjour›", vec!["‹Bonjour›"]),
+            ("CJK: 「こんにちは」", vec!["「こんにちは」"]),
+            ("Chinese: 《你好》", vec!["《你好》"]),
+        ];
+
+        for (text, expected) in test_cases {
+            let matches: Vec<_> = QUOTES_REGEX
+                .find_iter(text)
+                .map(|m| &text[m.start()..m.end()])
+                .collect();
+            assert_eq!(matches, expected, "Failed for text: {}", text);
+        }
+    }
+
+    #[test]
+    fn test_quotes_regex_edge_cases() {
+        // Empty quotes
+        let text = "Empty: «»";
+        let matches: Vec<_> = QUOTES_REGEX
+            .find_iter(text)
+            .map(|m| &text[m.start()..m.end()])
+            .collect();
+        assert_eq!(matches, vec!["«»"]);
+
+        // Nested quotes (should match the outer ones)
+        let text = "Nested: «Outer 'inner' quotes»";
+        let matches: Vec<_> = QUOTES_REGEX
+            .find_iter(text)
+            .map(|m| &text[m.start()..m.end()])
+            .collect();
+        assert_eq!(matches, vec!["«Outer 'inner' quotes»"]);
+
+        // No quotes
+        let text = "No quotes here at all.";
+        let matches: Vec<_> = QUOTES_REGEX
+            .find_iter(text)
+            .map(|m| &text[m.start()..m.end()])
+            .collect();
+        assert_eq!(matches, Vec::<&str>::new());
+    }
+
+    #[test]
+    fn test_quotes_regex_with_punctuation() {
+        // Quotes with various punctuation inside
+        let test_cases = vec![
+            ("Question: «Πώς είσαι;»", vec!["«Πώς είσαι;»"]),
+            ("Exclamation: «Γεια σου!»", vec!["«Γεια σου!»"]),
+            ("Period: «Καλημέρα.»", vec!["«Καλημέρα.»"]),
+            (
+                "Complex: «Ελα, πώς είσαι; Καλά!»",
+                vec!["«Ελα, πώς είσαι; Καλά!»"],
+            ),
+        ];
+
+        for (text, expected) in test_cases {
+            let matches: Vec<_> = QUOTES_REGEX
+                .find_iter(text)
+                .map(|m| &text[m.start()..m.end()])
+                .collect();
+            assert_eq!(matches, expected, "Failed for text: {}", text);
+        }
+    }
+
+    #[test]
+    fn test_quotes_regex_debug_pattern() {
+        // Let's see what the actual regex pattern looks like
+        let quote_pairs = get_quote_pairs();
+        let patterns: Vec<String> = quote_pairs
+            .iter()
+            .map(|(left, right)| {
+                format!(r"{}(\n|.)*?{}", regex::escape(left), regex::escape(right))
+            })
+            .collect();
+        let quotes_regex_str = patterns.join("|");
+
+        println!("QUOTES_REGEX pattern: {}", quotes_regex_str);
+
+        // Verify that Greek quotes are in the pattern
+        assert!(quotes_regex_str.contains("«"));
+        assert!(quotes_regex_str.contains("»"));
+    }
+}
