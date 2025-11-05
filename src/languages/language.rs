@@ -145,7 +145,10 @@ pub trait Language {
                     if range.contains(boundary) {
                         let next_word = self.get_next_word_approx(text, range.end);
                         let boundary_extend = self.get_boundary_extend(next_word);
-                        if range.is_quote() && boundary + 1 == range.end && boundary_extend >= 0 {
+                        if range.is_quote()
+                            && text.ceil_char_boundary(boundary + 1) == range.end
+                            && boundary_extend >= 0
+                        {
                             boundary = range.end + boundary_extend as usize;
                             in_range = false;
                         } else {
@@ -325,7 +328,7 @@ pub trait Language {
         let max_chars = 30;
         let safe_start = text.floor_char_boundary(start);
         let end_pos = (start + max_chars).min(text.len());
-        &text[safe_start..text.floor_char_boundary(end_pos)]
+        &text[safe_start..text.ceil_char_boundary(end_pos)]
     }
 
     /// Analyzes a potential sentence boundary and determines the exact position where
