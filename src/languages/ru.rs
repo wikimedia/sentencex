@@ -1,13 +1,13 @@
 use super::Language;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 #[derive(Debug, Clone)]
 pub struct Russian {}
 
-static PATTERN: Lazy<regex::Regex> =
-    Lazy::new(|| regex::Regex::new(r"^[0-9a-zа-я]").expect("Failed to compile regex"));
+static PATTERN: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"^[0-9a-zа-я]").expect("Failed to compile regex"));
 
-static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/ru.txt")
         .lines()
         .map(|line| line.trim().to_string())

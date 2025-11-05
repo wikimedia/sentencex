@@ -23,21 +23,28 @@ pub fn get_quote_pairs() -> HashMap<&'static str, &'static str> {
     quote_pairs
 }
 
-lazy_static::lazy_static! {
-    pub static ref PARENS_REGEX: Regex = Regex::new(r"[\(（<{\[](?:[^\)\]}>）]|\\[\)\]}>）])*[\)\]}>）]").unwrap();
-    pub static ref EMAIL_REGEX: Regex = Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}").unwrap();
-    pub static ref NUMBERED_REFERENCE_REGEX: Regex = Regex::new(r"^(\s*\[\d+])+").unwrap();
-    pub static ref SPACE_AFTER_SEPARATOR: Regex = Regex::new(r"^\s+").unwrap();
-    pub static ref QUOTES_REGEX: Regex = {
-        let quote_pairs = get_quote_pairs();
-        let patterns: Vec<String> = quote_pairs
-            .iter()
-            .map(|(left, right)| format!(r"{}(\n|.)*?{}", regex::escape(left), regex::escape(right)))
-            .collect();
-        let quotes_regex_str = patterns.join("|");
-        Regex::new(&quotes_regex_str).unwrap()
-    };
-}
+use std::sync::LazyLock;
+
+pub static PARENS_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[\(（<{\[](?:[^\)\]}>）]|\\[\)\]}>）])*[\)\]}>）]").unwrap());
+
+pub static EMAIL_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}").unwrap());
+
+pub static NUMBERED_REFERENCE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\s*\[\d+])+").unwrap());
+
+pub static SPACE_AFTER_SEPARATOR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s+").unwrap());
+
+pub static QUOTES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    let quote_pairs = get_quote_pairs();
+    let patterns: Vec<String> = quote_pairs
+        .iter()
+        .map(|(left, right)| format!(r"{}(\n|.)*?{}", regex::escape(left), regex::escape(right)))
+        .collect();
+    let quotes_regex_str = patterns.join("|");
+    Regex::new(&quotes_regex_str).unwrap()
+});
 
 pub const EXCLAMATION_WORDS: [&str; 17] = [
     "!Xũ",

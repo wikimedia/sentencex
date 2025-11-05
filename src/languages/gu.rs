@@ -1,11 +1,11 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Gujarati {}
 
-static GUJARATI_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static GUJARATI_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/gu.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())

@@ -1,10 +1,10 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Tamil {}
-static TAMIL_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static TAMIL_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     let vowel_signs = vec!["ா", "ி", "ீ", "ু", "ূ", "ে", "ে", "ৈ", "ও", "ো", "ৌ"];
     let vowels = vec!["அ", "ஆ", "இ", "ஈ", "உ", "ஊ", "எ", "ஏ", "ஐ", "ஒ", "ஓ", "ஔ"];
     let consonants = vec![

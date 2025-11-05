@@ -1,11 +1,11 @@
-use once_cell::sync::Lazy;
 use regex::Regex;
+use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Danish {}
-static DANISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static DANISH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/da.txt")
         .lines()
         .map(|line| line.trim().to_string())

@@ -1,10 +1,10 @@
 use super::Language;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 #[derive(Debug, Clone)]
 pub struct Polish {}
 
-static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/pl.txt")
         .lines()
         .map(|line| line.trim().to_string())

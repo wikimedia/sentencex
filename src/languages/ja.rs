@@ -1,10 +1,10 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Japanese {}
-static JAPANESE_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| Vec::new());
+static JAPANESE_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| Vec::new());
 
 impl Language for Japanese {
     fn get_abbreviations(&self) -> &[String] {

@@ -1,4 +1,4 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use crate::constants::ROMAN_NUMERALS;
 
@@ -6,7 +6,7 @@ use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Slovak {}
-static SLOVAK_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static SLOVAK_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/sk.txt")
         .lines()
         .map(|line| line.trim().to_string())
@@ -14,7 +14,7 @@ static SLOVAK_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
         .collect()
 });
 
-static SLOVAK_ALL_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static SLOVAK_ALL_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     let mut abbreviations = SLOVAK_ABBREVIATIONS.clone();
     abbreviations.extend(ROMAN_NUMERALS.iter().map(|&s| s.to_string()));
     abbreviations.extend(ROMAN_NUMERALS.iter().map(|&s| s.to_uppercase()));

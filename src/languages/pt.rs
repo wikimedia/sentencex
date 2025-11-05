@@ -2,9 +2,9 @@ use crate::constants::ROMAN_NUMERALS;
 
 use super::Language;
 
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
-static ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     let mut abbreviations: Vec<String> = include_str!("./abbrev/pt.txt")
         .lines()
         .map(|line| line.trim().to_string())

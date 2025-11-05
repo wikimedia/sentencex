@@ -10,13 +10,13 @@ mod constants;
 pub mod languages;
 
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
-lazy_static::lazy_static! {
-    static ref LANGUAGE_FALLBACKS: HashMap<&'static str, Vec<&'static str>> = {
+static LANGUAGE_FALLBACKS: LazyLock<HashMap<&'static str, Vec<&'static str>>> =
+    LazyLock::new(|| {
         let yaml_data = include_str!("./languages/fallbacks.yaml");
         serde_yaml::from_str(yaml_data).expect("Failed to parse fallbacks.yaml")
-    };
-}
+    });
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SentenceBoundary<'a> {

@@ -1,6 +1,6 @@
 use regex::Regex;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 
 use crate::SentenceBoundary;
 use crate::constants::EMAIL_REGEX;
@@ -9,10 +9,10 @@ use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
 use crate::constants::QUOTES_REGEX;
 
-lazy_static::lazy_static! {
-    static ref SENTENCE_BREAK_REGEX_CACHE: Mutex<HashMap<String, Regex>> = Mutex::new(HashMap::new());
-    static ref CONTINUE_REGEX: Regex = Regex::new(r"^[0-9a-z]").unwrap();
-}
+static SENTENCE_BREAK_REGEX_CACHE: LazyLock<Mutex<HashMap<String, Regex>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SkippableRangeType {

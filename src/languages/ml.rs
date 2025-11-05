@@ -1,10 +1,10 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Malayalam {}
-static MALAYALAM_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static MALAYALAM_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/ml.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())

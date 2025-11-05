@@ -1,4 +1,4 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use super::Language;
 use regex::Regex;
@@ -6,7 +6,7 @@ use regex::Regex;
 #[derive(Debug, Clone)]
 pub struct Finnish {}
 
-static FINNISH_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static FINNISH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/fi.txt")
         .lines()
         .map(|line| line.trim().to_string())

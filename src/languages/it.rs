@@ -1,11 +1,11 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Italian {}
 
-static ITALIAN_ABBREVIATIONS: Lazy<Vec<String>> = Lazy::new(|| {
+static ITALIAN_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/it.txt")
         .lines()
         .map(|line| line.trim().to_string())
