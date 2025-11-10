@@ -207,6 +207,7 @@ The following libraries are used for benchmarking:
 ## Thanks
 
 - <https://github.com/diasks2/pragmatic_segmenter> for test cases. The English golden rule set is also sourced from it.
+- <https://github.com/mush42/tqsm> for an earlier Rust port of this library.
 
 ## License
 
