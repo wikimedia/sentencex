@@ -1,3 +1,6 @@
+#[cfg(feature = "html")]
+pub mod html;
+
 use languages::{
     Amharic, Arabic, Armenian, Bengali, Bulgarian, Burmese, Catalan, Danish, Deutch, Dutch,
     English, Finnish, French, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
