@@ -197,11 +197,19 @@ pub trait Language {
                     None
                 };
 
+                let start_byte = paragraph_start_offset + start;
+                let end_byte = paragraph_start_offset + end;
+
+                let start_index = paragraph[..paragraph.ceil_char_boundary(start_byte)]
+                    .chars()
+                    .count();
+                let end_index = start_index + sentence_text.chars().count();
+
                 boundaries.push(SentenceBoundary {
-                    start_index: paragraph_start_offset + start,
-                    end_index: paragraph_start_offset + end,
-                    start_byte: paragraph_start_offset + start,
-                    end_byte: paragraph_start_offset + end,
+                    start_index,
+                    end_index,
+                    start_byte,
+                    end_byte,
                     text: sentence_text,
                     boundary_symbol,
                     is_paragraph_break: false,

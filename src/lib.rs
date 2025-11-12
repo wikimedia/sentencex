@@ -258,8 +258,8 @@ pub fn get_sentence_boundaries<'a>(
                 let start_byte = boundary.start_index + chunk_offset;
                 let end_byte = boundary.end_index + chunk_offset;
 
-                let start_index = text[..start_byte].chars().count();
-                let end_index = text[..end_byte].chars().count();
+                let start_index = text[..text.ceil_char_boundary(start_byte)].chars().count();
+                let end_index = start_index + boundary.text.chars().count();
 
                 all_boundaries.push(SentenceBoundary {
                     start_index,
