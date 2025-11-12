@@ -109,6 +109,8 @@ pub trait Language {
                 boundaries.push(SentenceBoundary {
                     start_index: paragraph_start,
                     end_index: paragraph_start + 2,
+                    start_byte: paragraph_start,
+                    end_byte: paragraph_start + 2,
                     text: "\n\n",
                     boundary_symbol: None,
                     is_paragraph_break: true,
@@ -198,6 +200,8 @@ pub trait Language {
                 boundaries.push(SentenceBoundary {
                     start_index: paragraph_start_offset + start,
                     end_index: paragraph_start_offset + end,
+                    start_byte: paragraph_start_offset + start,
+                    end_byte: paragraph_start_offset + end,
                     text: sentence_text,
                     boundary_symbol,
                     is_paragraph_break: false,

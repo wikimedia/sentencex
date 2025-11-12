@@ -49,6 +49,9 @@ fn main() {
             println!("Boundary {}: ", i + 1);
             println!("  Start Index: {}", boundary.start_index);
             println!("  End Index: {}", boundary.end_index);
+            println!("  Start Byte: {}", boundary.start_byte);
+            println!("  End Byte: {}", boundary.end_byte);
+
             println!("  Text: {:?}", boundary.text);
             println!("  Boundary Symbol: {:?}", boundary.boundary_symbol);
             println!("  Is Paragraph Break: {}", boundary.is_paragraph_break);

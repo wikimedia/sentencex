@@ -1,6 +1,3 @@
-#[cfg(feature = "html")]
-pub mod html;
-
 use languages::{
     Amharic, Arabic, Armenian, Bengali, Bulgarian, Burmese, Catalan, Danish, Deutch, Dutch,
     English, Finnish, French, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
@@ -17,6 +14,8 @@ use serde::Serialize;
 pub struct SentenceBoundary<'a> {
     pub start_index: usize,
     pub end_index: usize,
+    pub start_byte: usize,
+    pub end_byte: usize,
     pub text: &'a str,
     pub boundary_symbol: Option<String>,
     pub is_paragraph_break: bool,
@@ -256,9 +255,17 @@ pub fn get_sentence_boundaries<'a>(
 
             // Adjust indices to be relative to original text
             for boundary in chunk_boundaries {
+                let start_byte = boundary.start_index + chunk_offset;
+                let end_byte = boundary.end_index + chunk_offset;
+
+                let start_index = text[..start_byte].chars().count();
+                let end_index = text[..end_byte].chars().count();
+
                 all_boundaries.push(SentenceBoundary {
-                    start_index: boundary.start_index + chunk_offset,
-                    end_index: boundary.end_index + chunk_offset,
+                    start_index,
+                    end_index,
+                    start_byte,
+                    end_byte,
                     text: boundary.text,
                     boundary_symbol: boundary.boundary_symbol,
                     is_paragraph_break: boundary.is_paragraph_break,
