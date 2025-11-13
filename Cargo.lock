@@ -647,7 +647,7 @@ checksum = "cd0b0ec5f1c1ca621c432a25813d8d60c88abe6d3e08a3eb9cf37d97a0fe3d73"
 
 [[package]]
 name = "sentencex"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "clap",
  "criterion",
@@ -676,7 +676,7 @@ dependencies = [
 
 [[package]]
 name = "sentencex-wasm"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "sentencex",
  "serde",
