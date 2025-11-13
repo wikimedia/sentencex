@@ -200,7 +200,7 @@ pub trait Language {
                 let start_byte = paragraph_start_offset + start;
                 let end_byte = paragraph_start_offset + end;
 
-                let start_index = paragraph[..paragraph.ceil_char_boundary(start_byte)]
+                let start_index = paragraph[..paragraph.floor_char_boundary(start_byte)]
                     .chars()
                     .count();
                 let end_index = start_index + sentence_text.chars().count();

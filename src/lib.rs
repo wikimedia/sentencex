@@ -254,12 +254,19 @@ pub fn get_sentence_boundaries<'a>(
             let chunk_boundaries = language.get_sentence_boundaries(chunk);
 
             // Adjust indices to be relative to original text
+            let mut prev_end_index = 0;
             for boundary in chunk_boundaries {
-                let start_byte = boundary.start_index + chunk_offset;
-                let end_byte = boundary.end_index + chunk_offset;
+                let start_byte = boundary.start_byte + chunk_offset;
+                let end_byte = boundary.end_byte + chunk_offset;
 
-                let start_index = text[..text.ceil_char_boundary(start_byte)].chars().count();
+                let start_index = if prev_end_index > 0 {
+                    prev_end_index
+                } else {
+                    text[..start_byte].chars().count()
+                };
+
                 let end_index = start_index + boundary.text.chars().count();
+                prev_end_index = end_index;
 
                 all_boundaries.push(SentenceBoundary {
                     start_index,
