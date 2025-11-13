@@ -659,7 +659,7 @@ dependencies = [
 
 [[package]]
 name = "sentencex-js"
-version = "1.0.6"
+version = "1.0.9"
 dependencies = [
  "neon",
  "neon-build",
@@ -668,7 +668,7 @@ dependencies = [
 
 [[package]]
 name = "sentencex-py"
-version = "0.1.6"
+version = "0.1.9"
 dependencies = [
  "pyo3",
  "sentencex",
