@@ -104,9 +104,9 @@ lt
 ltd
 M
 maj
-man
+// man
 mar
-mass
+// mass
 may
 md
 me
@@ -206,7 +206,7 @@ viz
 vs
 vt
 W
-wash
+// wash
 wis
 wisc
 wy
