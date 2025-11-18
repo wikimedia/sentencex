@@ -34,8 +34,11 @@
     "import": "./index.mjs"
     }
   },
+  "optionalDependencies": {
+    "sentencex-linux-x64": "file:pkgs/sentencex-linux-x64"
+  },
   "scripts": {
-    "build": "cargo build --release",
+    "build": "cargo build --release && cp index.node pkgs/sentencex-linux-x64/",
     "test": "node --test test.js"
   }
 }

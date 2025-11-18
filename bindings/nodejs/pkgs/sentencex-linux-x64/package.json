@@ -1,0 +1,12 @@
+{
+  "name": "sentencex-linux-x64",
+  "version": "1.0.0",
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "main": "index.node",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wikimedia/sentencex.git"
+  }
+}
