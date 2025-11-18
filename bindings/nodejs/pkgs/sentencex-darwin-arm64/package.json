@@ -1,0 +1,12 @@
+{
+  "name": "sentencex-linux-arm64",
+  "version": "1.0.0",
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "main": "index.node",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wikimedia/sentencex.git"
+  }
+}
