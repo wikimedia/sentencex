@@ -65,9 +65,17 @@ jobs:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
 
+    - run: npm install -g npm@latest
+
     - name: Get version
       id: version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: sentencex-wasm
+        path: bindings/wasm/pkg
 
     - name: Publish WASM package
       working-directory: bindings/wasm/pkg
