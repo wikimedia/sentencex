@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Node - Build and Publish
 on:
   push:
     branches: [ main, master ]
@@ -13,8 +13,7 @@ permissions:
 jobs:
   # Build and Test job runs on all platforms/Node versions
   build:
-    name: Build and Test ${{ matrix.settings.target }}
-    if: startsWith(github.ref, 'refs/tags/v')
+    name: Build and Test
     runs-on: ${{ matrix.settings.host }}
     strategy:
       fail-fast: false
