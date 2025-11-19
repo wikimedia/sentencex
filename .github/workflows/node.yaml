@@ -87,7 +87,6 @@ jobs:
     - name: Move index.node to platform-specific folder
       working-directory: bindings/nodejs
       run: |
-        mkdir -p pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}
         cp index.node pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}/
 
     - name: Install dependencies

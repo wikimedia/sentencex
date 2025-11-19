@@ -1,5 +1,5 @@
 {
-  "name": "sentencex-linux-x64",
+  "name": "sentencex-darwin-x64",
   "version": "1.0.0",
   "os": ["darwin"],
   "cpu": ["x64"],
