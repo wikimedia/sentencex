@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write  # Required for OIDC
 
 jobs:
   # Build and Test job runs on all platforms/Node versions
@@ -176,8 +177,6 @@ jobs:
     - name: Publish platform package
       working-directory: bindings/nodejs/npm/sentencex-${{ matrix.platform }}-${{ matrix.arch }}
       run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # Publish main package with optionalDependencies
   publish-main:
@@ -225,5 +224,4 @@ jobs:
     - name: Publish main package
       working-directory: bindings/nodejs
       run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+

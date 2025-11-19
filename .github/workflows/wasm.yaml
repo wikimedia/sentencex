@@ -3,11 +3,14 @@ name: WASM Binding Tests
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main, master ]
 
 permissions:
   contents: read
+  id-token: write  # Required for OIDC
 
 jobs:
   wasm-binding:
@@ -47,3 +50,4 @@ jobs:
         name: sentencex-wasm
         path: bindings/wasm/pkg
         if-no-files-found: error
+
