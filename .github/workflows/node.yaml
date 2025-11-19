@@ -1,8 +1,9 @@
-name: Node.js Binding Tests
-
+name: Node - Build and Publish
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main, master ]
 
@@ -10,23 +11,63 @@ permissions:
   contents: read
 
 jobs:
-  nodejs-binding:
-    name: Test Node.js Binding
-    runs-on: ${{ matrix.os }}
+  # Build and Test job runs on all platforms/Node versions
+  build:
+    name: Build and Test
+    runs-on: ${{ matrix.settings.host }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [18, 20, 22]
+        settings:
+          # Linux x64
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux
+            arch: x64
+            build: npm run build
+
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            platform: linux
+            arch: arm64
+            build: npm run build
+
+          # macOS x64 (Intel)
+          # will run on macOS 15 and will be available from now until August 2027. This will be the last available x86_64 image from Actions, and after that date the x86_64 architecture will not be supported on GitHub actions
+          # See https://github.com/actions/runner-images/issues/13046
+          - host: macos-15-intel
+            target: x86_64-apple-darwin
+            platform: darwin
+            arch: x64
+            build: npm run build
+
+          # macOS ARM64 (Apple Silicon M1/M2/M3)
+          - host: macos-latest
+            target: aarch64-apple-darwin
+            platform: darwin
+            arch: arm64
+            build: npm run build
+
+          # Windows x64
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win32
+            arch: x64
+            build: npm run build
+
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 22
+        registry-url: 'https://registry.npmjs.org'
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.settings.target }}
 
     - name: Cache cargo
       uses: actions/cache@v4
@@ -35,16 +76,154 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ matrix.settings.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Build
+    - name: Build native module
       working-directory: bindings/nodejs
-      run: npm run build
+      run: ${{ matrix.settings.build }}
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
-    - name: Test
+    - name: Move index.node to platform-specific folder
       working-directory: bindings/nodejs
-      run: npm test
+      shell: bash
+      run: |
+        cp index.node pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}/
 
-    - name: Test example
+    - name: Install dependencies
       working-directory: bindings/nodejs
-      run: node example.js
+      run: npm install
+
+    - name: Run tests for platform-specific package
+      working-directory: bindings/nodejs
+      run: |
+        npm test
+        node example.js
+        node example.cjs
+
+    - name: Get version
+      id: version
+      shell: bash
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          # It's a tag - use tag name and strip 'v' prefix if present
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+        else
+          # It's a branch/commit - use short SHA
+          VERSION="${{ github.sha }}"
+          VERSION="${VERSION:0:7}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Resolved version: $VERSION"
+
+    - name: Update version in package.json
+      working-directory: bindings/nodejs/pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}
+      run: |
+        node -e "
+        const fs = require('fs');
+        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+        pkg.version = '${{ steps.version.outputs.VERSION }}';
+        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+        "
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}
+        path: bindings/nodejs/pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}
+        if-no-files-found: error
+
+  # Publish platform-specific packages
+  publish-platforms:
+    name: Publish Platform Packages
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            platform: linux
+            arch: x64
+          - target: aarch64-unknown-linux-gnu
+            platform: linux
+            arch: arm64
+          - target: x86_64-apple-darwin
+            platform: darwin
+            arch: x64
+          - target: aarch64-apple-darwin
+            platform: darwin
+            arch: arm64
+          - target: x86_64-pc-windows-msvc
+            platform: win32
+            arch: x64
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: sentencex-${{ matrix.platform }}-${{ matrix.arch }}
+        path: bindings/nodejs/npm/sentencex-${{ matrix.platform }}-${{ matrix.arch }}
+
+    - name: Publish platform package
+      working-directory: bindings/nodejs/npm/sentencex-${{ matrix.platform }}-${{ matrix.arch }}
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Publish main package with optionalDependencies
+  publish-main:
+    name: Publish Main Package
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: publish-platforms
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Get version
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Update package.json with optionalDependencies
+      working-directory: bindings/nodejs
+      run: |
+        node -e "
+        const fs = require('fs');
+        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+        pkg.version = '${{ steps.version.outputs.VERSION }}';
+        pkg.optionalDependencies = {
+          'sentencex-linux-x64': '${{ steps.version.outputs.VERSION }}',
+          'sentencex-linux-arm64': '${{ steps.version.outputs.VERSION }}',
+          'sentencex-darwin-x64': '${{ steps.version.outputs.VERSION }}',
+          'sentencex-darwin-arm64': '${{ steps.version.outputs.VERSION }}',
+          'sentencex-win32-x64': '${{ steps.version.outputs.VERSION }}'
+        };
+        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+        "
+
+    - name: Upload main package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sentencex
+        path: bindings/nodejs/sentencex
+        if-no-files-found: error
+
+    - name: Publish main package
+      working-directory: bindings/nodejs
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

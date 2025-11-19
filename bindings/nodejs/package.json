@@ -34,8 +34,17 @@
     "import": "./index.mjs"
     }
   },
+  "optionalDependencies": {
+    "sentencex-linux-x64": "file:pkgs/sentencex-linux-x64",
+    "sentencex-linux-arm64": "file:pkgs/sentencex-linux-arm64",
+    "sentencex-darwin-x64": "file:pkgs/sentencex-darwin-x64",
+    "sentencex-darwin-arm64": "file:pkgs/sentencex-darwin-arm64",
+    "sentencex-win32-x64": "file:pkgs/sentencex-win32-x64"
+  },
   "scripts": {
     "build": "cargo build --release",
-    "test": "node --test test.js"
+    "build-dev": "cargo build --release && cp index.node pkgs/sentencex-linux-x64",
+    "test": "node --test test.js",
+    "test-dev": "npm install && node --test test.js"
   }
 }
