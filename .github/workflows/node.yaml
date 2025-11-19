@@ -168,6 +168,9 @@ jobs:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
 
+    # Ensure npm 11.5.1 or later for trusted publishing
+    - run: npm install -g npm@latest
+
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
@@ -192,6 +195,8 @@ jobs:
       with:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
+
+    - run: npm install -g npm@latest
 
     - name: Get version
       id: version
