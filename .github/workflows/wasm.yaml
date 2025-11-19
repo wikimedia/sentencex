@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   wasm-binding:
-    name: Test WASM Binding
+    name: Build and test WASM Binding
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -50,4 +50,26 @@ jobs:
         name: sentencex-wasm
         path: bindings/wasm/pkg
         if-no-files-found: error
+
+  publish:
+    name: Publish WASM Package
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: wasm-binding
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Get version
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Publish WASM package
+      working-directory: bindings/wasm/pkg
+      run: npm publish --access public
 
