@@ -40,3 +40,10 @@ jobs:
     - name: Test WASM
       working-directory: bindings/wasm
       run: wasm-pack test --headless --firefox
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sentencex-wasm
+        path: bindings/wasm/pkg
+        if-no-files-found: error
