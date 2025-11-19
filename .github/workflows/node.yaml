@@ -26,7 +26,7 @@ jobs:
             arch: x64
             build: npm run build
 
-          # Linux ARM64
+          # Linux ARM64 (cross-compile)
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             platform: linux
@@ -34,17 +34,18 @@ jobs:
             build: |
               sudo apt-get update
               sudo apt-get install -y gcc-aarch64-linux-gnu
+              export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
               npm run build -- --target aarch64-unknown-linux-gnu
 
-          # macOS x64
-          - host: macos-latest
+          # macOS x64 (Intel) - use macos-13 for Intel runners
+          - host: macos-13
             target: x86_64-apple-darwin
             platform: darwin
             arch: x64
             build: npm run build
 
-          # macOS ARM64 (M1/M2/M3)
-          - host: macos-14
+          # macOS ARM64 (Apple Silicon M1/M2/M3)
+          - host: macos-latest
             target: aarch64-apple-darwin
             platform: darwin
             arch: arm64
@@ -63,7 +64,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 22
         registry-url: 'https://registry.npmjs.org'
 
     - name: Install Rust
@@ -83,9 +84,12 @@ jobs:
     - name: Build native module
       working-directory: bindings/nodejs
       run: ${{ matrix.settings.build }}
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
     - name: Move index.node to platform-specific folder
       working-directory: bindings/nodejs
+      shell: bash
       run: |
         cp index.node pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}/
 
@@ -104,7 +108,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: bindings-${{ matrix.settings.target }}
-        path: bindings/nodejs/*.node
+        path: bindings/nodejs/pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}/*.node
         if-no-files-found: error
 
   # Publish platform-specific packages
@@ -144,19 +148,22 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: bindings-${{ matrix.target }}
-        path: bindings/nodejs/platforms/${{ matrix.platform }}-${{ matrix.arch }}
+        path: bindings/nodejs/downloaded
 
     - name: Create platform package
       working-directory: bindings/nodejs
+      shell: bash
       run: |
-        mkdir -p npm/${{ matrix.platform }}-${{ matrix.arch }}
-        cp platforms/${{ matrix.platform }}-${{ matrix.arch }}/*.node npm/${{ matrix.platform }}-${{ matrix.arch }}/
+        cp downloaded/*.node pkgs/sentencex-${{ matrix.platform }}-${{ matrix.arch }}/
+
+        # Extract version from tag
+        VERSION=${GITHUB_REF#refs/tags/v}
 
         # Create platform-specific package.json
         cat > npm/${{ matrix.platform }}-${{ matrix.arch }}/package.json << EOF
         {
           "name": "sentencex-${{ matrix.platform }}-${{ matrix.arch }}",
-          "version": "${GITHUB_REF#refs/tags/v}",
+          "version": "$VERSION",
           "os": ["${{ matrix.platform }}"],
           "cpu": ["${{ matrix.arch }}"],
           "main": "index.node",
@@ -168,18 +175,8 @@ jobs:
         }
         EOF
 
-        # Create README
-        cat > npm/${{ matrix.platform }}-${{ matrix.arch }}/README.md << EOF
-        # sentencex-${{ matrix.platform }}-${{ matrix.arch }}
-
-        Native bindings for sentencex on ${{ matrix.platform }}-${{ matrix.arch }}.
-
-        This package is automatically published. Do not use directly.
-        Install \`sentencex\` instead.
-        EOF
-
     - name: Publish platform package
-      working-directory: bindings/nodejs/npm/${{ matrix.platform }}-${{ matrix.arch }}
+      working-directory: bindings/nodejs/pkgs/sentencex-${{ matrix.platform }}-${{ matrix.arch }}
       run: npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
