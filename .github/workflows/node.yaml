@@ -212,7 +212,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: sentencex
-        path: bindings/nodejs/sentencex
+        path: bindings/nodejs
         if-no-files-found: error
 
     - name: Publish main package
