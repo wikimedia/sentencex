@@ -1,6 +1,6 @@
 {
   "name": "sentencex",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "sentence segmentation library",
   "type": "module",
   "main": "index.cjs",
