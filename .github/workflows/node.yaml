@@ -118,16 +118,6 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Resolved version: $VERSION"
 
-    - name: Update version in package.json
-      working-directory: bindings/nodejs/pkgs/sentencex-${{ matrix.settings.platform }}-${{ matrix.settings.arch }}
-      run: |
-        node -e "
-        const fs = require('fs');
-        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-        pkg.version = '${{ steps.version.outputs.VERSION }}';
-        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-        "
-
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -208,13 +198,12 @@ jobs:
         node -e "
         const fs = require('fs');
         const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-        pkg.version = '${{ steps.version.outputs.VERSION }}';
         pkg.optionalDependencies = {
-          'sentencex-linux-x64': '${{ steps.version.outputs.VERSION }}',
-          'sentencex-linux-arm64': '${{ steps.version.outputs.VERSION }}',
-          'sentencex-darwin-x64': '${{ steps.version.outputs.VERSION }}',
-          'sentencex-darwin-arm64': '${{ steps.version.outputs.VERSION }}',
-          'sentencex-win32-x64': '${{ steps.version.outputs.VERSION }}'
+          'sentencex-linux-x64': pkg.version,
+          'sentencex-linux-arm64': pkg.version,
+          'sentencex-darwin-x64': pkg.version,
+          'sentencex-darwin-arm64': pkg.version,
+          'sentencex-win32-x64': pkg.version
         };
         fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
         "
