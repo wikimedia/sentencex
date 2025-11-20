@@ -1,8 +1,18 @@
 # Sentence segmenter
 
-[![tests](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml/badge.svg)](https://github.com/wikimedia/sentencex-rust/actions/workflows/test.yml)
+[![Rust Tests](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml)
+[![Node.js Tests](https://github.com/wikimedia/sentencex/actions/workflows/node.yaml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/node.yaml)
+[![Python Tests](https://github.com/wikimedia/sentencex/actions/workflows/python.yaml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/python.yaml)
 
-A sentence segmentation library in Go language with wide language support optimized for speed and utility.
+A sentence segmentation library written in Rust language with wide language support optimized for speed and utility.
+
+## Bindings
+
+Besides native Rust, bindings for the following programming languages are available:
+
+* [Python](https://pypi.org/project/sentencex/)
+* [Nodejs](https://www.npmjs.com/package/sentencex)
+* [Web(Wasm)](https://www.npmjs.com/package/sentencex-wasm)
 
 ## Approach
 
@@ -29,44 +39,147 @@ The sentence segmentation in this library is **non-destructive**. This means, if
 
 ## Usage
 
+### Rust
+
 Install the library using
+
+```bash
+cargo add sentencex
+```
+
+Then, any text can be segmented as follows.
+
+```rust
+use sentencex::segment;
+
+fn main() {
+    let text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
+    let sentences = segment("en", text);
+
+    for (i, sentence) in sentences.iter().enumerate() {
+        println!("{}. {}", i + 1, sentence);
+    }
+}
+```
+
+The first argument is language code, second argument is text to segment. The `segment` method returns an array of identified sentences.
+
+### Python
+
+Install from PyPI:
+
+```bash
+pip install sentencex
+```
+
+```python
+import sentencex
+
+text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development."
+
+# Segment text into sentences
+sentences = sentencex.segment("en", text)
+for i, sentence in enumerate(sentences, 1):
+    print(f"{i}. {sentence}")
+
+# Get sentence boundaries with indices
+boundaries = sentencex.get_sentence_boundaries("en", text)
+for boundary in boundaries:
+    print(f"Sentence: '{boundary['text']}' (indices: {boundary['start_index']}-{boundary['end_index']})")
+```
+
+See [bindings/python/example.py](bindings/python/example.py) for more examples.
+
+### Node.js
+
+Install from npm:
 
 ```bash
 npm install sentencex
 ```
 
-Then, any text can be segmented as follows.
-
 ```javascript
-const sentencex = require(".");
+import { segment, get_sentence_boundaries } from 'sentencex';
 
-console.log(
-  sentencex.segment("en", "This is first sentence. This is another one."),
-);
+const text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
+
+// Segment text into sentences
+const sentences = segment("en", text);
+sentences.forEach((sentence, i) => {
+    console.log(`${i + 1}. ${sentence}`);
+});
+
+// Get sentence boundaries with indices
+const boundaries = get_sentence_boundaries("en", text);
+boundaries.forEach(boundary => {
+    console.log(`Sentence: '${boundary.text}' (indices: ${boundary.start_index}-${boundary.end_index})`);
+});
 ```
 
-The first argument is language code, second argument is text to segment. The `segment` method returns an array of identified sentences.
-
-If you need more detailed information about sentence boundaries, you can use the `get_sentence_boundaries` method:
+For CommonJS usage:
 
 ```javascript
-const sentencex = require(".");
-
-console.log(
-  sentencex.get_sentence_boundaries("en", "This is first sentence. This is another one."),
-);
+const { segment, get_sentence_boundaries } = require('sentencex');
 ```
 
-This method returns an array of objects with the following properties:
-- `start_index`: The starting position of the sentence in the original text
-- `end_index`: The ending position of the sentence in the original text
-- `text`: The actual sentence text
+See [bindings/nodejs/example.js](bindings/nodejs/example.js) for more examples.
+
+### WebAssembly (Browser)
+
+Install from npm:
+
+```bash
+npm install sentencex-wasm
+```
+
+or use a CDN like `https://esm.sh/sentencex-wasm`
+
+```javascript
+import init, { segment, get_sentence_boundaries } from 'https://esm.sh/sentencex-wasm;
+
+async function main() {
+    // Initialize the WASM module
+    await init();
+
+    const text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
+
+    // Segment text into sentences
+    const sentences = segment("en", text);
+    sentences.forEach((sentence, i) => {
+        console.log(`${i + 1}. ${sentence}`);
+    });
+
+    // Get sentence boundaries with indices
+    const boundaries = get_sentence_boundaries("en", text);
+    boundaries.forEach(boundary => {
+        console.log(`Sentence: '${boundary.text}' (indices: ${boundary.start_index}-${boundary.end_index})`);
+    });
+}
+
+main();
+```
+
 
 ## Language support
 
 The aim is to support all languages where there is a wikipedia. Instead of falling back on English for languages not defined in the library, a fallback chain is used. The closest language which is defined in the library will be used. Fallbacks for ~244 languages are defined.
 
 ## Performance
+
+Following is a sample output of sentence segmenting [The Complete Works of William Shakespeare](https://www.gutenberg.org/files/100/100-0.txt).
+This file is 5.29MB. As you can see below, it took half a second.
+
+```bash
+$ curl https://www.gutenberg.org/files/100/100-0.txt | ./target/release/sentencex -l en > /dev/null
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 5295k  100 5295k    0     0   630k      0  0:00:08  0:00:08 --:--:-- 1061k
+Found 40923 paragraphs
+Processing 540 chunks
+Time taken for segment(): 521.071603ms
+Total sentences: 153736
+```
+
 
 Measured on Golden Rule Set(GRS) for English. Lists are exempted (1. sentence 2. another sentence).
 
@@ -94,6 +207,7 @@ The following libraries are used for benchmarking:
 ## Thanks
 
 - <https://github.com/diasks2/pragmatic_segmenter> for test cases. The English golden rule set is also sourced from it.
+- <https://github.com/mush42/tqsm> for an earlier Rust port of this library.
 
 ## License
 

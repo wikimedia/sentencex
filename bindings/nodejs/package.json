@@ -6,7 +6,7 @@
   "main": "index.cjs",
   "repository": {
     "type": "git",
-    "url": "https//github.com/wikimedia/sentencex"
+    "url": "git+https://github.com/wikimedia/sentencex.git"
   },
   "author": "Santhosh Thottingal <santhosh.thottingal@gmail.com>",
   "license": "MIT",
