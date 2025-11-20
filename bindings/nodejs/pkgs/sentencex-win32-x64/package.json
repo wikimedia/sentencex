@@ -1,6 +1,6 @@
 {
   "name": "sentencex-win32-x64",
-  "version": "1.0.0",
+  "version": "1.0.10",
   "os": ["win32"],
   "cpu": ["x64"],
   "main": "index.node",
