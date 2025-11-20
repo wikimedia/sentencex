@@ -1,6 +1,6 @@
 {
   "name": "sentencex-linux-x64",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "os": ["linux"],
   "cpu": ["x64"],
   "main": "index.node",
