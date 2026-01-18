@@ -91,11 +91,16 @@ pub trait Language {
         // Pre-calculate all paragraph offsets in one pass
         let mut paragraph_offsets = Vec::with_capacity(paragraphs.len());
         let mut current_offset = 0;
+        let mut paragraph_char_offsets = Vec::with_capacity(paragraphs.len());
+        let mut current_char_offset = 0;
         for (i, paragraph) in paragraphs.iter().enumerate() {
             paragraph_offsets.push(current_offset);
+            paragraph_char_offsets.push(current_char_offset);
             current_offset += paragraph.len();
+            current_char_offset += paragraph.chars().count();
             if i < paragraphs.len() - 1 {
                 current_offset += 2; // for "\n\n"
+                current_char_offset += 2;
             }
         }
 
@@ -106,11 +111,12 @@ pub trait Language {
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
             if pindex > 0 {
                 let paragraph_start = paragraph_offsets[pindex];
+                let paragraph_char_start = paragraph_char_offsets[pindex];
                 boundaries.push(SentenceBoundary {
-                    start_index: paragraph_start,
-                    end_index: paragraph_start + 2,
-                    start_byte: paragraph_start,
-                    end_byte: paragraph_start + 2,
+                    start_index: paragraph_char_start - 2,
+                    end_index: paragraph_char_start,
+                    start_byte: paragraph_start - 2,
+                    end_byte: paragraph_start,
                     text: "\n\n",
                     boundary_symbol: None,
                     is_paragraph_break: true,
@@ -120,8 +126,15 @@ pub trait Language {
             let paragraph_start_offset = if pindex == 0 {
                 0
             } else {
-                paragraph_offsets[pindex] + 2
+                paragraph_offsets[pindex]
             };
+
+            let paragraph_start_char_offset = if pindex == 0 {
+                0
+            } else {
+                paragraph_char_offsets[pindex]
+            };
+
             sentence_boundaries.clear();
             sentence_boundaries.push(0);
 
@@ -200,9 +213,10 @@ pub trait Language {
                 let start_byte = paragraph_start_offset + start;
                 let end_byte = paragraph_start_offset + end;
 
-                let start_index = paragraph[..paragraph.floor_char_boundary(start_byte)]
-                    .chars()
-                    .count();
+                let start_index = paragraph_start_char_offset
+                    + paragraph[..paragraph.floor_char_boundary(start)]
+                        .chars()
+                        .count();
                 let end_index = start_index + sentence_text.chars().count();
 
                 boundaries.push(SentenceBoundary {

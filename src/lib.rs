@@ -362,4 +362,39 @@ mod tests {
         let small_result = segment("en", small_text);
         assert_eq!(small_result, expected_per_repetition);
     }
+
+    #[test]
+    fn test_get_sentence_boundaries_with_paragraph_breaks() {
+        let text = "Title\n\nSentence 1.\n\nSentence 2.";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        // Should have at least 2 sentences plus paragraph breaks
+        assert!(boundaries.len() >= 2);
+
+        // Verify indices are consistent
+        for i in 1..boundaries.len() {
+            assert!(
+                boundaries[i].start_index >= boundaries[i - 1].end_index,
+                "Boundary {} starts at {} but previous ends at {}",
+                i,
+                boundaries[i].start_index,
+                boundaries[i - 1].end_index
+            );
+        }
+
+        // Verify text can be reconstructed
+        let reconstructed: String = boundaries.iter().map(|b| b.text).collect();
+        assert_eq!(
+            reconstructed, text,
+            "Reconstructed text doesn't match original"
+        );
+
+        // Check that paragraph breaks are detected
+        let paragraph_breaks: Vec<_> = boundaries.iter().filter(|b| b.is_paragraph_break).collect();
+        assert!(
+            paragraph_breaks.len() >= 2,
+            "Expected at least 2 paragraph breaks, found {}",
+            paragraph_breaks.len()
+        );
+    }
 }
