@@ -30,7 +30,7 @@
   ],
   "exports": {
     ".": {
-    "require": "./index.node",
+    "require": "./index.cjs",
     "import": "./index.mjs"
     }
   },
