@@ -89,6 +89,15 @@ pub trait Language {
         let paragraphs: Vec<&str> = para_split_re.split(text).collect();
 
         // Pre-calculate all paragraph offsets in one pass
+        // CRITICAL: We track both byte offsets AND character offsets separately.
+        // This is essential for correct handling of multi-byte UTF-8 characters (e.g., CJK, emoji).
+        //
+        // - `paragraph_offsets`: byte indices into the original text (for slicing with &text[start..end])
+        // - `paragraph_char_offsets`: character counts (for SentenceBoundary.start_index/end_index)
+        //
+        // Example: "日本語" is 3 characters but 9 bytes in UTF-8:
+        //   - byte offset: 0..9
+        //   - char offset: 0..3
         let mut paragraph_offsets = Vec::with_capacity(paragraphs.len());
         let mut current_offset = 0;
         let mut paragraph_char_offsets = Vec::with_capacity(paragraphs.len());
@@ -99,8 +108,8 @@ pub trait Language {
             current_offset += paragraph.len();
             current_char_offset += paragraph.chars().count();
             if i < paragraphs.len() - 1 {
-                current_offset += 2; // for "\n\n"
-                current_char_offset += 2;
+                current_offset += 2; // for "\n\n" bytes
+                current_char_offset += 2; // for "\n\n" chars (always 2, regardless of encoding)
             }
         }
 
@@ -213,6 +222,9 @@ pub trait Language {
                 let start_byte = paragraph_start_offset + start;
                 let end_byte = paragraph_start_offset + end;
 
+                // Calculate character index from paragraph char offset + character count within paragraph
+                // This is crucial: start_index is NOT the same as start_byte when UTF-8 multi-byte
+                // characters are present (e.g., CJK or emoji).
                 let start_index = paragraph_start_char_offset
                     + paragraph[..paragraph.floor_char_boundary(start)]
                         .chars()

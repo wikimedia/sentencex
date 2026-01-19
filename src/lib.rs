@@ -397,4 +397,165 @@ mod tests {
             paragraph_breaks.len()
         );
     }
+
+    #[test]
+    fn test_get_sentence_boundaries_with_multibyte_cjk() {
+        // Test with Japanese and Chinese characters (multi-byte UTF-8)
+        let text = "日本語です。\n\n中文文章。";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        // Should have sentences and paragraph break
+        assert!(
+            boundaries.len() >= 2,
+            "Expected at least 2 boundaries, got {}",
+            boundaries.len()
+        );
+
+        // Verify indices don't overlap and are monotonically increasing
+        for i in 1..boundaries.len() {
+            assert!(
+                boundaries[i].start_index >= boundaries[i - 1].end_index,
+                "Boundary {} starts at {} but previous ends at {}",
+                i,
+                boundaries[i].start_index,
+                boundaries[i - 1].end_index
+            );
+        }
+
+        // Verify text can be reconstructed (most important for multi-byte UTF-8)
+        let reconstructed: String = boundaries.iter().map(|b| b.text).collect();
+        assert_eq!(
+            reconstructed, text,
+            "Reconstructed text doesn't match original.\nOriginal: {:?}\nReconstructed: {:?}",
+            text, reconstructed
+        );
+    }
+
+    #[test]
+    fn test_get_sentence_boundaries_with_emoji() {
+        // Test with emoji characters (4-byte UTF-8)
+        let text = "Hello world 👋.\n\nGoodbye 👋.";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        // Should have sentences and paragraph break
+        assert!(
+            boundaries.len() >= 2,
+            "Expected at least 2 boundaries, got {}",
+            boundaries.len()
+        );
+
+        // Verify text can be reconstructed (critical for emoji)
+        let reconstructed: String = boundaries.iter().map(|b| b.text).collect();
+        assert_eq!(
+            reconstructed, text,
+            "Reconstructed text doesn't match original with emojis"
+        );
+
+        // Verify boundary indices are valid
+        for boundary in &boundaries {
+            assert!(
+                boundary.start_index <= boundary.end_index,
+                "Invalid boundary: start_index {} > end_index {}",
+                boundary.start_index,
+                boundary.end_index
+            );
+        }
+    }
+
+    #[test]
+    fn test_get_sentence_boundaries_with_mixed_scripts() {
+        // Test with mixed ASCII, Latin extended, and CJK
+        let text = "English text. Café résumé.\n\n日本語のテキスト。";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        // Verify text reconstruction
+        let reconstructed: String = boundaries.iter().map(|b| b.text).collect();
+        assert_eq!(
+            reconstructed, text,
+            "Mixed script text failed reconstruction"
+        );
+
+        // Verify indices are properly ordered
+        for i in 1..boundaries.len() {
+            assert!(
+                boundaries[i].start_index >= boundaries[i - 1].end_index,
+                "Boundaries not ordered correctly at index {}",
+                i
+            );
+        }
+
+        // Verify all boundaries have valid indices
+        for (i, boundary) in boundaries.iter().enumerate() {
+            assert!(
+                boundary.start_index <= boundary.end_index,
+                "Boundary {} has invalid indices: {} > {}",
+                i,
+                boundary.start_index,
+                boundary.end_index
+            );
+        }
+    }
+
+    #[test]
+    fn test_get_sentence_boundaries_character_vs_byte_offsets() {
+        // This test specifically validates that character indices (start_index/end_index)
+        // are correctly distinguished from byte offsets (start_byte/end_byte)
+        let text = "Short. 日本語.";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        // Count actual characters in original text
+        let total_chars = text.chars().count();
+        let total_bytes = text.len();
+
+        // Verify that the character indices sum correctly
+        // All boundaries together should cover all characters
+        let mut last_char_end = 0;
+        for boundary in &boundaries {
+            // Each boundary should start where previous ended (no gaps)
+            assert_eq!(
+                boundary.start_index, last_char_end,
+                "Gap in character indices: expected start {}, got {}",
+                last_char_end, boundary.start_index
+            );
+            last_char_end = boundary.end_index;
+        }
+        assert_eq!(
+            last_char_end, total_chars,
+            "Character coverage mismatch: ended at {}, total chars = {}",
+            last_char_end, total_chars
+        );
+
+        // Similarly verify byte offsets
+        let mut last_byte_end = 0;
+        for boundary in &boundaries {
+            assert_eq!(
+                boundary.start_byte, last_byte_end,
+                "Gap in byte indices: expected start {}, got {}",
+                last_byte_end, boundary.start_byte
+            );
+            last_byte_end = boundary.end_byte;
+        }
+        assert_eq!(
+            last_byte_end, total_bytes,
+            "Byte coverage mismatch: ended at {}, total bytes = {}",
+            last_byte_end, total_bytes
+        );
+    }
+
+    #[test]
+    fn test_segment_with_multibyte_characters() {
+        // Test basic segment function with multi-byte characters
+        let text = "日本語です。中文文章。";
+        let sentences = segment("en", text);
+
+        // Should segment into sentences
+        assert!(sentences.len() > 0, "Should find at least one sentence");
+
+        // Verify reconstruction
+        let reconstructed: String = sentences.join("");
+        assert_eq!(
+            reconstructed, text,
+            "Segment reconstruction failed for multi-byte text"
+        );
+    }
 }
