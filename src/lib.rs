@@ -558,4 +558,142 @@ mod tests {
             "Segment reconstruction failed for multi-byte text"
         );
     }
+
+    #[test]
+    fn test_boundary_symbol_detection_with_trailing_space() {
+        // This test reproduces the bug from issue #35:
+        // boundary_symbols are not detected if space follows boundary_symbol
+        let text = "Hello world. This is a test.Another test. And another test.";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        // Verify we have at least 4 boundaries (4 sentences)
+        assert!(
+            boundaries.len() >= 4,
+            "Expected at least 4 boundaries, got {}",
+            boundaries.len()
+        );
+
+        // Check each boundary has the correct boundary_symbol
+        let non_paragraph: Vec<_> = boundaries
+            .iter()
+            .filter(|b| !b.is_paragraph_break)
+            .collect();
+
+        // All 4 sentences should have period as boundary symbol
+        for (i, boundary) in non_paragraph.iter().enumerate() {
+            assert!(
+                boundary.boundary_symbol.is_some(),
+                "Boundary {} should have a boundary_symbol, got None",
+                i
+            );
+            assert_eq!(
+                boundary.boundary_symbol.as_deref(),
+                Some("."),
+                "Boundary {} should have period as symbol",
+                i
+            );
+        }
+    }
+
+    #[test]
+    fn test_boundary_symbol_with_multiple_trailing_spaces() {
+        // Test that multiple trailing spaces don't prevent symbol detection
+        let text = "Hello.  This is another.   Yet another.";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        let non_paragraph = boundaries
+            .iter()
+            .filter(|b| !b.is_paragraph_break)
+            .collect::<Vec<_>>();
+
+        // All sentence boundaries should have period symbol
+        for (i, boundary) in non_paragraph.iter().enumerate() {
+            assert_eq!(
+                boundary.boundary_symbol.as_deref(),
+                Some("."),
+                "Boundary {} should have period symbol despite trailing spaces",
+                i
+            );
+        }
+    }
+
+    #[test]
+    fn test_boundary_symbol_with_mixed_terminators() {
+        // Test various sentence terminators with trailing spaces
+        let text = "Hello! How are you? I'm fine. Yes.";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        let non_paragraph = boundaries
+            .iter()
+            .filter(|b| !b.is_paragraph_break)
+            .collect::<Vec<_>>();
+
+        // Verify we detect the different terminators
+        let symbols: Vec<_> = non_paragraph
+            .iter()
+            .filter_map(|b| b.boundary_symbol.as_deref())
+            .collect();
+
+        assert!(
+            symbols.iter().any(|&s| s == "!"),
+            "Should detect exclamation mark"
+        );
+        assert!(
+            symbols.iter().any(|&s| s == "?"),
+            "Should detect question mark"
+        );
+        assert!(symbols.iter().any(|&s| s == "."), "Should detect period");
+    }
+
+    #[test]
+    fn test_boundary_symbol_with_cjk_terminator() {
+        // Test with CJK full stop (。) which is a valid sentence terminator
+        let text = "日本語です。中文です。";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        let non_paragraph = boundaries
+            .iter()
+            .filter(|b| !b.is_paragraph_break)
+            .collect::<Vec<_>>();
+
+        // Should detect CJK terminators
+        let with_cjk_stop = non_paragraph
+            .iter()
+            .filter(|b| b.boundary_symbol.as_deref() == Some("。"))
+            .count();
+
+        assert!(
+            with_cjk_stop >= 1,
+            "Should detect at least one CJK full stop, got {}",
+            with_cjk_stop
+        );
+    }
+
+    #[test]
+    fn test_boundary_symbol_with_tabs_and_spaces() {
+        // Test with mixed whitespace (tabs and spaces)
+        let text = "First sentence.\t\n  Second sentence. Third one!";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        let non_paragraph = boundaries
+            .iter()
+            .filter(|b| !b.is_paragraph_break)
+            .collect::<Vec<_>>();
+
+        // All should have boundary symbols
+        for (i, boundary) in non_paragraph.iter().enumerate() {
+            assert!(
+                boundary.boundary_symbol.is_some(),
+                "Boundary {} should have boundary_symbol despite mixed whitespace",
+                i
+            );
+        }
+
+        // Verify reconstruction still works
+        let reconstructed: String = boundaries.iter().map(|b| b.text).collect();
+        assert_eq!(
+            reconstructed, text,
+            "Text reconstruction failed with mixed whitespace"
+        );
+    }
 }

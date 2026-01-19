@@ -203,12 +203,19 @@ pub trait Language {
 
                 let sentence_text = &paragraph[start..end];
                 let boundary_symbol = if end > 0 && end <= paragraph.len() {
-                    // Use char_indices for more efficient character iteration
-                    paragraph[..end]
+                    // Trim trailing whitespace before looking for the boundary symbol.
+                    // This fixes the issue where boundary symbols are not detected when
+                    // followed by whitespace (e.g., "Hello. " should detect "." as symbol).
+                    let sentence_slice = &paragraph[..end];
+                    let trimmed_slice = sentence_slice.trim_end();
+
+                    // Use char_indices for more efficient character iteration on the trimmed slice
+                    trimmed_slice
                         .char_indices()
                         .next_back()
                         .and_then(|(idx, _)| {
-                            let char_str = &paragraph[idx..end];
+                            // Extract the last character from the trimmed slice
+                            let char_str = &trimmed_slice[idx..];
                             if GLOBAL_SENTENCE_TERMINATORS.contains(&char_str) {
                                 Some(char_str.to_string())
                             } else {
