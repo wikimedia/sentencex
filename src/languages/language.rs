@@ -2,12 +2,12 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
-use crate::SentenceBoundary;
 use crate::constants::EMAIL_REGEX;
 use crate::constants::EXCLAMATION_WORDS;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
 use crate::constants::QUOTES_REGEX;
+use crate::SentenceBoundary;
 
 static SENTENCE_BREAK_REGEX_CACHE: LazyLock<Mutex<HashMap<String, Regex>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -167,10 +167,10 @@ pub trait Language {
 
                 for range in &skippable_ranges {
                     if range.contains(boundary) {
-                        let next_word = self.get_next_word_approx(text, range.end);
+                        let next_word = self.get_next_word_approx(paragraph, range.end);
                         let boundary_extend = self.get_boundary_extend(next_word);
                         if range.is_quote()
-                            && text.ceil_char_boundary(boundary + 1) == range.end
+                            && paragraph.ceil_char_boundary(boundary + 1) == range.end
                             && boundary_extend >= 0
                         {
                             boundary = range.end + boundary_extend as usize;
