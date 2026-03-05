@@ -103,10 +103,7 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
     }
 
     if paragraphs.is_empty() {
-        eprintln!("No para breaks?");
         return vec![text];
-    } else {
-        eprintln!("Found {:} paragraphs", paragraphs.len());
     }
 
     let mut current_start = 0;
@@ -186,7 +183,6 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
     if text.len() > CHUNK_SIZE {
         let chunks = chunk_text(text, CHUNK_SIZE);
         let mut all_sentences = Vec::new();
-        eprintln!("Processing {:?} chunks", chunks.len());
         for chunk in chunks {
             let chunk_sentences = language.segment(chunk);
             all_sentences.extend(chunk_sentences);
