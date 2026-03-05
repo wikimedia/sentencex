@@ -14,7 +14,49 @@ static SENTENCE_BREAK_REGEX_CACHE: LazyLock<Mutex<HashMap<String, Regex>>> =
 
 static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
 
+// Matches a lowercase letter or digit, optionally preceded by non-word characters
+// (e.g. a space or punctuation). Used by languages that extend the base continuation
+// check with their own month lists.
+static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\W*[0-9a-z]").unwrap());
+
 static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
+
+/// Shared helper for languages that continue sentences before month names.
+///
+/// Returns `true` if `text` starts with a lowercase letter/digit (after optional
+/// non-word characters), or if its first whitespace-delimited word (case-insensitively
+/// capitalised) is one of the supplied `months`.
+pub fn continues_after_boundary(text: &str, months: &[&str]) -> bool {
+    if CONTINUE_AFTER_NONWORD_REGEX.is_match(text) {
+        return true;
+    }
+
+    let next_word = text
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .trim_matches(['.', '!', '?']);
+
+    if next_word.is_empty() {
+        return false;
+    }
+
+    // Build a version with the first character upper-cased (handles non-ASCII safely).
+    let capitalized: String = next_word
+        .chars()
+        .enumerate()
+        .map(|(i, c)| {
+            if i == 0 {
+                c.to_uppercase().to_string()
+            } else {
+                c.to_string()
+            }
+        })
+        .collect();
+
+    months.contains(&next_word) || months.contains(&capitalized.as_str())
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SkippableRangeType {

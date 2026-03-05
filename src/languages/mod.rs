@@ -37,7 +37,7 @@ pub use bg::Bulgarian;
 pub use bn::Bengali;
 pub use ca::Catalan;
 pub use da::Danish;
-pub use de::Deutch;
+pub use de::German;
 pub use el::Greek;
 pub use en::English;
 pub use es::Spanish;

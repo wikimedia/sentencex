@@ -1,5 +1,7 @@
 use std::sync::LazyLock;
 
+use regex::Regex;
+
 use super::Language;
 
 #[derive(Debug, Clone)]
@@ -13,28 +15,24 @@ static KAZAKH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .collect()
 });
 
+// Extends the base continuation regex with Cyrillic lowercase range (а-я).
+static KAZAKH_CONTINUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\W*[0-9a-zа-я]").unwrap());
+
 impl Language for Kazakh {
     fn get_abbreviations(&self) -> &[String] {
-        // Return a reference to a static empty slice since we don't have a lazy static here
         &KAZAKH_ABBREVIATIONS
     }
 
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {
-        let words: Vec<&str> = text
-            .split(|c: char| c.is_whitespace() || c == '.')
+        text.split(|c: char| c.is_whitespace() || c == '.')
             .filter(|word| !word.is_empty())
-            .collect();
-
-        if let Some(&last_word) = words.last() {
-            return last_word;
-        }
-
-        ""
+            .last()
+            .unwrap_or("")
     }
 
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        let regex = regex::Regex::new(r"^\W*[0-9a-zа-я]").unwrap();
-        regex.is_match(text_after_boundary)
+        KAZAKH_CONTINUE_REGEX.is_match(text_after_boundary)
     }
 }
 

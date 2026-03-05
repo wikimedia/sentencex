@@ -1,6 +1,6 @@
 use languages::{
-    Amharic, Arabic, Armenian, Bengali, Bulgarian, Burmese, Catalan, Danish, Deutch, Dutch,
-    English, Finnish, French, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
+    Amharic, Arabic, Armenian, Bengali, Bulgarian, Burmese, Catalan, Danish, Dutch, English,
+    Finnish, French, German, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
     Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil,
 };
 use regex::Regex;
@@ -42,7 +42,7 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
             "bn" => return Box::new(Bengali {}),
             "ca" => return Box::new(Catalan {}),
             "da" => return Box::new(Danish {}),
-            "de" => return Box::new(Deutch {}),
+            "de" => return Box::new(German {}),
             "en" => return Box::new(English {}),
             "es" => return Box::new(Spanish {}),
             "el" => return Box::new(Greek {}),
