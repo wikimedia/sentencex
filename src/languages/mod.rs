@@ -62,7 +62,7 @@ pub use pt::Portuguese;
 pub use ru::Russian;
 pub use sk::Slovak;
 pub use ta::Tamil;
-pub use te::Telegu;
+pub use te::Telugu;
 
 #[cfg(test)]
 mod tests {

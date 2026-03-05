@@ -3,9 +3,9 @@ use std::sync::LazyLock;
 use super::Language;
 
 #[derive(Debug, Clone)]
-pub struct Telegu {}
+pub struct Telugu {}
 
-static TELEGU_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static TELUGU_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/te.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())
@@ -13,9 +13,9 @@ static TELEGU_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .filter(|line| !line.starts_with("//") && !line.is_empty())
         .collect()
 });
-impl Language for Telegu {
+impl Language for Telugu {
     fn get_abbreviations(&self) -> &[String] {
-        &TELEGU_ABBREVIATIONS
+        &TELUGU_ABBREVIATIONS
     }
 }
 
@@ -27,6 +27,6 @@ mod tests {
 
     #[test]
     fn test_segment() {
-        run_language_tests(Telegu {}, "tests/te.txt");
+        run_language_tests(Telugu {}, "tests/te.txt");
     }
 }
