@@ -214,8 +214,8 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
 ///
 /// A `Vec<SentenceBoundary>` containing detailed information about each sentence boundary.
 /// Each `SentenceBoundary` includes:
-/// - `start_index`: The byte index where the sentence starts
-/// - `end_index`: The byte index where the sentence ends
+/// - `start_index`: The character index (Unicode scalar count) where the sentence starts
+/// - `end_index`: The character index (Unicode scalar count) where the sentence ends
 /// - `text`: A reference to the sentence text (zero-copy)
 /// - `boundary_symbol`: The punctuation mark that ended the sentence (if any)
 /// - `is_paragraph_break`: Whether this boundary represents a paragraph break ("\n\n")
