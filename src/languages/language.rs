@@ -14,6 +14,8 @@ static SENTENCE_BREAK_REGEX_CACHE: LazyLock<Mutex<HashMap<String, Regex>>> =
 
 static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
 
+static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SkippableRangeType {
     Quote,
@@ -85,8 +87,7 @@ pub trait Language {
         let mut boundaries = Vec::with_capacity(estimated_sentences);
 
         // Split by paragraph breaks (one or more newlines with optional whitespace)
-        let para_split_re = Regex::new(r"\n[\r]*\n").unwrap();
-        let paragraphs: Vec<&str> = para_split_re.split(text).collect();
+        let paragraphs: Vec<&str> = PARA_SPLIT_REGEX.split(text).collect();
 
         // Pre-calculate all paragraph offsets in one pass
         // CRITICAL: We track both byte offsets AND character offsets separately.

@@ -4,11 +4,14 @@ use languages::{
     Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil,
 };
 use regex::Regex;
+use std::sync::LazyLock;
 
 mod constants;
 pub mod languages;
 
 use serde::Serialize;
+
+static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SentenceBoundary<'a> {
@@ -86,13 +89,11 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
     let mut chunks = Vec::new();
 
     // Split by paragraph breaks (one or more newlines with optional whitespace)
-    let re = Regex::new(r"\n[\r]*\n").unwrap();
-
     // Get paragraph parts and their positions
     let mut paragraphs = Vec::new();
     let mut last_end = 0;
 
-    for mat in re.find_iter(text) {
+    for mat in PARA_SPLIT_REGEX.find_iter(text) {
         // Add the text before this match
         paragraphs.push((last_end, mat.start()));
         last_end = mat.end();
