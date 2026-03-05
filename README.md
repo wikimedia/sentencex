@@ -1,8 +1,12 @@
 # Sentence segmenter
 
+[![crates.io](https://img.shields.io/crates/v/sentencex)](https://crates.io/crates/sentencex)
+[![PyPI](https://img.shields.io/pypi/v/sentencex)](https://pypi.org/project/sentencex/)
+[![npm](https://img.shields.io/npm/v/sentencex)](https://www.npmjs.com/package/sentencex)
 [![Rust Tests](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml)
 [![Node.js Tests](https://github.com/wikimedia/sentencex/actions/workflows/node.yaml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/node.yaml)
 [![Python Tests](https://github.com/wikimedia/sentencex/actions/workflows/python.yaml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/python.yaml)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/wikimedia/sentencex)
 
 A sentence segmentation library written in Rust language with wide language support optimized for speed and utility.
 
