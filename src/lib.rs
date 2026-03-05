@@ -241,7 +241,7 @@ pub fn get_sentence_boundaries<'a>(
     language_code: &str,
     text: &'a str,
 ) -> Vec<SentenceBoundary<'a>> {
-    const CHUNK_SIZE: usize = 10 * 100; // 10KB
+    const CHUNK_SIZE: usize = 10 * 1024; // 10KB
 
     let language = language_factory(language_code);
 
