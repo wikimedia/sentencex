@@ -185,28 +185,27 @@ Total sentences: 153736
 ```
 
 
-Measured on Golden Rule Set(GRS) for English. Lists are exempted (1. sentence 2. another sentence).
+Measured on English Golden Rule Set (GRS) using mean F1 score across 60 test cases. List cases are excluded.
+The benchmark script is at [`benchmarks/compare.py`](benchmarks/compare.py) and can be run with `uv run benchmarks/compare.py`.
 
-The following libraries are used for benchmarking:
+The following libraries are compared:
 
-- mwtokenizer from <https://gitlab.wikimedia.org/repos/research/wiki-nlp-tools>
-- blingfire from <https://github.com/microsoft/BlingFire>
-- nltk from <https://pypi.org/project/nltk/>
-- pysbd from <https://github.com/nipunsadvilkar/pySBD/>
-- spacy from <https://github.com/stanfordnlp/stanza>
-- syntok from <https://github.com/fnl/syntok>
+- [mwtokenizer](https://pypi.org/project/mwtokenizer/) — Wikimedia rule-based tokenizer
+- [blingfire](https://github.com/microsoft/BlingFire) — Microsoft's fast tokenizer (C library)
+- [nltk](https://pypi.org/project/nltk/) — Punkt sentence tokenizer
+- [pysbd](https://github.com/nipunsadvilkar/pySBD/) — Python port of pragmatic segmenter
+- [spacy](https://spacy.io/) — dependency-parse based sentence segmentation
+- [syntok](https://github.com/fnl/syntok) — rule-based tokenizer
 
-| Tokenizer Library    | English Golden Rule Set score | Speed(Avg over 100 runs) in seconds |
-| -------------------- | ----------------------------- | ----------------------------------- |
-| sentencex            | 74.36                         | **0.1357**                          |
-| mwtokenizer_tokenize | 30.77                         | 1.54                                |
-| blingfire_tokenize   | 89.74                         | 0.27                                |
-| nltk_tokenize        | 66.67                         | 1.86                                |
-| pysbd_tokenize       | **97.44**                     | 10.57                               |
-| spacy_tokenize       | 61.54                         | 2.45                                |
-| spacy_dep_tokenize   | 74.36                         | 138.93                              |
-| stanza_tokenize      | 87.18                         | 107.51                              |
-| syntok_tokenize      | 79.49                         | 4.72                                |
+| Tokenizer   | English GRS F1 Score |
+| ----------- | -------------------- |
+| sentencex   | **100.00**           |
+| pysbd       | 93.00                |
+| blingfire   | 91.67                |
+| syntok      | 85.67                |
+| spacy       | 81.67                |
+| mwtokenizer | 78.00                |
+| nltk        | 72.33                |
 
 ## Thanks
 
