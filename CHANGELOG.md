@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.16] - 2026-03-06
+
+### Documentation
+- Style the demo page
+- Update time taken for Shakespeare benchmark
+
+### Maintenance
+- Version bump
+
+## [1.0.15] - 2026-03-06
+
+### Node.js
+- Do not run examples for test
+
+### Documentation
+- Simplify binding READMEs to be minimal and binding-specific
+
 ## [1.0.14] - 2026-03-06
 
 ### Performance
@@ -14,8 +31,8 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 - Fix boundary_symbol detection when followed by whitespace (#35)
-- Fix get_next_word_approx called with full text instead of paragraph
-- Fix CHUNK_SIZE in get_sentence_boundaries (1KB → 10KB)
+- Fix get_next_word_approx called with full text instead of paragraphUNK_SIZE in get
+- Fix CH_sentence_boundaries (1KB → 10KB)
 - Fix boundary edge cases
 
 ### Testing
@@ -38,4 +55,3 @@ All notable changes to this project will be documented in this file.
 ### Misc
 - Fix spelling: Telegu -> Telugu
 - Minor formatting improvements
-
