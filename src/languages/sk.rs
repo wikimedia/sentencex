@@ -2,8 +2,8 @@ use std::sync::LazyLock;
 
 use crate::constants::ROMAN_NUMERALS;
 
-use super::language::continues_after_boundary;
 use super::Language;
+use super::language::continues_after_boundary;
 
 #[derive(Debug, Clone)]
 pub struct Slovak {}

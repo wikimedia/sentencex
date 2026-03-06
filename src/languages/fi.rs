@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
-use super::language::continues_after_boundary;
 use super::Language;
+use super::language::continues_after_boundary;
 
 #[derive(Debug, Clone)]
 pub struct Finnish {}
