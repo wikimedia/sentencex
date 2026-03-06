@@ -171,17 +171,15 @@ The aim is to support all languages where there is a wikipedia. Instead of falli
 ## Performance
 
 Following is a sample output of sentence segmenting [The Complete Works of William Shakespeare](https://www.gutenberg.org/files/100/100-0.txt).
-This file is 5.29MB. As you can see below, it took half a second.
+This file is 5.29MB. As you can see below, it took 178 milli second.
 
 ```bash
 $ curl https://www.gutenberg.org/files/100/100-0.txt | ./target/release/sentencex -l en > /dev/null
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
 100 5295k  100 5295k    0     0   630k      0  0:00:08  0:00:08 --:--:-- 1061k
-Found 40923 paragraphs
-Processing 540 chunks
-Time taken for segment(): 521.071603ms
-Total sentences: 153736
+Time taken for segment(): 178.745108ms
+Total sentences: 150254
 ```
 
 
