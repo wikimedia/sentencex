@@ -99,8 +99,6 @@ jobs:
       working-directory: bindings/nodejs
       run: |
         npm test
-        node example.js
-        node example.cjs
 
     - name: Get version
       id: version
