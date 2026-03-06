@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sentencex demo</title>
   <style>
+    :root {
+      color-scheme: light dark;
+    }
+
     body {
       display: grid;
       grid-template-rows: 80dvh auto;
@@ -20,6 +24,7 @@
     #sentences {
       padding: 1em;
       overflow: auto;
+      text-wrap: pretty;
     }
 
     #text,
@@ -32,7 +37,6 @@
 
     .sentence {
       padding: 2px 4px;
-      border-radius: 8px;
     }
 
     .green {
@@ -136,7 +140,7 @@ speech and the actual injury produced by such speech.[92]
     for (let i = 0; i < sentences.length; i++) {
       const randomClass = classes[i % classes.length];
       sentenceSpans[i] =
-        '<span class="sentence ' + randomClass + '">' + sentences[i] + "</span>";
+        '<mark class="sentence ' + randomClass + '">' + sentences[i] + "</mark>";
     }
     sentencesEl.innerHTML = sentenceSpans.join("");
   }
@@ -144,8 +148,8 @@ speech and the actual injury produced by such speech.[92]
   inputEl.addEventListener("change", doSegment);
   inputEl.addEventListener("input", doSegment);
   languageEl.addEventListener("input", doSegment);
-  init().then(doSegment);
   inputEl.value = exampleText.split("\n").join(' ');
+  init().then(doSegment);
 </script>
 
 </html>
