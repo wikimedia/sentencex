@@ -107,12 +107,53 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
         return vec![text];
     }
 
+    fn split_range_by_size<'a>(
+        text: &'a str,
+        start: usize,
+        end: usize,
+        chunk_size: usize,
+        chunks: &mut Vec<&'a str>,
+    ) {
+        if start >= end {
+            return;
+        }
+
+        let mut cursor = start;
+        while cursor < end {
+            let mut safe_end = (cursor + chunk_size).min(end);
+
+            if safe_end < end {
+                safe_end = text.floor_char_boundary(safe_end);
+                if safe_end <= cursor {
+                    safe_end = text.ceil_char_boundary((cursor + 1).min(end));
+                }
+            }
+
+            chunks.push(&text[cursor..safe_end]);
+            cursor = safe_end;
+        }
+    }
+
     let mut current_start = 0;
     let mut current_end = 0;
     let mut i = 0;
 
     while i < paragraphs.len() {
         let (para_start, para_end) = paragraphs[i];
+        let para_size = para_end - para_start;
+
+        if para_size > chunk_size {
+            if current_end > current_start {
+                let safe_end = text.ceil_char_boundary(current_end);
+                chunks.push(&text[current_start..safe_end]);
+                current_start = 0;
+                current_end = 0;
+            }
+
+            split_range_by_size(text, para_start, para_end, chunk_size, &mut chunks);
+            i += 1;
+            continue;
+        }
 
         // If this is the first paragraph in the chunk
         if current_end == current_start {
@@ -142,7 +183,7 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
     }
 
     // Add the final chunk if there's remaining content
-    if current_start < text.len() {
+    if current_end > current_start {
         let safe_end = text.ceil_char_boundary(current_end);
         chunks.push(&text[current_start..safe_end]);
     }
@@ -339,8 +380,9 @@ mod tests {
         let text =
             "This is a long text without paragraph breaks that should be returned as one chunk.";
         let chunks = chunk_text(text, 20);
-        assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0], text);
+        assert!(chunks.len() > 1);
+        assert!(chunks.iter().all(|chunk| chunk.len() <= 20));
+        assert_eq!(chunks.concat(), text);
     }
 
     #[test]

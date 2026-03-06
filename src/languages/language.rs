@@ -2,12 +2,12 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
 
+use crate::SentenceBoundary;
 use crate::constants::EMAIL_REGEX;
 use crate::constants::EXCLAMATION_WORDS;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
 use crate::constants::QUOTES_REGEX;
-use crate::SentenceBoundary;
 
 static SENTENCE_BREAK_REGEX_CACHE: LazyLock<Mutex<HashMap<String, Regex>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -236,6 +236,9 @@ pub trait Language {
                 sentence_boundaries.push(paragraph.len());
             }
 
+            let mut prev_end_index = paragraph_start_char_offset;
+            let mut prev_end_byte = 0;
+
             for i in 0..sentence_boundaries.len() - 1 {
                 let start = sentence_boundaries[i];
                 let end = sentence_boundaries[i + 1];
@@ -272,13 +275,13 @@ pub trait Language {
                 let start_byte = paragraph_start_offset + start;
                 let end_byte = paragraph_start_offset + end;
 
-                // Calculate character index from paragraph char offset + character count within paragraph
-                // This is crucial: start_index is NOT the same as start_byte when UTF-8 multi-byte
-                // characters are present (e.g., CJK or emoji).
-                let start_index = paragraph_start_char_offset
-                    + paragraph[..paragraph.floor_char_boundary(start)]
-                        .chars()
-                        .count();
+                let start_index = if start == prev_end_byte {
+                    prev_end_index
+                } else {
+                    let safe_prev = paragraph.floor_char_boundary(prev_end_byte);
+                    let safe_start = paragraph.floor_char_boundary(start);
+                    prev_end_index + paragraph[safe_prev..safe_start].chars().count()
+                };
                 let end_index = start_index + sentence_text.chars().count();
 
                 boundaries.push(SentenceBoundary {
@@ -290,6 +293,9 @@ pub trait Language {
                     boundary_symbol,
                     is_paragraph_break: false,
                 });
+
+                prev_end_index = end_index;
+                prev_end_byte = end;
             }
         }
 

@@ -1,6 +1,7 @@
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use sentencex::{get_sentence_boundaries, segment};
 use std::hint::black_box;
+use std::time::Duration;
 
 fn benchmark_segment(c: &mut Criterion) {
     let text = "This is a sentence. Here is another one. And yet another sentence follows.";
@@ -25,9 +26,10 @@ fn generate_text(size: usize) -> String {
 
 fn bench_segment_by_size(c: &mut Criterion) {
     let mut group = c.benchmark_group("segment_by_size");
+    group.measurement_time(Duration::from_secs(12));
+    group.sample_size(80);
 
-    // Reduced max size to avoid timeouts, focus on realistic use cases
-    for size in [100, 1_000, 10_000, 50_000].iter() {
+    for size in [100, 1_000, 10_000, 50_000, 1_000_000].iter() {
         let text = generate_text(*size);
         group.throughput(Throughput::Bytes(*size as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &text, |b, text| {
@@ -40,11 +42,65 @@ fn bench_segment_by_size(c: &mut Criterion) {
 
 fn bench_boundary_detection_by_size(c: &mut Criterion) {
     let mut group = c.benchmark_group("boundary_detection_by_size");
+    group.measurement_time(Duration::from_secs(12));
+    group.sample_size(80);
 
-    for size in [100, 1_000, 10_000, 50_000].iter() {
+    for size in [100, 1_000, 10_000, 50_000, 1_000_000].iter() {
         let text = generate_text(*size);
         group.throughput(Throughput::Bytes(*size as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &text, |b, text| {
+            b.iter(|| get_sentence_boundaries(black_box("en"), black_box(text)))
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_real_corpus_segment(c: &mut Criterion) {
+    let mut group = c.benchmark_group("real_corpus_segment");
+    group.measurement_time(Duration::from_secs(12));
+    group.sample_size(80);
+
+    let fixtures = [
+        (
+            "book_style_fixture",
+            include_str!("fixtures/book_style_fixture.txt"),
+        ),
+        (
+            "gutenberg_style_fixture",
+            include_str!("fixtures/gutenberg_style_fixture.txt"),
+        ),
+    ];
+
+    for (name, text) in fixtures {
+        group.throughput(Throughput::Bytes(text.len() as u64));
+        group.bench_function(name, |b| {
+            b.iter(|| segment(black_box("en"), black_box(text)))
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_real_corpus_boundaries(c: &mut Criterion) {
+    let mut group = c.benchmark_group("real_corpus_boundaries");
+    group.measurement_time(Duration::from_secs(12));
+    group.sample_size(80);
+
+    let fixtures = [
+        (
+            "book_style_fixture",
+            include_str!("fixtures/book_style_fixture.txt"),
+        ),
+        (
+            "gutenberg_style_fixture",
+            include_str!("fixtures/gutenberg_style_fixture.txt"),
+        ),
+    ];
+
+    for (name, text) in fixtures {
+        group.throughput(Throughput::Bytes(text.len() as u64));
+        group.bench_function(name, |b| {
             b.iter(|| get_sentence_boundaries(black_box("en"), black_box(text)))
         });
     }
@@ -144,6 +200,8 @@ criterion_group!(
     benchmark_segment,
     bench_segment_by_size,
     bench_boundary_detection_by_size,
+    bench_real_corpus_segment,
+    bench_real_corpus_boundaries,
     bench_multi_language,
     bench_paragraph_heavy_text,
     bench_abbreviation_heavy_text,
