@@ -18,14 +18,18 @@ static GREEK_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .collect()
 });
 
+static GREEK_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    let pattern = format!("[{};]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
+    Regex::new(&pattern).unwrap()
+});
+
 impl Language for Greek {
     fn get_abbreviations(&self) -> &[String] {
         &GREEK_ABBREVIATIONS
     }
 
-    fn get_sentence_break_regex(&self) -> Regex {
-        let pattern = format!("[{};]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
-        Regex::new(&pattern).unwrap()
+    fn get_sentence_break_regex(&self) -> &'static Regex {
+        &GREEK_SENTENCE_BREAK_REGEX
     }
 }
 

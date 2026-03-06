@@ -1,6 +1,5 @@
 use regex::Regex;
-use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use std::sync::LazyLock;
 
 use crate::SentenceBoundary;
 use crate::constants::EMAIL_REGEX;
@@ -9,8 +8,10 @@ use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
 use crate::constants::QUOTES_REGEX;
 
-static SENTENCE_BREAK_REGEX_CACHE: LazyLock<Mutex<HashMap<String, Regex>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
+    Regex::new(&pattern).unwrap()
+});
 
 static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
 
@@ -91,29 +92,10 @@ impl SkippableRange {
 }
 
 pub trait Language {
-    /// Returns a compiled regex pattern that matches sentence terminating punctuation.
-    /// This regex is used to identify potential sentence boundaries in text.
-    /// The pattern is cached for performance and includes all global sentence terminators
-    /// like periods, exclamation marks, and question marks.
-    fn get_sentence_break_regex(&self) -> Regex {
-        let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
-
-        // Try to get from cache first
-        {
-            let cache = SENTENCE_BREAK_REGEX_CACHE.lock().unwrap();
-            if let Some(regex) = cache.get(&pattern) {
-                return regex.clone();
-            }
-        }
-
-        // Create new regex and cache it
-        let regex = Regex::new(&pattern).unwrap();
-        {
-            let mut cache = SENTENCE_BREAK_REGEX_CACHE.lock().unwrap();
-            cache.insert(pattern, regex.clone());
-        }
-
-        regex
+    /// Returns a reference to the compiled regex pattern that matches sentence terminating
+    /// punctuation. The default implementation uses a static LazyLock for zero-cost access.
+    fn get_sentence_break_regex(&self) -> &'static Regex {
+        &DEFAULT_SENTENCE_BREAK_REGEX
     }
 
     /// Analyzes the input text and returns a vector of sentence boundaries.

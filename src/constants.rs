@@ -40,7 +40,7 @@ pub static QUOTES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     let quote_pairs = get_quote_pairs();
     let patterns: Vec<String> = quote_pairs
         .iter()
-        .map(|(left, right)| format!(r"{}(\n|.)*?{}", regex::escape(left), regex::escape(right)))
+        .map(|(left, right)| format!(r"{}(?s:.*?){}", regex::escape(left), regex::escape(right)))
         .collect();
     let quotes_regex_str = patterns.join("|");
     Regex::new(&quotes_regex_str).unwrap()
