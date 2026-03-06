@@ -1,6 +1,6 @@
 {
   "name": "sentencex-darwin-x64",
-  "version": "1.0.13",
+  "version": "1.0.16",
   "os": ["darwin"],
   "cpu": ["x64"],
   "main": "index.node",
