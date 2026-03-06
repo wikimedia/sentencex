@@ -109,4 +109,4 @@ The WASM bindings provide near-native performance for sentence segmentation whil
 
 ## License
 
-MIT license. See the main project repository for details.
+MIT. See [https://github.com/wikimedia/sentencex](https://github.com/wikimedia/sentencex)
