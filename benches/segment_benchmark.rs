@@ -61,16 +61,7 @@ fn bench_real_corpus_segment(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(12));
     group.sample_size(80);
 
-    let fixtures = [
-        (
-            "book_style_fixture",
-            include_str!("fixtures/book_style_fixture.txt"),
-        ),
-        (
-            "gutenberg_style_fixture",
-            include_str!("fixtures/gutenberg_style_fixture.txt"),
-        ),
-    ];
+    let fixtures = [("book_style_fixture", include_str!("fixtures/pg5200.txt"))];
 
     for (name, text) in fixtures {
         group.throughput(Throughput::Bytes(text.len() as u64));
@@ -87,16 +78,7 @@ fn bench_real_corpus_boundaries(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(12));
     group.sample_size(80);
 
-    let fixtures = [
-        (
-            "book_style_fixture",
-            include_str!("fixtures/book_style_fixture.txt"),
-        ),
-        (
-            "gutenberg_style_fixture",
-            include_str!("fixtures/gutenberg_style_fixture.txt"),
-        ),
-    ];
+    let fixtures = [("book_style_fixture", include_str!("fixtures/pg5200.txt"))];
 
     for (name, text) in fixtures {
         group.throughput(Throughput::Bytes(text.len() as u64));
