@@ -155,3 +155,15 @@ Mit Inkrafttreten des Mindestlohngesetzes (MiLoG) zum 01. Januar 2015 werden in 
 #• ungeputztes Gemüse und ungewaschener Salat
 #• nicht ganz durchgebratenes Hühnerfleisch, rohe oder nur weich gekochte Eier
 ===
+Die Buchhändlerin nickte eifrig und zog ein blaues Buch aus dem Regal. »Dann empfehle ich diesen Roman«, sagte sie überzeugt. »Die Handlung spielt im antiken Rom während des großen Brandes. Die Recherche ist erstaunlich detailliert.« Maria blätterte darin, las die ersten Sätze und kaufte es schließlich.
+---
+Die Buchhändlerin nickte eifrig und zog ein blaues Buch aus dem Regal.
+»Dann empfehle ich diesen Roman«, sagte sie überzeugt.
+»Die Handlung spielt im antiken Rom während des großen Brandes. Die Recherche ist erstaunlich detailliert.«
+Maria blätterte darin, las die ersten Sätze und kaufte es schließlich.
+===
+»Wirklich?« »Ja, absolut!« »Das glaube ich erst, wenn ich es sehe.«
+---
+»Wirklich?«
+»Ja, absolut!«
+»Das glaube ich erst, wenn ich es sehe.«
