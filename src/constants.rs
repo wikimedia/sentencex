@@ -16,6 +16,7 @@ pub fn get_quote_pairs() -> HashMap<&'static str, &'static str> {
     quote_pairs.insert("“", "”");
     quote_pairs.insert("‛", "‛");
     quote_pairs.insert("„", "“");
+    quote_pairs.insert("»", "«");
     quote_pairs.insert("‟", "‟");
     quote_pairs.insert("‹", "›");
     quote_pairs.insert("《", "》");
