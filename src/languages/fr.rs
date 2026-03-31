@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use super::Language;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct French {}
 static FRENCH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/fr.txt")

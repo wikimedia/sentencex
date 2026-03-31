@@ -6,7 +6,7 @@ use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 
 use super::{English, Language};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Armenian {}
 
 static ARMENIAN_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {

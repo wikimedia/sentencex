@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use super::Language;
 use super::language::continues_after_boundary;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct German {}
 
 static GERMAN_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {

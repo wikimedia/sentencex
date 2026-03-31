@@ -1,7 +1,7 @@
-use sentencex::segment;
+use sentencex::{languages::English, segment};
 fn main() {
-    let language_code = "en";
+    let language = English{};
     let text = "Hello world. This is a test.";
-    let sentences = segment(language_code, text);
+    let sentences = segment(&language, text);
     println!("Segmented sentences: {:?}", sentences);
 }

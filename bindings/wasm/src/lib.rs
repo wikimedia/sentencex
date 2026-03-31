@@ -1,4 +1,5 @@
 use ::sentencex::{get_sentence_boundaries as _get_sentence_boundaries, segment as _segment};
+use sentencex::{fallback_language, language_factory, languages::English};
 use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 
 /// Segments a given text into sentences based on the specified language.
@@ -26,7 +27,8 @@ use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 /// ```
 #[wasm_bindgen]
 pub fn segment(language: &str, text: &str) -> JsValue {
-    let sentences = _segment(language, text);
+    let language = language_factory(&language).unwrap_or_else(fallback_language);
+    let sentences = _segment(&language, text);
     serde_wasm_bindgen::to_value(&sentences).expect("")
 }
 
@@ -60,6 +62,7 @@ pub fn segment(language: &str, text: &str) -> JsValue {
 /// ```
 #[wasm_bindgen]
 pub fn get_sentence_boundaries(language: &str, text: &str) -> JsValue {
-    let boundaries = _get_sentence_boundaries(language, text);
+    let language = language_factory(&language).unwrap_or_else(|| Box::new(English {}));
+    let boundaries = _get_sentence_boundaries(&language, text);
     serde_wasm_bindgen::to_value(&boundaries).expect("")
 }

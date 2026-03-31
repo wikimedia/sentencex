@@ -1,6 +1,6 @@
 use super::{Hindi, Language};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Marathi {}
 
 impl Language for Marathi {

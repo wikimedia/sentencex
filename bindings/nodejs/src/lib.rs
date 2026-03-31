@@ -1,8 +1,9 @@
 use neon::prelude::*;
-use sentencex::{get_sentence_boundaries as _get_sentence_boundaries, segment as _segment};
+use sentencex::{fallback_language, get_sentence_boundaries as _get_sentence_boundaries, language_factory, languages::English, segment as _segment};
 
 fn segment(mut cx: FunctionContext) -> JsResult<JsArray> {
     let language = cx.argument::<JsString>(0)?.value(&mut cx);
+    let language = language_factory(&language).unwrap_or_else(fallback_language);
     let text = cx.argument::<JsString>(1)?.value(&mut cx);
 
     let segments = _segment(&language, &text);
@@ -18,6 +19,7 @@ fn segment(mut cx: FunctionContext) -> JsResult<JsArray> {
 
 fn get_sentence_boundaries(mut cx: FunctionContext) -> JsResult<JsArray> {
     let language = cx.argument::<JsString>(0)?.value(&mut cx);
+    let language = language_factory(&language).unwrap_or_else(fallback_language);
     let text = cx.argument::<JsString>(1)?.value(&mut cx);
 
     let boundaries = _get_sentence_boundaries(&language, &text);

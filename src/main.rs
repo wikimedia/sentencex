@@ -1,5 +1,5 @@
 use clap::Parser;
-use sentencex::{get_sentence_boundaries, segment};
+use sentencex::{fallback_language, get_sentence_boundaries, language_factory, segment};
 use std::fs;
 use std::io::{self, Read};
 use std::time::Instant;
@@ -38,9 +38,10 @@ fn main() {
         }
     };
 
+    let language = language_factory(&cli.language).unwrap_or_else(fallback_language);
     if cli.debug {
         let start_time = Instant::now();
-        let boundaries = get_sentence_boundaries(&cli.language, &text);
+        let boundaries = get_sentence_boundaries(&language, &text);
         let elapsed = start_time.elapsed();
 
         eprintln!("Time taken for get_sentence_boundaries(): {:?}", elapsed);
@@ -59,7 +60,7 @@ fn main() {
         }
     } else {
         let start_time = Instant::now();
-        let sentences = segment(&cli.language, &text);
+        let sentences = segment(&language, &text);
         let elapsed = start_time.elapsed();
         for sentence in sentences.iter() {
             println!("* {}", sentence);

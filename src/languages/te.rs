@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use super::Language;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Telugu {}
 
 static TELUGU_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {

@@ -1,7 +1,7 @@
 use super::Language;
 use std::sync::LazyLock;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Polish {}
 
 static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {

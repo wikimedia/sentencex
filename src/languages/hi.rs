@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use super::Language;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Hindi {}
 static HINDI_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     include_str!("./abbrev/hi.txt")
