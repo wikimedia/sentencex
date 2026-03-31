@@ -213,11 +213,11 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
 /// # Example
 ///
 /// ```
-/// use sentencex::segment;
+/// use sentencex::{languages::English, segment};
 ///
 /// let language_code = "en";
 /// let text = "Hello world. This is a test.";
-/// let sentences = segment(language_code, text);
+/// let sentences = segment(&English{}, text);
 ///
 /// assert_eq!(sentences, vec!["Hello world. ", "This is a test."]);
 /// ```
@@ -266,11 +266,10 @@ pub fn segment<'a, L: Language>(language: &L, text: &'a str) -> Vec<&'a str> {
 /// # Example
 ///
 /// ```
-/// use sentencex::get_sentence_boundaries;
+/// use sentencex::{languages::English, get_sentence_boundaries};
 ///
-/// let language_code = "en";
 /// let text = "Hello world. This is a test.\n\nNew paragraph.";
-/// let boundaries = get_sentence_boundaries(language_code, text);
+/// let boundaries = get_sentence_boundaries(&English{}, text);
 ///
 /// for boundary in boundaries {
 ///     println!("Text: {:?}, Start: {}, End: {}",
