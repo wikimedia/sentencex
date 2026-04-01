@@ -31,4 +31,5 @@ members = [
     "bindings/python",
     "bindings/nodejs",
     "bindings/wasm",
+    "bindings/dotnet",
 ]

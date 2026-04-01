@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Sentencex.Tests/Sentencex.Tests.csproj" />
+  <Project Path="Sentencex/Sentencex.csproj" />
+</Solution>

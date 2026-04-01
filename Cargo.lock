@@ -261,6 +261,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
+name = "csbindgen"
+version = "1.9.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "710604f525e7b68070458083252602c2bf2afe255dfe019e83bd57bdfa50bdb4"
+dependencies = [
+ "regex",
+ "syn",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -682,6 +692,14 @@ dependencies = [
  "criterion",
  "regex",
  "serde",
+]
+
+[[package]]
+name = "sentencex-dotnet"
+version = "0.1.17"
+dependencies = [
+ "csbindgen",
+ "sentencex",
 ]
 
 [[package]]

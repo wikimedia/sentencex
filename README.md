@@ -6,6 +6,7 @@
 [![Rust Tests](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/rust.yml)
 [![Node.js Tests](https://github.com/wikimedia/sentencex/actions/workflows/node.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/node.yml)
 [![Python Tests](https://github.com/wikimedia/sentencex/actions/workflows/python.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/python.yml)
+[![C# Tests](https://github.com/wikimedia/sentencex/actions/workflows/dotnet.yml/badge.svg)](https://github.com/wikimedia/sentencex/actions/workflows/dotnet.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/wikimedia/sentencex)
 
 A sentence segmentation library written in Rust language with wide language support optimized for speed and utility.
@@ -17,6 +18,7 @@ Besides native Rust, bindings for the following programming languages are availa
 * [Python](https://pypi.org/project/sentencex/)
 * [Nodejs](https://www.npmjs.com/package/sentencex)
 * [Web(Wasm)](https://www.npmjs.com/package/sentencex-wasm)
+* [C#](https://www.nuget.org/packages/sentencex/)
 
 ## Approach
 
@@ -163,6 +165,35 @@ async function main() {
 main();
 ```
 
+### C# / .NET 10+
+
+Install from nuget:
+
+```bash
+dotnet add package sentencex
+```
+
+```csharp
+using Sentencex;
+
+string language = "en";
+string inputText = "The James Webb Space Telescope (JWST) is a space telescope specifically designed to conduct infrared astronomy. The U.S. National Aeronautics and Space Administration (NASA) led Webb's design and development.";
+string[] sentences = Segmenter.Segment("en", inputText);
+
+// Segment text into sentences
+foreach (string sentence in sentences)
+    Console.WriteLine($"Sentence: {sentence}");
+
+// Get sentence boundaries with indices and text
+SentenceBoundary[] boundaries = Segmenter.GetSentenceBoundaries(language, inputText);
+foreach (SentenceBoundary boundary in boundaries)
+    Console.WriteLine($"Sentence: '{boundary.Text}' (indices: {boundary.StartIndex}-{boundary.EndIndex})");
+
+// Get sentence boundary indices without text
+SentenceBoundarySlim[] boundariesSlim = Segmenter.GetSentenceBoundariesSlim(language, inputText);
+foreach (SentenceBoundarySlim boundary in boundariesSlim)
+    Console.WriteLine($"Sentence indices: {boundary.StartIndex}-{boundary.EndIndex}");
+```
 
 ## Language support
 

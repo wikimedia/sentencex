@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Consumed transitively by any project that depends on Sentencex when targeting net*-ios.
+    Adds the pre-built static library as a NativeFileReference so the .NET iOS toolchain
+    links it into the app binary at build time (iOS prohibits loading .dylib at runtime).
+    $(MSBuildThisFileDirectory) resolves to the buildTransitive/ folder inside the package
+    cache, so ../runtimes/ points to the runtimes/ tree in the same package.
+  -->
+  <ItemGroup Condition="$(TargetFramework.Contains('-ios'))">
+    <NativeFileReference
+      Include="$(MSBuildThisFileDirectory)../runtimes/$(RuntimeIdentifier)/native/libsentencex_dotnet.a"
+      ForceLoad="true"
+	  SmartLink="false"
+      Condition="'$(RuntimeIdentifier)' == 'ios-arm64' or
+                 '$(RuntimeIdentifier)' == 'iossimulator-arm64' or
+                 '$(RuntimeIdentifier)' == 'iossimulator-x64'" />
+  </ItemGroup>
+</Project>
