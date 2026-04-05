@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.18] - 2026-04-05
+
+### Bug fixes
+- Fix implicit chunk splitting breaking words and sentences when text exceeds 10KB with no paragraph breaks (#45)
+- Add support for »...« quotation marks (a429c94)
+
 ## [1.0.17] - 2026-03-10
 
 - Add Linux ARM64 build support (#41)
