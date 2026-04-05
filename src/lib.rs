@@ -107,33 +107,6 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
         return vec![text];
     }
 
-    fn split_range_by_size<'a>(
-        text: &'a str,
-        start: usize,
-        end: usize,
-        chunk_size: usize,
-        chunks: &mut Vec<&'a str>,
-    ) {
-        if start >= end {
-            return;
-        }
-
-        let mut cursor = start;
-        while cursor < end {
-            let mut safe_end = (cursor + chunk_size).min(end);
-
-            if safe_end < end {
-                safe_end = text.floor_char_boundary(safe_end);
-                if safe_end <= cursor {
-                    safe_end = text.ceil_char_boundary((cursor + 1).min(end));
-                }
-            }
-
-            chunks.push(&text[cursor..safe_end]);
-            cursor = safe_end;
-        }
-    }
-
     let mut current_start = 0;
     let mut current_end = 0;
     let mut i = 0;
@@ -150,7 +123,9 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
                 current_end = 0;
             }
 
-            split_range_by_size(text, para_start, para_end, chunk_size, &mut chunks);
+            // Paragraph exceeds chunk_size but has no \n\n boundary to split on.
+            // Pass it through whole to avoid splitting mid-sentence or mid-word.
+            chunks.push(&text[para_start..para_end]);
             i += 1;
             continue;
         }
@@ -193,9 +168,10 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
 
 /// Segments a given text into sentences based on the specified language.
 ///
-/// For texts larger than CHUNK_SIZE, the function automatically chunks the text at paragraph
-/// boundaries (double newlines) to handle large inputs efficiently. The only fallback
-/// boundary is end of file.
+/// For texts larger than 10KB, the function chunks the text at paragraph boundaries
+/// (`\n\n`) to process large inputs efficiently. Paragraphs that exceed 10KB and
+/// contain no internal paragraph breaks are processed as a single unit to avoid
+/// splitting mid-sentence or mid-word.
 ///
 /// # Arguments
 ///
@@ -242,9 +218,11 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
 /// detailed information about each boundary including start/end indices, the text content,
 /// boundary symbols, and whether the boundary represents a paragraph break.
 ///
-/// For texts larger than chunk_size, the function automatically chunks the text at paragraph
-/// boundaries (double newlines) to handle large inputs efficiently. The returned boundaries
-/// maintain correct indices relative to the original text.
+/// For texts larger than 10KB, the function chunks the text at paragraph boundaries
+/// (`\n\n`) to process large inputs efficiently. Paragraphs that exceed 10KB and
+/// contain no internal paragraph breaks are processed as a single unit to avoid
+/// splitting mid-sentence or mid-word. The returned boundaries maintain correct
+/// indices relative to the original text.
 ///
 /// # Arguments
 ///
@@ -377,12 +355,78 @@ mod tests {
 
     #[test]
     fn test_chunk_text_no_paragraph_breaks() {
+        // Text with no \n\n but longer than chunk_size: returned as a single chunk,
+        // never split mid-word or mid-sentence.
         let text =
             "This is a long text without paragraph breaks that should be returned as one chunk.";
         let chunks = chunk_text(text, 20);
-        assert!(chunks.len() > 1);
-        assert!(chunks.iter().all(|chunk| chunk.len() <= 20));
-        assert_eq!(chunks.concat(), text);
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0], text);
+    }
+
+    #[test]
+    fn test_segment_no_word_split_at_chunk_boundary() {
+        // Reproduce issue #45: text >10KB with no \n\n, where "Christopher" straddles
+        // the 10240-byte hard-split boundary (4 bytes "Chri" in chunk 0, "stopher." in chunk 1).
+        const CHUNK_SIZE: usize = 10 * 1024;
+        // Pad with exactly CHUNK_SIZE - 4 bytes so "Christopher" starts at byte CHUNK_SIZE - 4
+        let padding = "a".repeat(CHUNK_SIZE - 4);
+        let text = format!("{}Christopher.", padding);
+        assert!(text.len() > CHUNK_SIZE, "test input must exceed chunk size");
+        // Confirm the split would fall inside "Christopher"
+        assert_eq!(&text[CHUNK_SIZE - 4..CHUNK_SIZE], "Chri");
+
+        let sentences = segment("en", &text);
+        // "Christopher" must appear whole — no fragment like "Chri" or "stopher." as a sentence
+        for s in &sentences {
+            assert!(
+                !s.trim_end().ends_with("Chri"),
+                "Word 'Christopher' was split: sentence ends with 'Chri': {:?}",
+                s
+            );
+            assert!(
+                !s.trim_start().starts_with("stopher"),
+                "Word 'Christopher' was split: sentence starts with 'stopher': {:?}",
+                s
+            );
+        }
+        assert!(
+            sentences.iter().any(|s| s.contains("Christopher")),
+            "Expected 'Christopher' to appear whole in a sentence, got: {:?}",
+            sentences.last()
+        );
+    }
+
+    #[test]
+    fn test_get_sentence_boundaries_no_word_split_at_chunk_boundary() {
+        // Same setup as above but via get_sentence_boundaries.
+        const CHUNK_SIZE: usize = 10 * 1024;
+        let padding = "a".repeat(CHUNK_SIZE - 4);
+        let text = format!("{}Christopher.", padding);
+        assert!(text.len() > CHUNK_SIZE, "test input must exceed chunk size");
+
+        let boundaries = get_sentence_boundaries("en", &text);
+
+        // No boundary text should be a fragment of "Christopher"
+        for b in &boundaries {
+            assert!(
+                !b.text.trim_end().ends_with("Chri"),
+                "Boundary ends with split fragment 'Chri': {:?}",
+                b.text
+            );
+            assert!(
+                !b.text.trim_start().starts_with("stopher"),
+                "Boundary starts with split fragment 'stopher': {:?}",
+                b.text
+            );
+        }
+
+        // Full text must be reconstructable from boundary spans
+        let reconstructed: String = boundaries.iter().map(|b| b.text).collect();
+        assert_eq!(
+            reconstructed, text,
+            "Text reconstruction failed after chunking"
+        );
     }
 
     #[test]
