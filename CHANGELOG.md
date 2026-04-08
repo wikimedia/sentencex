@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.19] - 2026-04-08
+
+### Added
+- Add .NET bindings with native library packaging and tests
+
 ## [1.0.18] - 2026-04-05
 
 ### Bug fixes
