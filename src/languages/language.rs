@@ -211,6 +211,13 @@ pub trait Language {
                     continue;
                 }
 
+                // Quote-extension can move a boundary past later regex matches in the
+                // same paragraph. Ignore those stale matches so boundaries stay
+                // strictly increasing instead of slicing backwards later.
+                if boundary <= *sentence_boundaries.last().unwrap() {
+                    continue;
+                }
+
                 sentence_boundaries.push(boundary);
             }
 

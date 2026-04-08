@@ -643,6 +643,31 @@ mod tests {
     }
 
     #[test]
+    fn test_segment_quote_followed_by_spaced_dots_does_not_panic() {
+        // Minimized from a JPMorgan annual-report TOC line that previously caused
+        // quote-extension to push a later boundary backwards.
+        let text = "\"x.\" . .";
+        let sentences = segment("en", text);
+
+        assert_eq!(sentences, vec![text]);
+    }
+
+    #[test]
+    fn test_get_sentence_boundaries_quote_followed_by_spaced_dots_does_not_panic() {
+        let text = "\"x.\" . .";
+        let boundaries = get_sentence_boundaries("en", text);
+
+        assert_eq!(boundaries.len(), 1);
+        assert_eq!(boundaries[0].text, text);
+        assert_eq!(boundaries[0].start_index, 0);
+        assert_eq!(boundaries[0].end_index, text.chars().count());
+        assert_eq!(boundaries[0].start_byte, 0);
+        assert_eq!(boundaries[0].end_byte, text.len());
+        assert_eq!(boundaries[0].boundary_symbol.as_deref(), Some("."));
+        assert!(!boundaries[0].is_paragraph_break);
+    }
+
+    #[test]
     fn test_boundary_symbol_detection_with_trailing_space() {
         // This test reproduces the bug from issue #35:
         // boundary_symbols are not detected if space follows boundary_symbol
