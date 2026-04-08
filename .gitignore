@@ -1,9 +1,13 @@
 __pycache__
 .venv
 .tox
+.vs
 .vscode
 .ruff_cache
 .pytest_cache
 dist
 /target
 benchmarks/fixtures/
+bin/
+obj/
+*.g.cs

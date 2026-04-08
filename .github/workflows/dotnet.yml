@@ -1,0 +1,305 @@
+name: .NET - Build and Publish NuGet
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Build the native cdylib on each target platform ───────────────────────
+  build-native:
+    name: Build (${{ matrix.settings.rid }})
+    runs-on: ${{ matrix.settings.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - runner: windows-latest
+            rid: win-x64
+            lib: sentencex_dotnet.dll
+            use_zigbuild: false
+            cargo_out_dir: target/release
+
+          - runner: ubuntu-latest
+            rid: linux-x64
+            lib: libsentencex_dotnet.so
+            use_zigbuild: true
+            cargo_target: x86_64-unknown-linux-gnu.2.35
+            cargo_out_dir: target/x86_64-unknown-linux-gnu/release
+
+          - runner: ubuntu-24.04-arm
+            rid: linux-arm64
+            lib: libsentencex_dotnet.so
+            use_zigbuild: true
+            cargo_target: aarch64-unknown-linux-gnu.2.35
+            cargo_out_dir: target/aarch64-unknown-linux-gnu/release
+
+          - runner: macos-15-intel
+            rid: osx-x64
+            lib: libsentencex_dotnet.dylib
+            use_zigbuild: false
+            cargo_out_dir: target/release
+
+          - runner: macos-latest
+            rid: osx-arm64
+            lib: libsentencex_dotnet.dylib
+            use_zigbuild: false
+            cargo_out_dir: target/release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.settings.rid }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-zigbuild
+        if: matrix.settings.use_zigbuild
+        run: pip install ziglang && cargo install cargo-zigbuild
+
+      - name: Build native library (Linux, zigbuild)
+        if: matrix.settings.use_zigbuild
+        run: cargo zigbuild --release -p sentencex-dotnet --target ${{ matrix.settings.cargo_target }}
+
+      - name: Build native library
+        if: ${{ !matrix.settings.use_zigbuild }}
+        run: cargo build --release -p sentencex-dotnet
+
+      - name: Stage native library for tests (zigbuild)
+        if: matrix.settings.use_zigbuild
+        run: |
+          mkdir -p target/release
+          cp ${{ matrix.settings.cargo_out_dir }}/${{ matrix.settings.lib }} target/release/${{ matrix.settings.lib }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Run tests
+        run: dotnet test bindings/dotnet/Sentencex.Tests/Sentencex.Tests.csproj --configuration Release --framework net10.0 -p:TargetFrameworks=net10.0 --logger "console;verbosity=normal"
+
+      - name: Upload native library
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.settings.rid }}
+          path: ${{ matrix.settings.cargo_out_dir }}/${{ matrix.settings.lib }}
+          if-no-files-found: error
+
+  # ── Build the native cdylib for all Android ABIs ────────────────────────
+  build-android-native:
+    name: Build (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: android-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Build for Android
+        run: cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 build --release -p sentencex-dotnet
+
+      - name: Stage Android libraries
+        run: |
+          mkdir -p android-staging/android-arm64
+          mkdir -p android-staging/android-arm
+          mkdir -p android-staging/android-x64
+          cp target/aarch64-linux-android/release/libsentencex_dotnet.so   android-staging/android-arm64/
+          cp target/armv7-linux-androideabi/release/libsentencex_dotnet.so android-staging/android-arm/
+          cp target/x86_64-linux-android/release/libsentencex_dotnet.so    android-staging/android-x64/
+
+      - name: Upload Android native libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-android
+          path: android-staging/
+          if-no-files-found: error
+
+  # ── Build the native cdylib for iOS and Mac Catalyst ──────────────────────
+  build-apple-native:
+    name: Build (iOS + Mac Catalyst)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # All Apple targets are Tier 2 as of Rust 1.77 — stable is sufficient
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios,aarch64-apple-ios-macabi,x86_64-apple-ios-macabi
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: apple-mobile-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build for iOS device (arm64)
+        run: cargo build --release --target aarch64-apple-ios -p sentencex-dotnet
+
+      - name: Build for iOS Simulator (arm64)
+        run: cargo build --release --target aarch64-apple-ios-sim -p sentencex-dotnet
+
+      - name: Build for iOS Simulator (x64)
+        run: cargo build --release --target x86_64-apple-ios -p sentencex-dotnet
+
+      - name: Build for Mac Catalyst (arm64)
+        run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          cargo build --release --target aarch64-apple-ios-macabi -p sentencex-dotnet
+
+      - name: Build for Mac Catalyst (x64)
+        run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          cargo build --release --target x86_64-apple-ios-macabi -p sentencex-dotnet
+
+      - name: Stage Apple mobile libraries
+        run: |
+          mkdir -p apple-staging/ios-arm64
+          mkdir -p apple-staging/iossimulator-arm64
+          mkdir -p apple-staging/iossimulator-x64
+          mkdir -p apple-staging/maccatalyst-arm64
+          mkdir -p apple-staging/maccatalyst-x64
+          cp target/aarch64-apple-ios/release/libsentencex_dotnet.a           apple-staging/ios-arm64/
+          cp target/aarch64-apple-ios-sim/release/libsentencex_dotnet.a        apple-staging/iossimulator-arm64/
+          cp target/x86_64-apple-ios/release/libsentencex_dotnet.a             apple-staging/iossimulator-x64/
+          cp target/aarch64-apple-ios-macabi/release/libsentencex_dotnet.dylib apple-staging/maccatalyst-arm64/
+          cp target/x86_64-apple-ios-macabi/release/libsentencex_dotnet.dylib  apple-staging/maccatalyst-x64/
+
+      - name: Upload Apple mobile libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-apple-mobile
+          path: apple-staging/
+          if-no-files-found: error
+
+  # ── Collect all natives, pack, and publish ────────────────────────────────
+  pack:
+    name: Pack and Publish NuGet
+    runs-on: macos-latest
+    needs: [build-native, build-android-native, build-apple-native]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Install .NET workloads
+        run: dotnet workload install ios maccatalyst macos android
+
+      - name: Download all native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: native-artifacts
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Generate C# bindings (csbindgen)
+        working-directory: bindings/dotnet
+        run: cargo build -p sentencex-dotnet
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="0.0.0-ci.${{ github.run_number }}"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Resolved version: $VERSION"
+
+      - name: Build
+        working-directory: bindings/dotnet/Sentencex
+        run: dotnet build --configuration Release
+
+      - name: Stage native libraries
+        shell: bash
+        run: |
+          RD="$(pwd)/bindings/dotnet/Sentencex/runtimes"
+          NA="$(pwd)/native-artifacts"
+
+          mkdir -p "$RD/win-x64/native"
+          cp "$NA/native-win-x64/sentencex_dotnet.dll" "$RD/win-x64/native/"
+
+          mkdir -p "$RD/linux-x64/native"
+          mkdir -p "$RD/linux-arm64/native"
+          cp "$NA/native-linux-x64/libsentencex_dotnet.so"   "$RD/linux-x64/native/"
+          cp "$NA/native-linux-arm64/libsentencex_dotnet.so" "$RD/linux-arm64/native/"
+
+          mkdir -p "$RD/osx-x64/native"
+          mkdir -p "$RD/osx-arm64/native"
+          cp "$NA/native-osx-x64/libsentencex_dotnet.dylib"   "$RD/osx-x64/native/"
+          cp "$NA/native-osx-arm64/libsentencex_dotnet.dylib" "$RD/osx-arm64/native/"
+
+          mkdir -p "$RD/android-arm64/native"
+          mkdir -p "$RD/android-arm/native"
+          mkdir -p "$RD/android-x64/native"
+          cp "$NA/native-android/android-arm64/libsentencex_dotnet.so" "$RD/android-arm64/native/"
+          cp "$NA/native-android/android-arm/libsentencex_dotnet.so"   "$RD/android-arm/native/"
+          cp "$NA/native-android/android-x64/libsentencex_dotnet.so"   "$RD/android-x64/native/"
+
+          mkdir -p "$RD/ios-arm64/native"
+          mkdir -p "$RD/iossimulator-arm64/native"
+          mkdir -p "$RD/iossimulator-x64/native"
+          cp "$NA/native-apple-mobile/ios-arm64/libsentencex_dotnet.a"          "$RD/ios-arm64/native/"
+          cp "$NA/native-apple-mobile/iossimulator-arm64/libsentencex_dotnet.a" "$RD/iossimulator-arm64/native/"
+          cp "$NA/native-apple-mobile/iossimulator-x64/libsentencex_dotnet.a"   "$RD/iossimulator-x64/native/"
+
+          mkdir -p "$RD/maccatalyst-arm64/native"
+          mkdir -p "$RD/maccatalyst-x64/native"
+          cp "$NA/native-apple-mobile/maccatalyst-arm64/libsentencex_dotnet.dylib" "$RD/maccatalyst-arm64/native/"
+          cp "$NA/native-apple-mobile/maccatalyst-x64/libsentencex_dotnet.dylib"   "$RD/maccatalyst-x64/native/"
+
+      - name: Pack
+        working-directory: bindings/dotnet/Sentencex
+        run: dotnet pack --no-build --configuration Release -p:Version=${{ steps.version.outputs.VERSION }} --output nupkgs
+
+      - name: Upload NuGet package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: bindings/dotnet/Sentencex/nupkgs/*.nupkg
+
+      - name: Publish to NuGet.org
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: bindings/dotnet/Sentencex
+        run: dotnet nuget push nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

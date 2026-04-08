@@ -1,0 +1,7 @@
+bin/
+obj/
+# Native libraries staged locally or by CI — not committed to source
+runtimes/
+staging/
+# NuGet package output
+nupkgs/
