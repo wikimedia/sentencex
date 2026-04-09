@@ -48,7 +48,7 @@ jobs:
       - name: Install pytest
         run: pip install pytest
       - name: Install wheel for testing
-        run: pip install --find-links bindings/python/dist sentencex --force-reinstall
+        run: pip install --no-index --find-links bindings/python/dist sentencex --force-reinstall
       - name: Run tests
         run: pytest bindings/python/tests/ -v
       - name: Upload wheels
@@ -83,7 +83,7 @@ jobs:
       - name: Install pytest
         run: pip install pytest
       - name: Install wheel for testing
-        run: pip install --find-links bindings/python/dist sentencex --force-reinstall
+        run: pip install --no-index --find-links bindings/python/dist sentencex --force-reinstall
       - name: Run tests
         run: pytest bindings/python/tests/ -v
       - name: Upload wheels
@@ -117,7 +117,7 @@ jobs:
       - name: Install pytest
         run: pip install pytest
       - name: Install wheel for testing
-        run: pip install --find-links bindings/python/dist sentencex --force-reinstall
+        run: pip install --no-index --find-links bindings/python/dist sentencex --force-reinstall
       - name: Run tests
         run: pytest bindings/python/tests/ -v
       - name: Upload wheels
