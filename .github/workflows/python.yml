@@ -26,20 +26,16 @@ jobs:
         platform:
           - runner: ubuntu-24.04
             target: x86_64
-            python-architecture: x64
           - runner: ubuntu-24.04
             target: x86
-            python-architecture: x86
           - runner: ubuntu-24.04-arm
             target: aarch64
-            python-architecture: arm64
 
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-          architecture: ${{ matrix.platform.python-architecture }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -50,11 +46,33 @@ jobs:
           working-directory: bindings/python
           rust-toolchain: stable
       - name: Install pytest
+        if: ${{ matrix.platform.target != 'x86' }}
         run: pip install pytest
       - name: Install wheel for testing
+        if: ${{ matrix.platform.target != 'x86' }}
         run: pip install --no-index --find-links bindings/python/dist sentencex --force-reinstall
       - name: Run tests
+        if: ${{ matrix.platform.target != 'x86' }}
         run: pytest bindings/python/tests/ -v
+      - name: Validate linux x86 wheel selection
+        if: ${{ matrix.platform.target == 'x86' }}
+        shell: bash
+        run: |
+          # GitHub-hosted Ubuntu runners do not provide an x86 CPython, so we
+          # verify pip can still resolve the freshly built i686 wheel locally.
+          wheel_check_dir="$(mktemp -d)"
+          py_minor="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+          py_abi="$(python -c 'import sys; print(f"cp{sys.version_info.major}{sys.version_info.minor}")')"
+          python -m pip download \
+            --dest "${wheel_check_dir}" \
+            --no-index \
+            --find-links bindings/python/dist \
+            --only-binary=:all: \
+            --platform manylinux1_i686 \
+            --implementation cp \
+            --python-version "${py_minor}" \
+            --abi "${py_abi}" \
+            sentencex
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
