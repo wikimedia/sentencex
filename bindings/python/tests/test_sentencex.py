@@ -66,6 +66,13 @@ class TestSegment:
         fr_sentences = segment("fr", fr_text)
         assert len(fr_sentences) == 2
 
+    def test_quote_followed_by_spaced_dots(self):
+        """Quoted text with spaced dot leaders should not crash segmentation."""
+        text = '"x." . .'
+        sentences = segment("en", text)
+
+        assert sentences == [text]
+
 
 class TestGetSentenceBoundaries:
     """Test cases for the get_sentence_boundaries function."""
@@ -131,6 +138,16 @@ class TestGetSentenceBoundaries:
         # Check that indices are sequential
         for i in range(1, len(boundaries)):
             assert boundaries[i - 1]["end_index"] == boundaries[i]["start_index"]
+
+    def test_quote_followed_by_spaced_dots_boundaries(self):
+        """Quoted text with spaced dot leaders should not crash boundary extraction."""
+        text = '"x." . .'
+        boundaries = get_sentence_boundaries("en", text)
+
+        assert len(boundaries) == 1
+        assert boundaries[0]["text"] == text
+        assert boundaries[0]["start_index"] == 0
+        assert boundaries[0]["end_index"] == len(text)
 
 
 class TestErrorCases:
