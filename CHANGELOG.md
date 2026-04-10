@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.20] - 2026-04-10
+
+### Bug fixes
+- Skip stale quote-extended boundaries (1435136)
+
 ## [1.0.19] - 2026-04-08
 
 ### Added
