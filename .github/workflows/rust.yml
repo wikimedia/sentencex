@@ -81,7 +81,28 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: release-assets
-        merge-multiple: true
+    - name: Prepare release assets
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+
+        mkdir -p release-upload
+
+        for artifact_dir in release-assets/*; do
+          [[ -d "$artifact_dir" ]] || continue
+          artifact_name="$(basename "$artifact_dir")"
+          files=("$artifact_dir"/*)
+
+          if [[ "${#files[@]}" -ne 1 ]]; then
+            echo "Expected exactly one file in $artifact_dir, found ${#files[@]}"
+            exit 1
+          fi
+
+          cp "${files[0]}" "release-upload/${artifact_name}"
+        done
+
+        ls -l release-upload
     - name: Ensure GitHub release exists
       env:
         GH_TOKEN: ${{ github.token }}
@@ -91,7 +112,7 @@ jobs:
     - name: Upload release assets
       env:
         GH_TOKEN: ${{ github.token }}
-      run: gh release upload "${GITHUB_REF_NAME}" release-assets/* --clobber
+      run: gh release upload "${GITHUB_REF_NAME}" release-upload/* --clobber
     - uses: rust-lang/crates-io-auth-action@v1
       id: auth
     - run: cargo publish
