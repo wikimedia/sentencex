@@ -73,9 +73,25 @@ jobs:
     needs: build
     environment: release  # Optional: for enhanced security
     permissions:
+      contents: write      # Required for GitHub Release assets
       id-token: write     # Required for OIDC token exchange
     steps:
     - uses: actions/checkout@v6
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-assets
+        merge-multiple: true
+    - name: Ensure GitHub release exists
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 || \
+          gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --generate-notes
+    - name: Upload release assets
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: gh release upload "${GITHUB_REF_NAME}" release-assets/* --clobber
     - uses: rust-lang/crates-io-auth-action@v1
       id: auth
     - run: cargo publish
