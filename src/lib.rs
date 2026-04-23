@@ -313,10 +313,10 @@ mod tests {
 
     pub fn run_language_tests_for_language(language: &str, test_file: &str) {
         let content = fs::read_to_string(test_file).expect("Failed to read test file");
-        let test_cases: Vec<&str> = content.split("===\n").collect();
+        let test_cases: Vec<&str> = content.split("===").collect();
 
         for case in test_cases {
-            if case.trim().starts_with('#') || case.trim().is_empty() {
+            if case.trim().is_empty() || case.trim().starts_with('#') {
                 continue; // Skip comment and empty lines
             }
             let parts: Vec<&str> = case.split("---\n").collect();
