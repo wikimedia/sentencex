@@ -320,9 +320,7 @@ mod tests {
                 continue; // Skip comment lines
             }
             let parts: Vec<&str> = case.split("---\n").collect();
-            if parts.len() != 2 {
-                continue; // Skip malformed test cases
-            }
+            assert_eq!(parts.len(), 2, "Malformed test case: \n{}", case);
 
             let input = parts[0].trim();
             let expected: Vec<&str> = parts[1].lines().map(|line| line.trim()).collect();
