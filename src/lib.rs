@@ -316,8 +316,8 @@ mod tests {
         let test_cases: Vec<&str> = content.split("===\n").collect();
 
         for case in test_cases {
-            if case.trim().starts_with('#') {
-                continue; // Skip comment lines
+            if case.trim().starts_with('#') || case.trim().is_empty() {
+                continue; // Skip comment and empty lines
             }
             let parts: Vec<&str> = case.split("---\n").collect();
             assert_eq!(parts.len(), 2, "Malformed test case: \n{}", case);
