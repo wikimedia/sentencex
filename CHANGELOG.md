@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.21] - 2026-04-24
+
+### Added
+- Add common Latin abbreviations and variations to English (e.g. ie, eg, abbrev.)
+
+### Bug fixes
+- Fix malformed test cases for Armenian (hy), Japanese (ja), and Russian (ru) (#57)
+
+### CI
+- Add Android wheel builds for Python (PEP 738 support)
+
 ## [1.0.20] - 2026-04-10
 
 ### Bug fixes
