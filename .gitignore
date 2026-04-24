@@ -11,3 +11,4 @@ benchmarks/fixtures/
 bin/
 obj/
 *.g.cs
+.DS_Store
