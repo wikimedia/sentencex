@@ -1,7 +1,7 @@
 use super::Language;
 use std::sync::LazyLock;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Punjabi {}
 
 static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {

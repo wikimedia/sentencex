@@ -5,7 +5,7 @@ use crate::constants::ROMAN_NUMERALS;
 use super::Language;
 use super::language::continues_after_boundary;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Slovak {}
 
 static SLOVAK_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {

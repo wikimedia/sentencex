@@ -1,12 +1,12 @@
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use sentencex::{get_sentence_boundaries, segment};
+use sentencex::{fallback_language, get_sentence_boundaries, language_factory, segment};
 use std::hint::black_box;
 use std::time::Duration;
 
 fn benchmark_segment(c: &mut Criterion) {
     let text = "This is a sentence. Here is another one. And yet another sentence follows.";
     c.bench_function("segment_english", |b| {
-        b.iter(|| segment(black_box("en"), black_box(text)))
+        b.iter(|| segment(black_box(&language_factory("en").unwrap()), black_box(text)))
     });
 }
 // Generate text of varying sizes for benchmarking
@@ -33,7 +33,7 @@ fn bench_segment_by_size(c: &mut Criterion) {
         let text = generate_text(*size);
         group.throughput(Throughput::Bytes(*size as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &text, |b, text| {
-            b.iter(|| segment(black_box("en"), black_box(text)))
+            b.iter(|| segment(black_box(&language_factory("en").unwrap()), black_box(text)))
         });
     }
 
@@ -49,7 +49,12 @@ fn bench_boundary_detection_by_size(c: &mut Criterion) {
         let text = generate_text(*size);
         group.throughput(Throughput::Bytes(*size as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &text, |b, text| {
-            b.iter(|| get_sentence_boundaries(black_box("en"), black_box(text)))
+            b.iter(|| {
+                get_sentence_boundaries(
+                    black_box(&language_factory("en").unwrap()),
+                    black_box(text),
+                )
+            })
         });
     }
 
@@ -66,7 +71,7 @@ fn bench_real_corpus_segment(c: &mut Criterion) {
     for (name, text) in fixtures {
         group.throughput(Throughput::Bytes(text.len() as u64));
         group.bench_function(name, |b| {
-            b.iter(|| segment(black_box("en"), black_box(text)))
+            b.iter(|| segment(black_box(&language_factory("en").unwrap()), black_box(text)))
         });
     }
 
@@ -83,7 +88,12 @@ fn bench_real_corpus_boundaries(c: &mut Criterion) {
     for (name, text) in fixtures {
         group.throughput(Throughput::Bytes(text.len() as u64));
         group.bench_function(name, |b| {
-            b.iter(|| get_sentence_boundaries(black_box("en"), black_box(text)))
+            b.iter(|| {
+                get_sentence_boundaries(
+                    black_box(&language_factory("en").unwrap()),
+                    black_box(text),
+                )
+            })
         });
     }
 
@@ -122,7 +132,7 @@ fn bench_multi_language(c: &mut Criterion) {
 
     for (lang, text) in languages.iter() {
         group.bench_with_input(BenchmarkId::from_parameter(lang), text, |b, text| {
-            b.iter(|| segment(black_box(lang), black_box(text)))
+            b.iter(|| segment(black_box(&language_factory(lang).unwrap()), black_box(text)))
         });
     }
 
@@ -136,7 +146,7 @@ fn bench_paragraph_heavy_text(c: &mut Criterion) {
                 Fourth paragraph sentence one. Fourth paragraph sentence two.";
 
     c.bench_function("paragraph_heavy_text", |b| {
-        b.iter(|| segment(black_box("en"), black_box(text)))
+        b.iter(|| segment(black_box(&language_factory("en").unwrap()), black_box(text)))
     });
 }
 
@@ -147,7 +157,7 @@ fn bench_abbreviation_heavy_text(c: &mut Criterion) {
                 Mr. Brown and Mrs. Davis were also there.";
 
     c.bench_function("abbreviation_heavy_text", |b| {
-        b.iter(|| segment(black_box("en"), black_box(text)))
+        b.iter(|| segment(black_box(&language_factory("en").unwrap()), black_box(text)))
     });
 }
 
@@ -156,7 +166,7 @@ fn bench_quoted_text(c: &mut Criterion) {
                   "What about this?" she asked. "And this!" he exclaimed."#;
 
     c.bench_function("quoted_text", |b| {
-        b.iter(|| segment(black_box("en"), black_box(text)))
+        b.iter(|| segment(black_box(&language_factory("en").unwrap()), black_box(text)))
     });
 }
 
@@ -173,7 +183,7 @@ fn bench_real_wikipedia_sample(c: &mut Criterion) {
                 to 1968 during the Mercury, Gemini, and Apollo programs.";
 
     c.bench_function("wikipedia_sample", |b| {
-        b.iter(|| segment(black_box("en"), black_box(text)))
+        b.iter(|| segment(black_box(&language_factory("en").unwrap()), black_box(text)))
     });
 }
 

@@ -91,6 +91,8 @@ impl SkippableRange {
     }
 }
 
+impl<L> Language for Box<L> where L: Language + ?Sized {}
+
 pub trait Language {
     /// Returns a reference to the compiled regex pattern that matches sentence terminating
     /// punctuation. The default implementation uses a static LazyLock for zero-cost access.

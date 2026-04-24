@@ -13,6 +13,10 @@ use serde::Serialize;
 
 static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
 
+pub fn fallback_language() -> Box<dyn Language> {
+    Box::new(English {})
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct SentenceBoundary<'a> {
     pub start_index: usize,
@@ -24,47 +28,47 @@ pub struct SentenceBoundary<'a> {
     pub is_paragraph_break: bool,
 }
 
-pub fn language_factory(language_code: &str) -> Box<dyn Language> {
+pub fn language_factory(language_code: &str) -> Option<Box<dyn Language>> {
     let mut current_code = language_code;
     let mut visited = std::collections::HashSet::new();
 
     loop {
         if visited.contains(current_code) {
-            current_code = "en"; // Default to English if a cycle is detected
+            return None; // cycle is detected
         } else {
             visited.insert(current_code);
         }
 
         match current_code {
-            "am" => return Box::new(Amharic {}),
-            "ar" => return Box::new(Arabic {}),
-            "bg" => return Box::new(Bulgarian {}),
-            "bn" => return Box::new(Bengali {}),
-            "ca" => return Box::new(Catalan {}),
-            "da" => return Box::new(Danish {}),
-            "de" => return Box::new(German {}),
-            "en" => return Box::new(English {}),
-            "es" => return Box::new(Spanish {}),
-            "el" => return Box::new(Greek {}),
-            "gu" => return Box::new(Gujarati {}),
-            "hi" => return Box::new(Hindi {}),
-            "hy" => return Box::new(Armenian {}),
-            "ja" => return Box::new(Japanese {}),
-            "ml" => return Box::new(Malayalam {}),
-            "mr" => return Box::new(Marathi {}),
-            "sk" => return Box::new(Slovak {}),
-            "my" => return Box::new(Burmese {}),
-            "nl" => return Box::new(Dutch {}),
-            "pt" => return Box::new(Portuguese {}),
-            "it" => return Box::new(Italian {}),
-            "ta" => return Box::new(Tamil {}),
-            "te" => return Box::new(Tamil {}),
-            "kn" => return Box::new(Kannada {}),
-            "kk" => return Box::new(Kazakh {}),
-            "pa" => return Box::new(Punjabi {}),
-            "pl" => return Box::new(Polish {}),
-            "fr" => return Box::new(French {}),
-            "fi" => return Box::new(Finnish {}),
+            "am" => return Some(Box::new(Amharic {})),
+            "ar" => return Some(Box::new(Arabic {})),
+            "bg" => return Some(Box::new(Bulgarian {})),
+            "bn" => return Some(Box::new(Bengali {})),
+            "ca" => return Some(Box::new(Catalan {})),
+            "da" => return Some(Box::new(Danish {})),
+            "de" => return Some(Box::new(German {})),
+            "en" => return Some(Box::new(English {})),
+            "es" => return Some(Box::new(Spanish {})),
+            "el" => return Some(Box::new(Greek {})),
+            "gu" => return Some(Box::new(Gujarati {})),
+            "hi" => return Some(Box::new(Hindi {})),
+            "hy" => return Some(Box::new(Armenian {})),
+            "ja" => return Some(Box::new(Japanese {})),
+            "ml" => return Some(Box::new(Malayalam {})),
+            "mr" => return Some(Box::new(Marathi {})),
+            "sk" => return Some(Box::new(Slovak {})),
+            "my" => return Some(Box::new(Burmese {})),
+            "nl" => return Some(Box::new(Dutch {})),
+            "pt" => return Some(Box::new(Portuguese {})),
+            "it" => return Some(Box::new(Italian {})),
+            "ta" => return Some(Box::new(Tamil {})),
+            "te" => return Some(Box::new(Tamil {})),
+            "kn" => return Some(Box::new(Kannada {})),
+            "kk" => return Some(Box::new(Kazakh {})),
+            "pa" => return Some(Box::new(Punjabi {})),
+            "pl" => return Some(Box::new(Polish {})),
+            "fr" => return Some(Box::new(French {})),
+            "fi" => return Some(Box::new(Finnish {})),
             _ => {
                 if let Some(fallbacks) = languages::get_fallbacks(current_code) {
                     for next_code in fallbacks {
@@ -74,7 +78,7 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
                         }
                     }
                 } else {
-                    current_code = "en"; // Default to English if no fallbacks are found
+                    return None; // No fallbacks are found
                 }
             }
         }
@@ -185,18 +189,16 @@ fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
 /// # Example
 ///
 /// ```
-/// use sentencex::segment;
+/// use sentencex::{languages::English, segment};
 ///
 /// let language_code = "en";
 /// let text = "Hello world. This is a test.";
-/// let sentences = segment(language_code, text);
+/// let sentences = segment(&English{}, text);
 ///
 /// assert_eq!(sentences, vec!["Hello world. ", "This is a test."]);
 /// ```
-pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
+pub fn segment<'a, L: Language>(language: &L, text: &'a str) -> Vec<&'a str> {
     const CHUNK_SIZE: usize = 10 * 1024; // 10KB
-
-    let language = language_factory(language_code);
 
     if text.len() > CHUNK_SIZE {
         let chunks = chunk_text(text, CHUNK_SIZE);
@@ -242,24 +244,21 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
 /// # Example
 ///
 /// ```
-/// use sentencex::get_sentence_boundaries;
+/// use sentencex::{languages::English, get_sentence_boundaries};
 ///
-/// let language_code = "en";
 /// let text = "Hello world. This is a test.\n\nNew paragraph.";
-/// let boundaries = get_sentence_boundaries(language_code, text);
+/// let boundaries = get_sentence_boundaries(&English{}, text);
 ///
 /// for boundary in boundaries {
 ///     println!("Text: {:?}, Start: {}, End: {}",
 ///              boundary.text, boundary.start_index, boundary.end_index);
 /// }
 /// ```
-pub fn get_sentence_boundaries<'a>(
-    language_code: &str,
+pub fn get_sentence_boundaries<'a, L: Language>(
+    language: &L,
     text: &'a str,
 ) -> Vec<SentenceBoundary<'a>> {
     const CHUNK_SIZE: usize = 10 * 1024; // 10KB
-
-    let language = language_factory(language_code);
 
     if text.len() > CHUNK_SIZE {
         let chunks = chunk_text(text, CHUNK_SIZE);
@@ -311,7 +310,7 @@ mod tests {
 
     use super::*;
 
-    pub fn run_language_tests_for_language(language: &str, test_file: &str) {
+    pub fn run_language_tests_for_language<L: Language>(language: &L, test_file: &str) {
         let content = fs::read_to_string(test_file).expect("Failed to read test file");
         let test_cases: Vec<&str> = content.split("===").collect();
 
@@ -344,11 +343,11 @@ mod tests {
 
     #[test]
     fn test_urdu_segment() {
-        run_language_tests_for_language("ur", "tests/ur.txt");
+        run_language_tests_for_language(&language_factory("en").unwrap(), "tests/ur.txt");
     }
     #[test]
     fn test_chinese_segment() {
-        run_language_tests_for_language("zh", "tests/zh.txt");
+        run_language_tests_for_language(&language_factory("en").unwrap(), "tests/zh.txt");
     }
 
     #[test]
@@ -443,21 +442,21 @@ mod tests {
         let small_text = "First sentence. Second sentence.\n\nThird sentence. Fourth sentence.";
         let large_text = small_text.repeat(10000); // This will be > 512KB
 
-        let result = segment("en", &large_text);
-        let expected_per_repetition = segment("en", small_text);
+        let result = segment(&language_factory("en").unwrap(), &large_text);
+        let expected_per_repetition = segment(&language_factory("en").unwrap(), small_text);
 
         // Verify that we get the expected pattern repeated
         assert!(result.len() >= expected_per_repetition.len() * 9000); // Allow for some variation
 
         // Test that small text still works normally
-        let small_result = segment("en", small_text);
+        let small_result = segment(&language_factory("en").unwrap(), small_text);
         assert_eq!(small_result, expected_per_repetition);
     }
 
     #[test]
     fn test_get_sentence_boundaries_with_paragraph_breaks() {
         let text = "Title\n\nSentence 1.\n\nSentence 2.";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         // Should have at least 2 sentences plus paragraph breaks
         assert!(boundaries.len() >= 2);
@@ -493,7 +492,7 @@ mod tests {
     fn test_get_sentence_boundaries_with_multibyte_cjk() {
         // Test with Japanese and Chinese characters (multi-byte UTF-8)
         let text = "日本語です。\n\n中文文章。";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         // Should have sentences and paragraph break
         assert!(
@@ -526,7 +525,7 @@ mod tests {
     fn test_get_sentence_boundaries_with_emoji() {
         // Test with emoji characters (4-byte UTF-8)
         let text = "Hello world 👋.\n\nGoodbye 👋.";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         // Should have sentences and paragraph break
         assert!(
@@ -557,7 +556,7 @@ mod tests {
     fn test_get_sentence_boundaries_with_mixed_scripts() {
         // Test with mixed ASCII, Latin extended, and CJK
         let text = "English text. Café résumé.\n\n日本語のテキスト。";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         // Verify text reconstruction
         let reconstructed: String = boundaries.iter().map(|b| b.text).collect();
@@ -592,7 +591,7 @@ mod tests {
         // This test specifically validates that character indices (start_index/end_index)
         // are correctly distinguished from byte offsets (start_byte/end_byte)
         let text = "Short. 日本語.";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         // Count actual characters in original text
         let total_chars = text.chars().count();
@@ -637,7 +636,7 @@ mod tests {
     fn test_segment_with_multibyte_characters() {
         // Test basic segment function with multi-byte characters
         let text = "日本語です。中文文章。";
-        let sentences = segment("en", text);
+        let sentences = segment(&language_factory("en").unwrap(), text);
 
         // Should segment into sentences
         assert!(sentences.len() > 0, "Should find at least one sentence");
@@ -680,7 +679,7 @@ mod tests {
         // This test reproduces the bug from issue #35:
         // boundary_symbols are not detected if space follows boundary_symbol
         let text = "Hello world. This is a test.Another test. And another test.";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         // Verify we have at least 4 boundaries (4 sentences)
         assert!(
@@ -715,7 +714,7 @@ mod tests {
     fn test_boundary_symbol_with_multiple_trailing_spaces() {
         // Test that multiple trailing spaces don't prevent symbol detection
         let text = "Hello.  This is another.   Yet another.";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         let non_paragraph = boundaries
             .iter()
@@ -737,7 +736,7 @@ mod tests {
     fn test_boundary_symbol_with_mixed_terminators() {
         // Test various sentence terminators with trailing spaces
         let text = "Hello! How are you? I'm fine. Yes.";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         let non_paragraph = boundaries
             .iter()
@@ -765,7 +764,7 @@ mod tests {
     fn test_boundary_symbol_with_cjk_terminator() {
         // Test with CJK full stop (。) which is a valid sentence terminator
         let text = "日本語です。中文です。";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         let non_paragraph = boundaries
             .iter()
@@ -789,7 +788,7 @@ mod tests {
     fn test_boundary_symbol_with_tabs_and_spaces() {
         // Test with mixed whitespace (tabs and spaces)
         let text = "First sentence.\t\n  Second sentence. Third one!";
-        let boundaries = get_sentence_boundaries("en", text);
+        let boundaries = get_sentence_boundaries(&language_factory("en").unwrap(), text);
 
         let non_paragraph = boundaries
             .iter()

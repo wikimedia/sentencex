@@ -6,7 +6,7 @@ use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 
 use super::Language;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Greek {}
 
 static GREEK_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {

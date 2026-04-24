@@ -16,7 +16,7 @@ static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
     abbreviations
 });
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Portuguese {}
 
 impl Language for Portuguese {

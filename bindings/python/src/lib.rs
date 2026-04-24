@@ -1,11 +1,13 @@
 #[pyo3::pymodule(gil_used = false)]
 mod sentencex {
+    use sentencex::{fallback_language, language_factory};
     use ::sentencex::{get_sentence_boundaries as _get_sentence_boundaries, segment as _segment};
     use pyo3::{prelude::*, types::PyDict};
 
     #[pyfunction]
     pub fn segment<'a>(language: &str, text: &'a str) -> Vec<&'a str> {
-        _segment(language, text)
+        let language = language_factory(&language).unwrap_or_else(fallback_language);
+        _segment(&language, text)
     }
 
     #[pyfunction]
@@ -14,7 +16,8 @@ mod sentencex {
         language: &str,
         text: &str,
     ) -> PyResult<Vec<Py<PyAny>>> {
-        let boundaries = _get_sentence_boundaries(language, text);
+        let language = language_factory(&language).unwrap_or_else(fallback_language);
+        let boundaries = _get_sentence_boundaries(&language, text);
 
         let mut result = Vec::new();
         for boundary in boundaries {

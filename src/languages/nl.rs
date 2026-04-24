@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use super::Language;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Dutch {}
 
 static DUTCH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
