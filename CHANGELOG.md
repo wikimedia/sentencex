@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.22] - 2026-04-27
+
+### Added
+- Add Ukrainian Support (#58)
+
+### CI
+- Add --allow-dirty to cargo publish in rust workflow
+
 ## [1.0.21] - 2026-04-24
 
 ### Added
