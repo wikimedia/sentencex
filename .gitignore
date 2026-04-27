@@ -12,3 +12,5 @@ bin/
 obj/
 *.g.cs
 .DS_Store
+release-assets/
+release-upload/
