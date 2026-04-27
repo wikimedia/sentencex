@@ -1,7 +1,7 @@
 use languages::{
     Amharic, Arabic, Armenian, Bengali, Bulgarian, Burmese, Catalan, Danish, Dutch, English,
     Finnish, French, German, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
-    Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil,
+    Malayalam, Marathi, Polish, Portuguese, Punjabi, Slovak, Spanish, Tamil, Ukrainian,
 };
 use regex::Regex;
 use std::sync::LazyLock;
@@ -65,6 +65,7 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
             "pl" => return Box::new(Polish {}),
             "fr" => return Box::new(French {}),
             "fi" => return Box::new(Finnish {}),
+            "uk" => return Box::new(Ukrainian {}),
             _ => {
                 if let Some(fallbacks) = languages::get_fallbacks(current_code) {
                     for next_code in fallbacks {
