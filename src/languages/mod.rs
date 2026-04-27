@@ -30,6 +30,7 @@ mod ru;
 mod sk;
 mod ta;
 mod te;
+mod uk;
 
 pub use am::Amharic;
 pub use ar::Arabic;
@@ -63,6 +64,7 @@ pub use ru::Russian;
 pub use sk::Slovak;
 pub use ta::Tamil;
 pub use te::Telugu;
+pub use uk::Ukrainian;
 
 #[cfg(test)]
 mod tests {
