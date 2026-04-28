@@ -686,7 +686,7 @@ checksum = "cd0b0ec5f1c1ca621c432a25813d8d60c88abe6d3e08a3eb9cf37d97a0fe3d73"
 
 [[package]]
 name = "sentencex"
-version = "0.1.22"
+version = "0.1.23"
 dependencies = [
  "clap",
  "criterion",
@@ -696,7 +696,7 @@ dependencies = [
 
 [[package]]
 name = "sentencex-dotnet"
-version = "0.1.22"
+version = "0.1.23"
 dependencies = [
  "csbindgen",
  "sentencex",
@@ -704,7 +704,7 @@ dependencies = [
 
 [[package]]
 name = "sentencex-js"
-version = "1.0.22"
+version = "1.0.23"
 dependencies = [
  "neon",
  "neon-build",
@@ -713,7 +713,7 @@ dependencies = [
 
 [[package]]
 name = "sentencex-py"
-version = "0.1.22"
+version = "0.1.23"
 dependencies = [
  "pyo3",
  "sentencex",
@@ -721,7 +721,7 @@ dependencies = [
 
 [[package]]
 name = "sentencex-wasm"
-version = "0.1.22"
+version = "0.1.23"
 dependencies = [
  "sentencex",
  "serde",

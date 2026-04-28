@@ -1,6 +1,6 @@
 {
   "name": "sentencex-linux-arm64",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "os": ["linux"],
   "cpu": ["arm64"],
   "main": "index.node",

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.23] - 2026-04-28
+
+### CI
+- Ignore temporary assets while publishing to crates.io
+
 ## [1.0.22] - 2026-04-27
 
 ### Added
