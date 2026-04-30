@@ -326,3 +326,41 @@ Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; h
 Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; however, further tests (e.g., MRI, CT scan) are required.".
 Meanwhile, the nurse—who had been on duty since 7:00 a.m.—noted that the patient's vitals (BP: 120/80, HR: 75) were within normal limits.
 "Let's proceed with the tests ASAP," she added.
+===
+He said `opens with a different symbol to what is used to close it.' Next sentence. "He said `hello world.' and left."
+---
+He said `opens with a different symbol to what is used to close it.'
+Next sentence.
+"He said `hello world.' and left."
+===
+He said ``opens with a different symbol to what is used to close it.'' Next sentence. "He said ``hello world.'' and left."
+---
+He said ``opens with a different symbol to what is used to close it.''
+Next sentence.
+"He said ``hello world.'' and left."
+===
+He said `opens with a different symbol to what is used to close it.` Next sentence. "He said `hello world.` and left."
+---
+He said `opens with a different symbol to what is used to close it.`
+Next sentence.
+"He said `hello world.` and left."
+===
+He said ``opens with a different symbol to what is used to close it.`` Next sentence. "He said ``hello world.`` and left."
+---
+He said ``opens with a different symbol to what is used to close it.``
+Next sentence.
+"He said ``hello world.`` and left."
+===
+'opens with a different symbol to what is used to close it.' Next sentence.
+---
+'opens with a different symbol to what is used to close it.'
+Next sentence.
+===
+It's fine, `just use L'Hôpital's rule here.'
+---
+It's fine, `just use L'Hôpital's rule here.'
+===
+it`s fine to leave it's foods' smells to the cat`s nose
+---
+it`s fine to leave it's foods' smells to the cat`s nose
+===

@@ -7,6 +7,7 @@ use crate::constants::EXCLAMATION_WORDS;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
 use crate::constants::QUOTES_REGEX;
+use crate::constants::QUOTE_CLOSERS_BY_LEN;
 
 static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
@@ -88,6 +89,18 @@ impl SkippableRange {
 
     pub fn is_quote(&self) -> bool {
         self.range_type == SkippableRangeType::Quote
+    }
+
+    pub fn is_inner_terminator(&self, text: &str, boundary: usize) -> bool {
+        if !self.is_quote() || boundary >= self.end {
+            return false;
+        }
+        
+        let head = &text[..self.end];
+        QUOTE_CLOSERS_BY_LEN
+            .iter()
+            .find(|c| head.ends_with(*c))
+            .is_some_and(|c| boundary + c.len() == self.end)
     }
 }
 
@@ -194,8 +207,7 @@ pub trait Language {
                     if range.contains(boundary) {
                         let next_word = self.get_next_word_approx(paragraph, range.end);
                         let boundary_extend = self.get_boundary_extend(next_word);
-                        if range.is_quote()
-                            && paragraph.ceil_char_boundary(boundary + 1) == range.end
+                        if range.is_inner_terminator(paragraph, boundary)
                             && boundary_extend >= 0
                         {
                             boundary = range.end + boundary_extend as usize;

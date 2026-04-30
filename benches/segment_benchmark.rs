@@ -152,12 +152,28 @@ fn bench_abbreviation_heavy_text(c: &mut Criterion) {
 }
 
 fn bench_quoted_text(c: &mut Criterion) {
-    let text = r#"She said, "This is the first sentence." He replied, "This is the second one." 
+    let text = r#"She said, "This is the first sentence." He replied, "This is the second one."
                   "What about this?" she asked. "And this!" he exclaimed."#;
 
     c.bench_function("quoted_text", |b| {
         b.iter(|| segment(black_box("en"), black_box(text)))
     });
+}
+
+fn bench_quote_heavy_inner_terminators(c: &mut Criterion) {
+    let unit = "He said `hi.` Then ``ok.'' Plus `bye.` And \"done.\" \
+                Also «fini.» And “end.” Repeat. ";
+    
+    let text = unit.repeat(200);
+
+    let mut group = c.benchmark_group("quote_heavy_inner_terminators");
+    
+    group.throughput(Throughput::Bytes(text.len() as u64));
+    group.bench_function("mixed_closers", |b| {
+        b.iter(|| segment(black_box("en"), black_box(&text)))
+    });
+
+    group.finish();
 }
 
 fn bench_real_wikipedia_sample(c: &mut Criterion) {
@@ -188,6 +204,7 @@ criterion_group!(
     bench_paragraph_heavy_text,
     bench_abbreviation_heavy_text,
     bench_quoted_text,
+    bench_quote_heavy_inner_terminators,
     bench_real_wikipedia_sample
 );
 criterion_main!(benches);
