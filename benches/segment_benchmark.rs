@@ -152,7 +152,7 @@ fn bench_abbreviation_heavy_text(c: &mut Criterion) {
 }
 
 fn bench_quoted_text(c: &mut Criterion) {
-    let text = r#"She said, "This is the first sentence." He replied, "This is the second one." 
+    let text = r#"She said, "This is the first sentence." He replied, "This is the second one."
                   "What about this?" she asked. "And this!" he exclaimed."#;
 
     c.bench_function("quoted_text", |b| {
