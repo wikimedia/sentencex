@@ -160,6 +160,22 @@ fn bench_quoted_text(c: &mut Criterion) {
     });
 }
 
+fn bench_quote_heavy_inner_terminators(c: &mut Criterion) {
+    let unit = "He said `hi.` Then ``ok.'' Plus `bye.` And \"done.\" \
+                Also «fini.» And “end.” Repeat. ";
+
+    let text = unit.repeat(200);
+
+    let mut group = c.benchmark_group("quote_heavy_inner_terminators");
+
+    group.throughput(Throughput::Bytes(text.len() as u64));
+    group.bench_function("mixed_closers", |b| {
+        b.iter(|| segment(black_box("en"), black_box(&text)))
+    });
+
+    group.finish();
+}
+
 fn bench_real_wikipedia_sample(c: &mut Criterion) {
     // Sample from a real Wikipedia article
     let text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed \
@@ -188,6 +204,7 @@ criterion_group!(
     bench_paragraph_heavy_text,
     bench_abbreviation_heavy_text,
     bench_quoted_text,
+    bench_quote_heavy_inner_terminators,
     bench_real_wikipedia_sample
 );
 criterion_main!(benches);
