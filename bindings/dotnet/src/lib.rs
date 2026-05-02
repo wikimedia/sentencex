@@ -48,7 +48,7 @@ pub unsafe extern "C" fn sentencex_segment(
                 return SegmentResult {
                     ptr: std::ptr::null_mut(),
                     len: 0,
-                }
+                };
             }
         }
     };
@@ -60,7 +60,7 @@ pub unsafe extern "C" fn sentencex_segment(
                 return SegmentResult {
                     ptr: std::ptr::null_mut(),
                     len: 0,
-                }
+                };
             }
         }
     };
@@ -114,7 +114,7 @@ pub unsafe extern "C" fn sentencex_get_boundaries(
                 return BoundaryResult {
                     ptr: std::ptr::null_mut(),
                     len: 0,
-                }
+                };
             }
         }
     };
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn sentencex_get_boundaries(
                 return BoundaryResult {
                     ptr: std::ptr::null_mut(),
                     len: 0,
-                }
+                };
             }
         }
     };

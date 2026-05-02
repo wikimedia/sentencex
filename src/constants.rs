@@ -1,30 +1,116 @@
 use regex::Regex;
-use std::collections::HashMap;
+use std::sync::LazyLock;
 
 pub const ROMAN_NUMERALS: [&str; 20] = [
     "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv",
     "xvi", "xvii", "xviii", "xix", "xx",
 ];
 
-pub fn get_quote_pairs() -> HashMap<&'static str, &'static str> {
-    let mut quote_pairs = HashMap::new();
-    quote_pairs.insert("\"", "\"");
-    quote_pairs.insert(" '", "'"); // Need a space before ' to avoid capturing don't, l'Avv, etc.
-    quote_pairs.insert("«", "»");
-    quote_pairs.insert("‘", "’");
-    quote_pairs.insert("‚", "‚");
-    quote_pairs.insert("“", "”");
-    quote_pairs.insert("‛", "‛");
-    quote_pairs.insert("„", "“");
-    quote_pairs.insert("»", "«");
-    quote_pairs.insert("‟", "‟");
-    quote_pairs.insert("‹", "›");
-    quote_pairs.insert("《", "》");
-    quote_pairs.insert("「", "」");
-    quote_pairs
+/// A quoted-region delimiter pair used to build [`QUOTES_REGEX`].
+pub struct QuotePair {
+    pub open: &'static str,
+    pub close: &'static str,
+    /// When true, wrap both opener and closer in `\B` (zero-width non-word
+    /// boundary) so the symbol won't match adjacent to an alphanumeric.
+    /// Set for pairs that could collide with contractions or possessives
+    /// (e.g. `'`); unnecessary for unambiguous symbols like `«` or `「`.
+    pub guard: bool,
 }
 
-use std::sync::LazyLock;
+// Order matters: the regex engine tries alternatives left to right, so longer
+// openers/closers must come before shorter ones (e.g. `''` before `'`).
+pub const QUOTE_PAIRS: &[QuotePair] = &[
+    QuotePair {
+        open: "``",
+        close: "''",
+        guard: false,
+    },
+    QuotePair {
+        open: "``",
+        close: "``",
+        guard: false,
+    },
+    QuotePair {
+        open: "''",
+        close: "''",
+        guard: false,
+    },
+    QuotePair {
+        open: "`",
+        close: "'",
+        guard: true,
+    },
+    QuotePair {
+        open: "`",
+        close: "`",
+        guard: true,
+    },
+    QuotePair {
+        open: "'",
+        close: "'",
+        guard: true,
+    },
+    QuotePair {
+        open: "\"",
+        close: "\"",
+        guard: false,
+    },
+    QuotePair {
+        open: "«",
+        close: "»",
+        guard: false,
+    },
+    QuotePair {
+        open: "‘",
+        close: "’",
+        guard: false,
+    },
+    QuotePair {
+        open: "‚",
+        close: "‚",
+        guard: false,
+    },
+    QuotePair {
+        open: "“",
+        close: "”",
+        guard: false,
+    },
+    QuotePair {
+        open: "‛",
+        close: "‛",
+        guard: false,
+    },
+    QuotePair {
+        open: "„",
+        close: "“",
+        guard: false,
+    },
+    QuotePair {
+        open: "»",
+        close: "«",
+        guard: false,
+    },
+    QuotePair {
+        open: "‟",
+        close: "‟",
+        guard: false,
+    },
+    QuotePair {
+        open: "‹",
+        close: "›",
+        guard: false,
+    },
+    QuotePair {
+        open: "《",
+        close: "》",
+        guard: false,
+    },
+    QuotePair {
+        open: "「",
+        close: "」",
+        guard: false,
+    },
+];
 
 pub static PARENS_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[\(（<{\[](?:[^\)\]}>）]|\\[\)\]}>）])*[\)\]}>）]").unwrap());
@@ -37,14 +123,27 @@ pub static NUMBERED_REFERENCE_REGEX: LazyLock<Regex> =
 
 pub static SPACE_AFTER_SEPARATOR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s+").unwrap());
 
+pub static QUOTE_CLOSERS_BY_LEN: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    let mut v: Vec<&'static str> = QUOTE_PAIRS.iter().map(|p| p.close).collect();
+    v.sort_by_key(|s| std::cmp::Reverse(s.len()));
+    v.dedup();
+    v
+});
+
 pub static QUOTES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let quote_pairs = get_quote_pairs();
-    let patterns: Vec<String> = quote_pairs
+    let patterns: Vec<String> = QUOTE_PAIRS
         .iter()
-        .map(|(left, right)| format!(r"{}(?s:.*?){}", regex::escape(left), regex::escape(right)))
+        .map(|p| {
+            let open = regex::escape(p.open);
+            let close = regex::escape(p.close);
+            if p.guard {
+                format!(r"\B{open}\b(?s:.*?[^\s{close}]){close}\B")
+            } else {
+                format!(r"{open}(?s:.*?){close}")
+            }
+        })
         .collect();
-    let quotes_regex_str = patterns.join("|");
-    Regex::new(&quotes_regex_str).unwrap()
+    Regex::new(&patterns.join("|")).unwrap()
 });
 
 pub const EXCLAMATION_WORDS: [&str; 17] = [
@@ -276,15 +375,20 @@ mod tests {
 
     #[test]
     fn test_quotes_regex_all_quote_types() {
-        // Test all quote pairs defined in get_quote_pairs
+        // Test all quote pairs defined in QUOTE_PAIRS
         let test_cases = vec![
             ("Standard double: \"Hello\"", vec!["\"Hello\""]),
             ("Greek: «Γεια σου»", vec!["«Γεια σου»"]),
-            ("Curved single: 'Hi'", vec![" 'Hi'"]),
+            ("Curved single: 'Hi'", vec!["'Hi'"]),
             ("German-style: „Hallo“", vec!["„Hallo“"]),
             ("Single angular: ‹Bonjour›", vec!["‹Bonjour›"]),
             ("CJK: 「こんにちは」", vec!["「こんにちは」"]),
             ("Chinese: 《你好》", vec!["《你好》"]),
+            ("LaTeX double: ``Hello''", vec!["``Hello''"]),
+            ("LaTeX single: `Hello'", vec!["`Hello'"]),
+            ("Single backtick: `Hello`", vec!["`Hello`"]),
+            ("Double backtick: ``Hello``", vec!["``Hello``"]),
+            ("Double apostrophe: ''Hello''", vec!["''Hello''"]),
         ];
 
         for (text, expected) in test_cases {
@@ -348,11 +452,14 @@ mod tests {
     #[test]
     fn test_quotes_regex_debug_pattern() {
         // Let's see what the actual regex pattern looks like
-        let quote_pairs = get_quote_pairs();
-        let patterns: Vec<String> = quote_pairs
+        let patterns: Vec<String> = QUOTE_PAIRS
             .iter()
-            .map(|(left, right)| {
-                format!(r"{}(\n|.)*?{}", regex::escape(left), regex::escape(right))
+            .map(|p| {
+                format!(
+                    r"(?s){}.*?{}",
+                    regex::escape(p.open),
+                    regex::escape(p.close)
+                )
             })
             .collect();
         let quotes_regex_str = patterns.join("|");

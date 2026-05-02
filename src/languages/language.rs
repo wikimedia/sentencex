@@ -6,7 +6,10 @@ use crate::constants::EMAIL_REGEX;
 use crate::constants::EXCLAMATION_WORDS;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
+use crate::constants::QUOTE_CLOSERS_BY_LEN;
+use crate::constants::QUOTE_PAIRS;
 use crate::constants::QUOTES_REGEX;
+use crate::constants::SPACE_AFTER_SEPARATOR;
 
 static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
@@ -22,6 +25,15 @@ static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\W*[0-9a-z]").unwrap());
 
 static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
+
+/// Push `boundary` only if it advances past the last recorded position.
+/// Quote-extension can move a boundary past later regex matches in the same
+/// paragraph; this keeps the boundary list strictly increasing.
+fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
+    if boundary > *boundaries.last().unwrap() {
+        boundaries.push(boundary);
+    }
+}
 
 /// Shared helper for languages that continue sentences before month names.
 ///
@@ -88,6 +100,17 @@ impl SkippableRange {
 
     pub fn is_quote(&self) -> bool {
         self.range_type == SkippableRangeType::Quote
+    }
+
+    pub fn is_inner_terminator(&self, text: &str, boundary: usize) -> bool {
+        if !self.is_quote() || boundary >= self.end {
+            return false;
+        }
+
+        let head = &text[..self.end];
+        QUOTE_CLOSERS_BY_LEN
+            .iter()
+            .any(|c| head.ends_with(*c) && boundary + c.len() == self.end)
     }
 }
 
@@ -179,46 +202,34 @@ pub trait Language {
                 .collect();
             let skippable_ranges = self.get_skippable_ranges(paragraph);
 
-            for (start, end) in matches {
-                let mut boundary = self
-                    .find_boundary(paragraph, start, end)
-                    .unwrap_or(usize::MAX);
-
-                if boundary == usize::MAX {
+            'next_match: for (start, end) in matches {
+                let Some(mut boundary) = self.find_boundary(paragraph, start, end) else {
                     continue;
-                }
-
-                let mut in_range = false;
+                };
 
                 for range in &skippable_ranges {
-                    if range.contains(boundary) {
-                        let next_word = self.get_next_word_approx(paragraph, range.end);
-                        let boundary_extend = self.get_boundary_extend(next_word);
-                        if range.is_quote()
-                            && paragraph.ceil_char_boundary(boundary + 1) == range.end
-                            && boundary_extend >= 0
-                        {
-                            boundary = range.end + boundary_extend as usize;
-                            in_range = false;
-                        } else {
-                            in_range = true;
-                        }
-                        break;
+                    if !range.contains(boundary) {
+                        continue;
                     }
+
+                    // Inside a quoted/parens/email range. Either advance past the
+                    // closer (if the boundary sits at an inner terminator) or drop
+                    // this match entirely. Either way, no further extension applies.
+                    if range.is_inner_terminator(paragraph, boundary) {
+                        let next_word = self.get_next_word_approx(paragraph, range.end);
+                        let extend = self.get_boundary_extend(next_word);
+                        if extend >= 0 {
+                            push_if_increasing(
+                                &mut sentence_boundaries,
+                                range.end + extend as usize,
+                            );
+                        }
+                    }
+                    continue 'next_match;
                 }
 
-                if in_range {
-                    continue;
-                }
-
-                // Quote-extension can move a boundary past later regex matches in the
-                // same paragraph. Ignore those stale matches so boundaries stay
-                // strictly increasing instead of slicing backwards later.
-                if boundary <= *sentence_boundaries.last().unwrap() {
-                    continue;
-                }
-
-                sentence_boundaries.push(boundary);
+                boundary = self.extend_past_orphan_closer(paragraph, boundary, &skippable_ranges);
+                push_if_increasing(&mut sentence_boundaries, boundary);
             }
 
             if *sentence_boundaries.last().unwrap() != paragraph.len() {
@@ -333,7 +344,7 @@ pub trait Language {
     /// to skip when positioning the boundary. Used to handle cases like quoted sentences
     /// where the boundary should include trailing punctuation and whitespace.
     fn get_boundary_extend(&self, word: &str) -> i8 {
-        if self.continue_in_next_word(word.trim()) {
+        if self.continue_in_next_word(word.trim()) || CONTINUE_AFTER_NONWORD_REGEX.is_match(word) {
             // not a boundary.
             return -1;
         }
@@ -352,6 +363,61 @@ pub trait Language {
         }
 
         word.ceil_char_boundary(count as usize) as i8
+    }
+
+    /// If `boundary` sits at an orphan trailing quote closer (e.g. `.'` with no
+    /// matching opener captured by `QUOTES_REGEX`), advance past the closer, any
+    /// trailing whitespace, and any stranded terminator that would otherwise
+    /// form a single-punctuation sentence. Returns `boundary` unchanged otherwise.
+    fn extend_past_orphan_closer(
+        &self,
+        paragraph: &str,
+        boundary: usize,
+        skippable_ranges: &[SkippableRange],
+    ) -> usize {
+        // If the next char opens a known quoted range, that quote belongs to
+        // the upcoming sentence — leave the boundary alone.
+        if skippable_ranges.iter().any(|r| r.start == boundary) {
+            return boundary;
+        }
+
+        // For ambiguous pairs (opener == closer, e.g. `'` or `"`) the regex
+        // may fail to pair both ends when they are space-padded. Use parity
+        // of the closer in the preceding text: odd ⇒ unmatched opener exists
+        // ⇒ true orphan (pull it); even ⇒ already paired ⇒ opening a new
+        // phrase (leave it).
+        let is_orphan = |closer: &str| -> bool {
+            let symmetric = QUOTE_PAIRS
+                .iter()
+                .any(|p| p.open == p.close && p.close == closer);
+            !symmetric || paragraph[..boundary].matches(closer).count() % 2 == 1
+        };
+
+        let Some(closer) = QUOTE_CLOSERS_BY_LEN
+            .iter()
+            .find(|c| paragraph[boundary..].starts_with(**c) && is_orphan(c))
+        else {
+            return boundary;
+        };
+
+        let advance_past_space = |pos: usize| {
+            SPACE_AFTER_SEPARATOR
+                .find(&paragraph[pos..])
+                .map_or(pos, |m| pos + m.end())
+        };
+
+        let mut boundary = advance_past_space(boundary + closer.len());
+        // Absorb any stranded terminators (e.g. `'' .`) that would otherwise
+        // form a single-punctuation sentence.
+        while let Some(m) = self
+            .get_sentence_break_regex()
+            .find(&paragraph[boundary..])
+            .filter(|m| m.start() == 0)
+        {
+            boundary = advance_past_space(boundary + m.end());
+        }
+
+        boundary
     }
 
     /// Checks if a potential sentence boundary is actually part of an abbreviation.
