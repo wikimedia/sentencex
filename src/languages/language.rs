@@ -390,7 +390,22 @@ pub trait Language {
             let symmetric = QUOTE_PAIRS
                 .iter()
                 .any(|p| p.open == p.close && p.close == closer);
-            !symmetric || paragraph[..boundary].matches(closer).count() % 2 == 1
+            if !symmetric {
+                return true;
+            }
+            // Don't count occurrences already consumed as the closer of a
+            // different (asymmetric) quote pair — those have been paired by
+            // QUOTES_REGEX and shouldn't affect parity for leftover symmetric
+            // quotes.
+            let count = paragraph[..boundary]
+                .match_indices(closer)
+                .filter(|(idx, _)| {
+                    !skippable_ranges
+                        .iter()
+                        .any(|r| r.is_quote() && *idx >= r.start && *idx < r.end)
+                })
+                .count();
+            count % 2 == 1
         };
 
         let Some(closer) = QUOTE_CLOSERS_BY_LEN
