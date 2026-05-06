@@ -1188,6 +1188,18 @@ pub trait Language {
             return None;
         }
 
+        // Orphan emphatic terminator: a free-standing `!`/`?` with whitespace
+        // before it followed by a lowercase/digit continuation (after any
+        // stray non-word punctuation like a leftover `''` closer) is part of a
+        // title, not a sentence end,
+        // e.g., "Father Came Too ! is a British comedy film".
+        if (matched == "!" || matched == "?")
+            && matches!(head.chars().next_back(), Some(' ' | '\t'))
+            && CONTINUE_AFTER_NONWORD_REGEX.is_match(next_word_approx)
+        {
+            return None;
+        }
+
         // Digit immediately before the period and a digit-bearing alphanumeric
         // token immediately after (no space) is a code-like numbered token,
         // not a sentence end: chess moves (`7.Bg5`). Requiring a digit in the
