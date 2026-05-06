@@ -29,7 +29,10 @@ static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*
 /// Push `boundary` only if it advances past the last recorded position.
 /// Quote-extension can move a boundary past later regex matches in the same
 /// paragraph; this keeps the boundary list strictly increasing.
+/// Assumes the caller is passing a non empty list of boundaries.
 fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
+    debug_assert!(!boundaries.is_empty());
+
     if boundary > *boundaries.last().unwrap() {
         boundaries.push(boundary);
     }
@@ -102,6 +105,14 @@ impl SkippableRange {
         self.range_type == SkippableRangeType::Quote
     }
 
+    /// True if `boundary` lies just before this quote's closing mark — i.e. the
+    /// sentence terminator sits inside the quoted span with only the closer left.
+    /// Opinionated behaviour, but it can help to resolve some real world cases with erroneous
+    /// or ambiguous punctuation placement.
+    ///
+    /// Example: in (start of line) `He said "Hello."`, the `.` boundary is immediately followed
+    /// by the closing `"`, so the sentence should extend past the quote rather than break
+    /// between the `.` and the `"`.
     pub fn is_inner_terminator(&self, text: &str, boundary: usize) -> bool {
         if !self.is_quote() || boundary >= self.end {
             return false;
@@ -422,10 +433,11 @@ pub trait Language {
         };
 
         let mut boundary = advance_past_space(boundary + closer.len());
+        let sentence_break_regex = self.get_sentence_break_regex();
+
         // Absorb any stranded terminators (e.g. `'' .`) that would otherwise
         // form a single-punctuation sentence.
-        while let Some(m) = self
-            .get_sentence_break_regex()
+        while let Some(m) = sentence_break_regex
             .find(&paragraph[boundary..])
             .filter(|m| m.start() == 0)
         {
