@@ -131,7 +131,7 @@ pub static QUOTE_CLOSERS_BY_LEN: LazyLock<Vec<&'static str>> = LazyLock::new(|| 
 });
 
 pub static QUOTES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let patterns: Vec<String> = QUOTE_PAIRS
+    let mut patterns: Vec<String> = QUOTE_PAIRS
         .iter()
         .map(|p| {
             let open = regex::escape(p.open);
@@ -143,6 +143,21 @@ pub static QUOTES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
             }
         })
         .collect();
+
+    // Line-anchored variant for guarded openers. A guarded delimiter (e.g.
+    // `'`, `` ` ``) sitting at start-of-line and matched by another `'` at
+    // end-of-line cannot be a possessive: there is no preceding noun to
+    // attach to at line-start, and at line-end the symmetric pairing across
+    // the same line provides structural evidence that this is a quotation.
+    // Both guards (`\B…\b` opener-side, `[^\s…]…\B` closer-side) are
+    // dropped, allowing whitespace immediately inside the quote pair
+    // (`' Hello, world. '`).
+    for pair in QUOTE_PAIRS.iter().filter(|p| p.guard) {
+        let open = regex::escape(pair.open);
+        let close = regex::escape(pair.close);
+        patterns.push(format!(r"(?m:^{open}.+?{close}$)"));
+    }
+
     Regex::new(&patterns.join("|")).unwrap()
 });
 
