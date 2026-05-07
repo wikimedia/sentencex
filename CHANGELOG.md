@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.24] - 2026-05-07
+
+### Added
+- Add support for multi character quote pairs (#59)
+
+### Bug fixes
+- Normalise newline handling so tests run on Windows (#60)
+
 ## [1.0.23] - 2026-04-28
 
 ### CI
