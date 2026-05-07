@@ -26,8 +26,7 @@ impl Language for Kazakh {
 
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {
         text.split(|c: char| c.is_whitespace() || c == '.')
-            .filter(|word| !word.is_empty())
-            .last()
+            .rfind(|word| !word.is_empty())
             .unwrap_or("")
     }
 

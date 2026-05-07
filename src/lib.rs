@@ -645,7 +645,7 @@ mod tests {
         let sentences = segment("en", text);
 
         // Should segment into sentences
-        assert!(sentences.len() > 0, "Should find at least one sentence");
+        assert!(!sentences.is_empty(), "Should find at least one sentence");
 
         // Verify reconstruction
         let reconstructed: String = sentences.join("");
@@ -755,15 +755,9 @@ mod tests {
             .filter_map(|b| b.boundary_symbol.as_deref())
             .collect();
 
-        assert!(
-            symbols.iter().any(|&s| s == "!"),
-            "Should detect exclamation mark"
-        );
-        assert!(
-            symbols.iter().any(|&s| s == "?"),
-            "Should detect question mark"
-        );
-        assert!(symbols.iter().any(|&s| s == "."), "Should detect period");
+        assert!(symbols.contains(&"!"), "Should detect exclamation mark");
+        assert!(symbols.contains(&"?"), "Should detect question mark");
+        assert!(symbols.contains(&"."), "Should detect period");
     }
 
     #[test]

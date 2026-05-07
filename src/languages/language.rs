@@ -86,10 +86,9 @@ fn is_symmetric_quote_range(text: &str, range: &SkippableRange) -> bool {
         return false;
     }
     let span = &text[range.start..range.end];
-    QUOTE_PAIRS
-        .iter()
-        .filter(|p| p.open == p.close)
-        .any(|p| span.len() >= 2 * p.open.len() && span.starts_with(p.open) && span.ends_with(p.close))
+    QUOTE_PAIRS.iter().filter(|p| p.open == p.close).any(|p| {
+        span.len() >= 2 * p.open.len() && span.starts_with(p.open) && span.ends_with(p.close)
+    })
 }
 
 /// True when the paragraph contains an odd number of the symmetric quote
@@ -236,6 +235,7 @@ pub trait Language {
     /// 2. Identifies potential sentence breaks using regex patterns
     /// 3. Filters out false positives (abbreviations, quotes, etc.)
     /// 4. Returns structured boundary information including start/end positions and boundary symbols
+    ///
     /// Each boundary contains the sentence text, position indices, and metadata about the boundary type.
     fn get_sentence_boundaries<'a>(&self, text: &'a str) -> Vec<SentenceBoundary<'a>> {
         // Pre-allocate boundaries with estimated capacity (rough estimate: 1 sentence per 50 characters)
@@ -595,7 +595,7 @@ pub trait Language {
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {
         // Find the last word without collecting all words
         text.split(|c: char| c.is_whitespace() || c == '.')
-            .last()
+            .next_back()
             .unwrap_or("")
     }
 
