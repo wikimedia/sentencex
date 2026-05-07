@@ -10,10 +10,11 @@ pub const ROMAN_NUMERALS: [&str; 20] = [
 pub struct QuotePair {
     pub open: &'static str,
     pub close: &'static str,
-    /// Set for pairs whose delimiters are ambiguous with non-quote uses
-    /// (e.g. `'` clashes with contractions/possessives, `` ` `` with code
-    /// ticks). The regex builder wraps these with `\B` boundary guards;
-    /// unambiguous symbols like `«` or `「` need no special handling.
+    /// Set for pairs whose delimiters are ambiguous with non-quote uses — e.g.
+    /// `'` clashes with contractions/possessives, `` ` `` with code ticks (so
+    /// ``don`t`` with a backtick instead of an apostrophe could trigger a
+    /// false-positive match). The regex builder wraps these with `\B` boundary
+    /// guards. Unambiguous symbols like `«` or `「` need no special handling.
     pub ambiguous: bool,
 }
 
