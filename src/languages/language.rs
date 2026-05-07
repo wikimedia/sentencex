@@ -6,7 +6,10 @@ use crate::constants::EMAIL_REGEX;
 use crate::constants::EXCLAMATION_WORDS;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
+use crate::constants::QUOTE_CLOSERS_BY_LEN;
+use crate::constants::QUOTE_PAIRS;
 use crate::constants::QUOTES_REGEX;
+use crate::constants::SPACE_AFTER_SEPARATOR;
 
 static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
@@ -22,6 +25,116 @@ static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\W*[0-9a-z]").unwrap());
 
 static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
+
+/// True when `closer` is the closing token of a symmetric quote pair —
+/// `'`, `''`, `"`, etc., where opener equals closer. These pairs are
+/// inherently ambiguous: `QUOTES_REGEX` can fail to pair them when they're
+/// space-padded, so callers need extra logic to decide orphanhood.
+fn is_symmetric_quote_closer(closer: &str) -> bool {
+    QUOTE_PAIRS
+        .iter()
+        .any(|p| p.open == p.close && p.close == closer)
+}
+
+/// True when the `closer` token at `boundary` in `paragraph` is an orphan —
+/// either it has no matching opener earlier in the paragraph, or it is a
+/// lone stray with no counterpart anywhere.
+///
+/// Asymmetric closers (`»`, `”`, …) are unambiguous and always orphan once
+/// `QUOTES_REGEX` has had a chance to pair them. For symmetric closers we
+/// inspect the closer's distribution across the paragraph, ignoring any
+/// occurrence already consumed by an asymmetric quote pair.
+fn is_orphan_closer(
+    paragraph: &str,
+    boundary: usize,
+    closer: &str,
+    skippable_ranges: &[SkippableRange],
+) -> bool {
+    if !is_symmetric_quote_closer(closer) {
+        return true;
+    }
+
+    let consumed_by_asymmetric_pair = |idx: usize| {
+        skippable_ranges
+            .iter()
+            .any(|r| r.is_quote() && idx >= r.start && idx < r.end)
+    };
+
+    let (mut before, mut at_or_after) = (0usize, 0usize);
+    for (idx, _) in paragraph.match_indices(closer) {
+        if consumed_by_asymmetric_pair(idx) {
+            continue;
+        }
+        if idx < boundary {
+            before += 1;
+        } else {
+            at_or_after += 1;
+        }
+    }
+
+    let unmatched_opener_before = before % 2 == 1;
+    let lone_stray_at_boundary = before == 0 && at_or_after == 1;
+    unmatched_opener_before || lone_stray_at_boundary
+}
+
+/// True when `range` is a quote range whose opener and closer are the same
+/// token — `''…''`, `'…'`, `"…"`, etc. These pairs are inherently ambiguous
+/// for the regex pairer and need extra scrutiny when they appear to veto a
+/// sentence boundary.
+fn is_symmetric_quote_range(text: &str, range: &SkippableRange) -> bool {
+    if !range.is_quote() {
+        return false;
+    }
+    let span = &text[range.start..range.end];
+    QUOTE_PAIRS
+        .iter()
+        .filter(|p| p.open == p.close)
+        .any(|p| span.len() >= 2 * p.open.len() && span.starts_with(p.open) && span.ends_with(p.close))
+}
+
+/// True when the paragraph contains an odd number of the symmetric quote
+/// token that opens `range`. An odd count guarantees at least one orphan
+/// occurrence — and when that orphan sits earlier than a real downstream
+/// opener, `QUOTES_REGEX` will mispair across a real sentence break. Even
+/// counts are structurally consistent and should be trusted.
+fn symmetric_token_count_is_odd(paragraph: &str, range: &SkippableRange) -> bool {
+    let Some(pair) = QUOTE_PAIRS
+        .iter()
+        .filter(|p| p.open == p.close)
+        .find(|p| paragraph[range.start..].starts_with(p.open))
+    else {
+        return false;
+    };
+
+    paragraph.matches(pair.open).count() % 2 == 1
+}
+
+/// True when `quote` and any parens range in `ranges` partially overlap —
+/// one endpoint inside, the other outside. Full containment in either
+/// direction (a quote wrapping parens, or parens wrapping a quote) is fine
+/// and returns false. Partial overlap is the signature of a greedy
+/// symmetric-pair pairing that crossed what's really a sentence break.
+fn quote_partially_overlaps_parens(quote: &SkippableRange, ranges: &[SkippableRange]) -> bool {
+    ranges
+        .iter()
+        .filter(|r| r.range_type == SkippableRangeType::Parentheses)
+        .any(|p| {
+            (quote.start < p.start && p.start < quote.end && quote.end < p.end)
+                || (p.start < quote.start && quote.start < p.end && p.end < quote.end)
+        })
+}
+
+/// Push `boundary` only if it advances past the last recorded position.
+/// Quote-extension can move a boundary past later regex matches in the same
+/// paragraph; this keeps the boundary list strictly increasing.
+/// Assumes the caller is passing a non empty list of boundaries.
+fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
+    debug_assert!(!boundaries.is_empty());
+
+    if boundary > *boundaries.last().unwrap() {
+        boundaries.push(boundary);
+    }
+}
 
 /// Shared helper for languages that continue sentences before month names.
 ///
@@ -88,6 +201,25 @@ impl SkippableRange {
 
     pub fn is_quote(&self) -> bool {
         self.range_type == SkippableRangeType::Quote
+    }
+
+    /// True if `boundary` lies just before this quote's closing mark — i.e. the
+    /// sentence terminator sits inside the quoted span with only the closer left.
+    /// Opinionated behaviour, but it can help to resolve some real world cases with erroneous
+    /// or ambiguous punctuation placement.
+    ///
+    /// Example: in (start of line) `He said "Hello."`, the `.` boundary is immediately followed
+    /// by the closing `"`, so the sentence should extend past the quote rather than break
+    /// between the `.` and the `"`.
+    pub fn is_inner_terminator(&self, text: &str, boundary: usize) -> bool {
+        if !self.is_quote() || boundary >= self.end {
+            return false;
+        }
+
+        let head = &text[..self.end];
+        QUOTE_CLOSERS_BY_LEN
+            .iter()
+            .any(|c| head.ends_with(*c) && boundary + c.len() == self.end)
     }
 }
 
@@ -179,46 +311,50 @@ pub trait Language {
                 .collect();
             let skippable_ranges = self.get_skippable_ranges(paragraph);
 
-            for (start, end) in matches {
-                let mut boundary = self
-                    .find_boundary(paragraph, start, end)
-                    .unwrap_or(usize::MAX);
-
-                if boundary == usize::MAX {
+            'next_match: for (start, end) in matches {
+                let Some(mut boundary) = self.find_boundary(paragraph, start, end) else {
                     continue;
-                }
-
-                let mut in_range = false;
+                };
 
                 for range in &skippable_ranges {
-                    if range.contains(boundary) {
-                        let next_word = self.get_next_word_approx(paragraph, range.end);
-                        let boundary_extend = self.get_boundary_extend(next_word);
-                        if range.is_quote()
-                            && paragraph.ceil_char_boundary(boundary + 1) == range.end
-                            && boundary_extend >= 0
-                        {
-                            boundary = range.end + boundary_extend as usize;
-                            in_range = false;
-                        } else {
-                            in_range = true;
-                        }
-                        break;
+                    if !range.contains(boundary) {
+                        continue;
                     }
+
+                    // Symmetric-pair quote ranges (`''…''`, `'…'`, `"…"`) are
+                    // greedy: when a paragraph has more than one closer the
+                    // regex can pair across what's really a sentence break.
+                    // Detect that mispairing structurally — the range's
+                    // endpoints straddle a parens boundary, or the paragraph
+                    // has an odd count of the token and there's a strong
+                    // sentence break here — and let the boundary through
+                    // instead of vetoing it.
+                    if is_symmetric_quote_range(paragraph, range)
+                        && (quote_partially_overlaps_parens(range, &skippable_ranges)
+                            || (symmetric_token_count_is_odd(paragraph, range)
+                                && self.has_strong_sentence_break(paragraph, start, end)))
+                    {
+                        continue;
+                    }
+
+                    // Inside a quoted/parens/email range. Either advance past the
+                    // closer (if the boundary sits at an inner terminator) or drop
+                    // this match entirely. Either way, no further extension applies.
+                    if range.is_inner_terminator(paragraph, boundary) {
+                        let next_word = self.get_next_word_approx(paragraph, range.end);
+                        let extend = self.get_boundary_extend(next_word);
+                        if extend >= 0 {
+                            push_if_increasing(
+                                &mut sentence_boundaries,
+                                range.end + extend as usize,
+                            );
+                        }
+                    }
+                    continue 'next_match;
                 }
 
-                if in_range {
-                    continue;
-                }
-
-                // Quote-extension can move a boundary past later regex matches in the
-                // same paragraph. Ignore those stale matches so boundaries stay
-                // strictly increasing instead of slicing backwards later.
-                if boundary <= *sentence_boundaries.last().unwrap() {
-                    continue;
-                }
-
-                sentence_boundaries.push(boundary);
+                boundary = self.extend_past_orphan_closer(paragraph, boundary, &skippable_ranges);
+                push_if_increasing(&mut sentence_boundaries, boundary);
             }
 
             if *sentence_boundaries.last().unwrap() != paragraph.len() {
@@ -333,7 +469,7 @@ pub trait Language {
     /// to skip when positioning the boundary. Used to handle cases like quoted sentences
     /// where the boundary should include trailing punctuation and whitespace.
     fn get_boundary_extend(&self, word: &str) -> i8 {
-        if self.continue_in_next_word(word.trim()) {
+        if self.continue_in_next_word(word.trim()) || CONTINUE_AFTER_NONWORD_REGEX.is_match(word) {
             // not a boundary.
             return -1;
         }
@@ -352,6 +488,80 @@ pub trait Language {
         }
 
         word.ceil_char_boundary(count as usize) as i8
+    }
+
+    /// If `boundary` sits at an orphan trailing quote closer (e.g. `.'` with no
+    /// matching opener captured by `QUOTES_REGEX`), advance past the closer, any
+    /// trailing whitespace, and any stranded terminator that would otherwise
+    /// form a single-punctuation sentence. Returns `boundary` unchanged otherwise.
+    fn extend_past_orphan_closer(
+        &self,
+        paragraph: &str,
+        boundary: usize,
+        skippable_ranges: &[SkippableRange],
+    ) -> usize {
+        // If the next char opens a known quoted range, that quote belongs to
+        // the upcoming sentence — leave the boundary alone.
+        if skippable_ranges.iter().any(|r| r.start == boundary) {
+            return boundary;
+        }
+
+        // Find an orphan closer starting at `boundary`, if any. Longest first
+        // so `''` wins over `'` when both could match.
+        let Some(closer) = QUOTE_CLOSERS_BY_LEN.iter().find(|c| {
+            paragraph[boundary..].starts_with(**c)
+                && is_orphan_closer(paragraph, boundary, c, skippable_ranges)
+        }) else {
+            return boundary;
+        };
+
+        // A symmetric closer (`''`, `'`, `"`, …) that follows a terminator+space
+        // and precedes whitespace + a capitalized word is more plausibly the
+        // *opener* of the next sentence than a trailing orphan — but only when
+        // the same token has already been used as a paired opener/closer
+        // earlier in the paragraph. That paired use is the signal that the
+        // text is using this token in opener position too; without it, the
+        // token is more likely a stray closer (e.g. `… do ? ''` with no
+        // earlier opener).
+        if is_symmetric_quote_closer(closer) {
+            let has_earlier_symmetric_pair = skippable_ranges.iter().any(|r| {
+                r.end <= boundary
+                    && is_symmetric_quote_range(paragraph, r)
+                    && paragraph[r.start..].starts_with(*closer)
+            });
+
+            if has_earlier_symmetric_pair {
+                let after = &paragraph[boundary + closer.len()..];
+                let mut chars = after.chars();
+                let first = chars.next();
+                if first.is_some_and(char::is_whitespace) {
+                    let next_non_ws = chars.find(|c| !c.is_whitespace());
+                    if next_non_ws.is_some_and(|c| c.is_ascii_uppercase()) {
+                        return boundary;
+                    }
+                }
+            }
+        }
+
+        let advance_past_space = |pos: usize| {
+            SPACE_AFTER_SEPARATOR
+                .find(&paragraph[pos..])
+                .map_or(pos, |m| pos + m.end())
+        };
+
+        let mut boundary = advance_past_space(boundary + closer.len());
+        let sentence_break_regex = self.get_sentence_break_regex();
+
+        // Absorb any stranded terminators (e.g. `'' .`) that would otherwise
+        // form a single-punctuation sentence.
+        while let Some(m) = sentence_break_regex
+            .find(&paragraph[boundary..])
+            .filter(|m| m.start() == 0)
+        {
+            boundary = advance_past_space(boundary + m.end());
+        }
+
+        boundary
     }
 
     /// Checks if a potential sentence boundary is actually part of an abbreviation.
@@ -397,6 +607,57 @@ pub trait Language {
         let last_word = self.get_last_word(head);
         let exclamation_word = format!("{}!", last_word);
         EXCLAMATION_WORDS.contains(&exclamation_word.as_str())
+    }
+
+    /// True when the terminator at `[start, end)` looks like a confident
+    /// sentence end: a single `.` whose preceding word is a symmetric quote
+    /// closer (`''`, `"`, …) and whose follower starts with a capital letter
+    /// — the `closer + . + UpperWord` shape. Used as a structural escape
+    /// valve for symmetric-pair quote ranges (`''…''`, `'…'`, `"…"`) that the
+    /// non-greedy `QUOTES_REGEX` may have mispaired across a real boundary.
+    ///
+    /// TODO: a starter-word fallback (last_word non-closer + next word in
+    /// language's starter list) belongs here once starter-word infrastructure
+    /// lands on this branch. Until then, only the closer-branch is implemented.
+    fn has_strong_sentence_break(&self, paragraph: &str, start: usize, end: usize) -> bool {
+        if &paragraph[start..end] != "." {
+            return false;
+        }
+        let head = &paragraph[..start];
+
+        // The terminator is typically space-separated from the closer
+        // (`'' .`), so trim trailing whitespace before walking back to find
+        // the last token.
+        let trimmed = head.trim_end();
+
+        let last_word = match trimmed
+            .char_indices()
+            .rfind(|(_, c)| c.is_whitespace() || *c == '.')
+        {
+            Some((i, c)) => &trimmed[i + c.len_utf8()..],
+            None => trimmed,
+        };
+
+        if last_word.is_empty() {
+            return false;
+        }
+
+        if self.is_abbreviation(head, last_word, ".") {
+            return false;
+        }
+
+        if !is_symmetric_quote_closer(last_word) {
+            return false;
+        }
+
+        let next_index = paragraph.ceil_char_boundary(start + 1);
+        let next_word_approx = self.get_next_word_approx(paragraph, next_index);
+
+        next_word_approx
+            .trim_start()
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_uppercase())
     }
 
     /// Returns an approximate substring of the next word(s) starting from the given position.

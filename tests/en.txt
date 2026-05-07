@@ -326,3 +326,114 @@ Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; h
 Dr. Smith, who arrived at 3:00 p.m., said, "The patient's condition is stable; however, further tests (e.g., MRI, CT scan) are required.".
 Meanwhile, the nurse—who had been on duty since 7:00 a.m.—noted that the patient's vitals (BP: 120/80, HR: 75) were within normal limits.
 "Let's proceed with the tests ASAP," she added.
+===
+He said `opens with a different symbol to what is used to close it.' Next sentence. "He said `hello world.' and left."
+---
+He said `opens with a different symbol to what is used to close it.'
+Next sentence.
+"He said `hello world.' and left."
+===
+He said ``opens with a different symbol to what is used to close it.'' Next sentence. "He said ``hello world.'' and left."
+---
+He said ``opens with a different symbol to what is used to close it.''
+Next sentence.
+"He said ``hello world.'' and left."
+===
+He said `opens with a different symbol to what is used to close it.` Next sentence. "He said `hello world.` and left."
+---
+He said `opens with a different symbol to what is used to close it.`
+Next sentence.
+"He said `hello world.` and left."
+===
+He said ``opens with a different symbol to what is used to close it.`` Next sentence. "He said ``hello world.`` and left."
+---
+He said ``opens with a different symbol to what is used to close it.``
+Next sentence.
+"He said ``hello world.`` and left."
+===
+'opens with a different symbol to what is used to close it.' Next sentence.
+---
+'opens with a different symbol to what is used to close it.'
+Next sentence.
+===
+It's fine, `just use L'Hôpital's rule here.'
+---
+It's fine, `just use L'Hôpital's rule here.'
+===
+it`s fine to leave it's foods' smells to the cat`s nose
+---
+it`s fine to leave it's foods' smells to the cat`s nose
+===
+Vincent Cartier , Walter 's brother and manager , later reflected on his observations of Kubrick during the filming . He said , '' Stanley was very stoic , impassive but imaginative type person with strong , imaginative thoughts .
+---
+Vincent Cartier , Walter 's brother and manager , later reflected on his observations of Kubrick during the filming .
+He said , '' Stanley was very stoic , impassive but imaginative type person with strong , imaginative thoughts .
+===
+Walter 's brother . He said , ' Stanley .
+---
+Walter 's brother .
+He said , ' Stanley .
+===
+Wendy Schaal ( born July 2 , 1954 ) is an American actress and voice actress . She is best known as the voice of Francine Smith in the TV series '' American Dad ! '' .
+---
+Wendy Schaal ( born July 2 , 1954 ) is an American actress and voice actress . 
+She is best known as the voice of Francine Smith in the TV series '' American Dad ! '' .
+===
+While the Gonarch is not encountered in '' Half - Life 2 '' , an amputated part of it exists as an unused model in the game 's code . This fusion of living material with technology is entirely in keeping with the Combine forces that are encountered in '' Half - Life 2 '' .
+---
+While the Gonarch is not encountered in '' Half - Life 2 '' , an amputated part of it exists as an unused model in the game 's code . 
+This fusion of living material with technology is entirely in keeping with the Combine forces that are encountered in '' Half - Life 2 '' .
+===
+This version also appeared on Sebadoh 's 1992 compilation album '' Smash Your Head on the Punk Rock '' . It also appeared on a number of various artist compilations , including the City Slang compilation '' Slanged ! '' , and the Eurostar compilation '' Going Underground Vol. II '' .
+---
+This version also appeared on Sebadoh 's 1992 compilation album '' Smash Your Head on the Punk Rock '' . 
+It also appeared on a number of various artist compilations , including the City Slang compilation '' Slanged ! '' , and the Eurostar compilation '' Going Underground Vol. II '' .
+===
+According to the publisher Random House , she is the originator of the '' service dog '' , dogs that are trained to help people with mobility limitations .
+---
+According to the publisher Random House , she is the originator of the '' service dog '' , dogs that are trained to help people with mobility limitations .
+===
+Desprez is also known as a designer and maker of embroidery for purses , as a ' Maistre Boursier . ' He published a map of La Rochelle , and was recorded working in Paris between 1556 and 1580 .
+---
+Desprez is also known as a designer and maker of embroidery for purses , as a ' Maistre Boursier . ' 
+He published a map of La Rochelle , and was recorded working in Paris between 1556 and 1580 .
+===
+Gagan Kokri is an punjabi singer . ' Blessings of Baapu ' and ' Asla ' is his Best ever hits .
+---
+Gagan Kokri is an punjabi singer . 
+' Blessings of Baapu ' and ' Asla ' is his Best ever hits .
+===
+Kate Owen looked at him and said quietly, `And what do you remember next?'  ' I was in bed, in the infirmary, with bandages.'
+---
+Kate Owen looked at him and said quietly, `And what do you remember next?' 
+' I was in bed, in the infirmary, with bandages.'
+===
+' No, they'll not catch you again.  If they try, they'll have Kate Owen to reckon with.'
+---
+' No, they'll not catch you again.  If they try, they'll have Kate Owen to reckon with.'
+===
+Do you know what it means not to know what to do ? '' Graham was ultimately convicted . The informant was immediately released from jail , her sentence commuted to time served .
+---
+Do you know what it means not to know what to do ? ''
+Graham was ultimately convicted .
+The informant was immediately released from jail , her sentence commuted to time served .
+===
+Bloodlines '' ( also known as '' Wrong Turn 5 '' ) is a 2012 American horror film written and directed by Declan O'Brien . It is a prequel and the fifth ( chronologically , the second ) installment in the '' Wrong Turn '' film series .
+---
+Bloodlines '' ( also known as '' Wrong Turn 5 '' ) is a 2012 American horror film written and directed by Declan O'Brien .
+It is a prequel and the fifth ( chronologically , the second ) installment in the '' Wrong Turn '' film series .
+===
+He became notable in the media in 1999 for being one of two councillors to opt out of retroactive salary increases that council had implemented , saying '' ... what the ( salary ) committee recommended was fair and appropriate , but the timing was wrong . It should be for the next council term which would give the electorate time to pass comment on councillors '' remuneration .
+---
+He became notable in the media in 1999 for being one of two councillors to opt out of retroactive salary increases that council had implemented , saying '' ... what the ( salary ) committee recommended was fair and appropriate , but the timing was wrong . It should be for the next council term which would give the electorate time to pass comment on councillors '' remuneration .
+===
+'' The internet exploded with questions about ( Janay Rice ) , '' she wrote . '' Why did n't she leave ?
+---
+'' The internet exploded with questions about ( Janay Rice ) , '' she wrote .
+'' Why did n't she leave ?
+===
+And the music has a melody and a language in and of itself '' . Lead editor Naomi Zeichner went on to compare the album to the work of Interpol and '' the retro biker bar rock that soundtracks '' Sons of Anarchy '' '' .
+---
+And the music has a melody and a language in and of itself '' .
+Lead editor Naomi Zeichner went on to compare the album to the work of Interpol and '' the retro biker bar rock that soundtracks '' Sons of Anarchy '' '' .
+===

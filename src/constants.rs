@@ -1,30 +1,117 @@
 use regex::Regex;
-use std::collections::HashMap;
+use std::sync::LazyLock;
 
 pub const ROMAN_NUMERALS: [&str; 20] = [
     "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv",
     "xvi", "xvii", "xviii", "xix", "xx",
 ];
 
-pub fn get_quote_pairs() -> HashMap<&'static str, &'static str> {
-    let mut quote_pairs = HashMap::new();
-    quote_pairs.insert("\"", "\"");
-    quote_pairs.insert(" '", "'"); // Need a space before ' to avoid capturing don't, l'Avv, etc.
-    quote_pairs.insert("«", "»");
-    quote_pairs.insert("‘", "’");
-    quote_pairs.insert("‚", "‚");
-    quote_pairs.insert("“", "”");
-    quote_pairs.insert("‛", "‛");
-    quote_pairs.insert("„", "“");
-    quote_pairs.insert("»", "«");
-    quote_pairs.insert("‟", "‟");
-    quote_pairs.insert("‹", "›");
-    quote_pairs.insert("《", "》");
-    quote_pairs.insert("「", "」");
-    quote_pairs
+/// A quoted-region delimiter pair used to build [`QUOTES_REGEX`].
+pub struct QuotePair {
+    pub open: &'static str,
+    pub close: &'static str,
+    /// Set for pairs whose delimiters are ambiguous with non-quote uses — e.g.
+    /// `'` clashes with contractions/possessives, `` ` `` with code ticks (so
+    /// ``don`t`` with a backtick instead of an apostrophe could trigger a
+    /// false-positive match). The regex builder wraps these with `\B` boundary
+    /// guards. Unambiguous symbols like `«` or `「` need no special handling.
+    pub ambiguous: bool,
 }
 
-use std::sync::LazyLock;
+// Order matters: the regex engine tries alternatives left to right, so longer
+// openers/closers must come before shorter ones (e.g. `''` before `'`).
+pub const QUOTE_PAIRS: &[QuotePair] = &[
+    QuotePair {
+        open: "``",
+        close: "''",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "``",
+        close: "``",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "''",
+        close: "''",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "`",
+        close: "'",
+        ambiguous: true,
+    },
+    QuotePair {
+        open: "`",
+        close: "`",
+        ambiguous: true,
+    },
+    QuotePair {
+        open: "'",
+        close: "'",
+        ambiguous: true,
+    },
+    QuotePair {
+        open: "\"",
+        close: "\"",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "«",
+        close: "»",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "‘",
+        close: "’",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "‚",
+        close: "‚",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "“",
+        close: "”",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "‛",
+        close: "‛",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "„",
+        close: "“",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "»",
+        close: "«",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "‟",
+        close: "‟",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "‹",
+        close: "›",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "《",
+        close: "》",
+        ambiguous: false,
+    },
+    QuotePair {
+        open: "「",
+        close: "」",
+        ambiguous: false,
+    },
+];
 
 pub static PARENS_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[\(（<{\[](?:[^\)\]}>）]|\\[\)\]}>）])*[\)\]}>）]").unwrap());
@@ -37,14 +124,60 @@ pub static NUMBERED_REFERENCE_REGEX: LazyLock<Regex> =
 
 pub static SPACE_AFTER_SEPARATOR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s+").unwrap());
 
+pub static QUOTE_CLOSERS_BY_LEN: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    let mut v: Vec<&'static str> = QUOTE_PAIRS.iter().map(|p| p.close).collect();
+    v.sort_by_key(|s| std::cmp::Reverse(s.len()));
+    v.dedup();
+    v
+});
+
+/// Escape `s` so it is safe to interpolate inside a regex character
+/// class `[...]`. `regex::escape`'s public contract only covers the
+/// general regex context, not character classes, so we handle the
+/// four class-special chars explicitly: `\ ] ^ -`.
+fn escape_for_char_class(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if matches!(c, '\\' | ']' | '^' | '-') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
 pub static QUOTES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let quote_pairs = get_quote_pairs();
-    let patterns: Vec<String> = quote_pairs
+    let mut patterns: Vec<String> = QUOTE_PAIRS
         .iter()
-        .map(|(left, right)| format!(r"{}(?s:.*?){}", regex::escape(left), regex::escape(right)))
+        .map(|p| {
+            let open = regex::escape(p.open);
+            let close = regex::escape(p.close);
+            if p.ambiguous {
+                // `close_in_class` uses char-class-aware escaping;
+                // `regex::escape` is not contracted safe inside `[...]`.
+                let close_in_class = escape_for_char_class(p.close);
+                format!(r"\B{open}\b(?s:.*?[^\s{close_in_class}]){close}\B")
+            } else {
+                format!(r"{open}(?s:.*?){close}")
+            }
+        })
         .collect();
-    let quotes_regex_str = patterns.join("|");
-    Regex::new(&quotes_regex_str).unwrap()
+
+    // Line-anchored variant for guarded openers. A guarded delimiter (e.g.
+    // `'`, `` ` ``) sitting at start-of-line and matched by another `'` at
+    // end-of-line cannot be a possessive: there is no preceding noun to
+    // attach to at line-start, and at line-end the symmetric pairing across
+    // the same line provides structural evidence that this is a quotation.
+    // Both guards (`\B…\b` opener-side, `[^\s…]…\B` closer-side) are
+    // dropped, allowing whitespace immediately inside the quote pair
+    // (`' Hello, world. '`).
+    for pair in QUOTE_PAIRS.iter().filter(|p| p.ambiguous) {
+        let open = regex::escape(pair.open);
+        let close = regex::escape(pair.close);
+        patterns.push(format!(r"(?m:^{open}.+?{close}$)"));
+    }
+
+    Regex::new(&patterns.join("|")).unwrap()
 });
 
 pub const EXCLAMATION_WORDS: [&str; 17] = [
@@ -276,15 +409,20 @@ mod tests {
 
     #[test]
     fn test_quotes_regex_all_quote_types() {
-        // Test all quote pairs defined in get_quote_pairs
+        // Test all quote pairs defined in QUOTE_PAIRS
         let test_cases = vec![
             ("Standard double: \"Hello\"", vec!["\"Hello\""]),
             ("Greek: «Γεια σου»", vec!["«Γεια σου»"]),
-            ("Curved single: 'Hi'", vec![" 'Hi'"]),
+            ("Curved single: 'Hi'", vec!["'Hi'"]),
             ("German-style: „Hallo“", vec!["„Hallo“"]),
             ("Single angular: ‹Bonjour›", vec!["‹Bonjour›"]),
             ("CJK: 「こんにちは」", vec!["「こんにちは」"]),
             ("Chinese: 《你好》", vec!["《你好》"]),
+            ("LaTeX double: ``Hello''", vec!["``Hello''"]),
+            ("LaTeX single: `Hello'", vec!["`Hello'"]),
+            ("Single backtick: `Hello`", vec!["`Hello`"]),
+            ("Double backtick: ``Hello``", vec!["``Hello``"]),
+            ("Double apostrophe: ''Hello''", vec!["''Hello''"]),
         ];
 
         for (text, expected) in test_cases {
@@ -348,11 +486,14 @@ mod tests {
     #[test]
     fn test_quotes_regex_debug_pattern() {
         // Let's see what the actual regex pattern looks like
-        let quote_pairs = get_quote_pairs();
-        let patterns: Vec<String> = quote_pairs
+        let patterns: Vec<String> = QUOTE_PAIRS
             .iter()
-            .map(|(left, right)| {
-                format!(r"{}(\n|.)*?{}", regex::escape(left), regex::escape(right))
+            .map(|p| {
+                format!(
+                    r"(?s){}.*?{}",
+                    regex::escape(p.open),
+                    regex::escape(p.close)
+                )
             })
             .collect();
         let quotes_regex_str = patterns.join("|");
@@ -362,5 +503,42 @@ mod tests {
         // Verify that Greek quotes are in the pattern
         assert!(quotes_regex_str.contains("«"));
         assert!(quotes_regex_str.contains("»"));
+    }
+
+    #[test]
+    fn test_quotes_regex_metachar_closer_is_safe() {
+        // Regression guard for the guarded-branch pattern construction:
+        // if a future QuotePair has a `close` that is a regex character-
+        // class metachar (`]`, `^`, `-`), interpolating it into the
+        // `[^\s...]` class must still produce a valid regex where the
+        // closer behaves as a literal - not as a class operator. We
+        // rebuild the same shape of pattern locally with synthetic
+        // pairs to exercise this without touching the const QUOTE_PAIRS.
+        for &close in &["]", "^", "-"] {
+            let open_lit = "<";
+            let o = regex::escape(open_lit);
+            let c_in_class = escape_for_char_class(close);
+            let c_outside = regex::escape(close);
+            let pat = format!(r"\B{o}\b(?s:.*?[^\s{c_in_class}]){c_outside}\B");
+            let re = Regex::new(&pat)
+                .unwrap_or_else(|e| panic!("pattern {pat:?} failed to compile: {e}"));
+
+            let text = format!("x <hi{close} y");
+            let m = re
+                .find(&text)
+                .unwrap_or_else(|| panic!("expected match in {text:?} with pattern {pat:?}"));
+            assert_eq!(&text[m.start()..m.end()], format!("<hi{close}"));
+        }
+    }
+
+    #[test]
+    fn test_escape_for_char_class() {
+        assert_eq!(escape_for_char_class("'"), "'");
+        assert_eq!(escape_for_char_class("`"), "`");
+        assert_eq!(escape_for_char_class("]"), r"\]");
+        assert_eq!(escape_for_char_class("^"), r"\^");
+        assert_eq!(escape_for_char_class("-"), r"\-");
+        assert_eq!(escape_for_char_class("\\"), r"\\");
+        assert_eq!(escape_for_char_class("a]b^c-d"), r"a\]b\^c\-d");
     }
 }

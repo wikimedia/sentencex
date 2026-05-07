@@ -1,7 +1,8 @@
 use languages::{
     Amharic, Arabic, Armenian, Bengali, Bulgarian, Burmese, Catalan, Danish, Dutch, English,
     Finnish, French, German, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
-    Malayalam, Marathi, Polish, Portuguese, Punjabi, Russian, Slovak, Spanish, Tamil, Telugu, Ukrainian,
+    Malayalam, Marathi, Polish, Portuguese, Punjabi, Russian, Slovak, Spanish, Tamil, Telugu,
+    Ukrainian,
 };
 use regex::Regex;
 use std::sync::LazyLock;
@@ -322,7 +323,8 @@ mod tests {
             if case.is_empty() || case.starts_with('#') {
                 continue; // Skip comment and empty lines
             }
-            let parts: Vec<&str> = case.split("---")
+            let parts: Vec<&str> = case
+                .split("---")
                 .map(|part| part.trim())
                 .filter(|part| !part.is_empty())
                 .collect();
@@ -332,7 +334,8 @@ mod tests {
             assert_eq!(parts.len(), 2, "Malformed test case: \n{}", case);
 
             let input = parts[0];
-            let expected: Vec<&str> = parts[1].lines()
+            let expected: Vec<&str> = parts[1]
+                .lines()
                 .map(|line| line.trim())
                 .filter(|line| !line.is_empty())
                 .collect();

@@ -22,8 +22,8 @@ Besides native Rust, bindings for the following programming languages are availa
 
 ## Approach
 
-- If it's a period, it ends a sentence.
-- If the preceding token is in the hand-compiled list of abbreviations, then it doesn't end a sentence.
+- A sentence-terminating punctuation mark (`.`, `?`, `!`, plus language specific terminators like `।` or `။`) ends a sentence by default.
+- Hand-compiled abbreviation lists, exclamation words, numbered references (`See [1]. Next sentence.`), and quote-aware rules (see below) suppress or relocate boundaries where the default rule would over-split.
 
 However, it is not 'period' for many languages. So we will use a list of known punctuations that can cause a sentence break in as many languages as possible.
 
@@ -33,6 +33,10 @@ Sometimes, it is very hard to get the segmentation correct. In such cases this l
 Avoid over engineering to get everything linguistically 100% accurate.
 
 This approach would be suitable for applications like text to speech, machine translation.
+
+### Trade-offs
+
+The opinionated *don't-over-split* stance coexists with several rules that *do* recover real boundaries (numbered references, quote-aware handling, abbreviation/exclamation suppression). The aim is to be conservative where context is ambiguous, while still picking up structural signals that make a split safe.
 
 Consider this example: `We make a good team, you and I. Did you see Albert I. Jones yesterday?`
 
