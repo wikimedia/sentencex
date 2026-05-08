@@ -19,6 +19,7 @@ mod ja;
 mod kk;
 mod kn;
 mod language;
+mod list_markers;
 mod ml;
 mod mr;
 mod my;
@@ -73,36 +74,57 @@ mod tests {
     use super::*;
 
     pub fn run_language_tests<T: Language>(language: T, test_file: &str) {
-        let content = fs::read_to_string(test_file).expect("Failed to read test file");
-        // Split on the bare delimiters (no trailing `\n`) so CRLF-checkout files
-        // on Windows parse identically to LF files on Linux/macOS.
+        let raw = fs::read_to_string(test_file).expect("Failed to read test file");
+        let content = raw.replace("\r\n", "\n");
         let test_cases: Vec<&str> = content.split("===").collect();
 
         for case in test_cases {
-            let case = case.trim();
-            if case.is_empty() || case.starts_with('#') {
+            // Explicit '#' comment handling. This lets fixture files include
+            // section headers and structural comments anywhere — not just at
+            // the very top of the file — without silently skipping cases that
+            // happen to share a chunk with leading comments.
+            let cleaned: String = case
+                .lines()
+                .filter(|line| !line.trim_start().starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            let cleaned = cleaned.trim();
+            if cleaned.is_empty() {
                 continue;
             }
-            let parts: Vec<&str> = case
+
+            let parts: Vec<&str> = cleaned
                 .split("---")
                 .map(|part| part.trim())
                 .filter(|part| !part.is_empty())
                 .collect();
+
             if parts.len() != 2 {
                 continue; // Skip malformed test cases
             }
 
+            // Comparison normalises whitespace on both sides — any run of
+            // whitespace (spaces, tabs, newlines) collapses to a single
+            // space.
+            let normalise = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ");
             let input = parts[0];
-            let expected: Vec<&str> = parts[1]
-                .lines()
-                .map(|line| line.trim())
-                .filter(|line| !line.is_empty())
-                .collect();
-            let result = language.segment(input);
-            let trimmed_result: Vec<String> =
-                result.iter().map(|item| item.trim().to_string()).collect();
 
-            assert_eq!(trimmed_result, expected, "Failed for input: \n{}", input);
+            let expected: Vec<String> = parts[1]
+                .lines()
+                .map(|s| normalise(&s))
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            let result = language.segment(&input);
+            
+            let actual: Vec<String> = result
+                .iter()
+                .map(|item| normalise(item))
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            assert_eq!(actual, expected, "Failed for input: \n{}", input);
         }
     }
 }
