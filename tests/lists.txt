@@ -5,10 +5,9 @@
 # Expected segments (one per line, trimmed)
 # ===
 #
-# Each expected segment is one non-empty line. Use `\n` (literal backslash-n)
-# inside an expected line to embed a real newline - necessary when a single
-# segment spans multiple lines of input (line-wrapped prose without a
-# paragraph break stays as one segment, with the original `\n` preserved).
+# Each expected segment is one non-empty line. Use `\n` (literal backslash-n) inside an expected line to embed a real newline
+# - necessary when a single segment spans multiple lines of input (line-wrapped prose without a paragraph break stays as one
+# segment, with the original `\n` preserved).
 
 # --------------------------------------------------------------------
 # accepts: list shapes that segment as one sentence per item.
@@ -129,9 +128,8 @@ ii.) The second item
 ===
 
 # --------------------------------------------------------------------
-# deliberately not handled. Scanner must not fire here.
-# Snapshot the pre-existing terminator-driven behaviour so any future drift
-# surfaces as a deliberate decision.
+# Deliberately not handled. Scanner must not fire here.
+# Snapshot the pre-existing terminator-driven behaviour so any future drift surfaces as a deliberate decision.
 # --------------------------------------------------------------------
 
 1. The first item. 2. The second item.
