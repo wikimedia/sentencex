@@ -151,6 +151,27 @@ fn bench_abbreviation_heavy_text(c: &mut Criterion) {
     });
 }
 
+fn bench_list_heavy_text(c: &mut Criterion) {
+    let text = "Here are the rules:\n\
+                * Be kind to others.\n\
+                * Be honest in your work.\n\
+                * Verify your assumptions.\n\n\
+                Numbered steps:\n\
+                1. Read the brief.\n\
+                2. Draft a response.\n\
+                3. Review and send.\n\n\
+                Lettered options:\n\
+                (a) First choice.\n\
+                (b) Second choice.\n\
+                (c) Third choice.\n\n\
+                • Unicode bullet item.\n\
+                • Another unicode bullet.";
+
+    c.bench_function("list_heavy_text", |b| {
+        b.iter(|| segment(black_box("en"), black_box(text)))
+    });
+}
+
 fn bench_quoted_text(c: &mut Criterion) {
     let text = r#"She said, "This is the first sentence." He replied, "This is the second one."
                   "What about this?" she asked. "And this!" he exclaimed."#;
@@ -203,6 +224,7 @@ criterion_group!(
     bench_multi_language,
     bench_paragraph_heavy_text,
     bench_abbreviation_heavy_text,
+    bench_list_heavy_text,
     bench_quoted_text,
     bench_quote_heavy_inner_terminators,
     bench_real_wikipedia_sample
