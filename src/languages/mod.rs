@@ -117,7 +117,7 @@ mod tests {
                 .collect();
 
             let result = language.segment(&input);
-            
+
             let actual: Vec<String> = result
                 .iter()
                 .map(|item| normalise(item))

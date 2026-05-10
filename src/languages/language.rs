@@ -315,8 +315,8 @@ pub trait Language {
             // Detect list-item line starts once per paragraph and reuse the
             // result for both atomic-item ranges (so terminator-driven boundaries
             // inside an item are dropped) and explicit boundary emission below.
-            let list_starts = Some(super::list_markers::detect_list_items(paragraph)).unwrap_or_default();
-            
+            let list_starts = super::list_markers::detect_list_items(paragraph);
+
             if !list_starts.is_empty() {
                 for window in list_starts.windows(2) {
                     skippable_ranges.push(SkippableRange::new(

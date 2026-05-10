@@ -60,18 +60,30 @@ struct Candidate {
 
 impl Candidate {
     fn line_start(pos: usize, hit: MarkerHit) -> Self {
-        Self { pos, family: hit.family, first_byte: hit.first_byte, line_start: true }
+        Self {
+            pos,
+            family: hit.family,
+            first_byte: hit.first_byte,
+            line_start: true,
+        }
     }
 
     fn inline(pos: usize, hit: MarkerHit) -> Self {
-        Self { pos, family: hit.family, first_byte: hit.first_byte, line_start: false }
+        Self {
+            pos,
+            family: hit.family,
+            first_byte: hit.first_byte,
+            line_start: false,
+        }
     }
 
     /// A single-letter `a.`/`a)` candidate whose letter could read as Roman
     /// (i, v, x, l, c, d, m). Used by `promote_roman_letters`.
     fn is_roman_letter_shape(&self) -> bool {
-        matches!(self.family, MarkerFamily::LetterDot | MarkerFamily::LetterParen)
-            && is_roman_byte(self.first_byte)
+        matches!(
+            self.family,
+            MarkerFamily::LetterDot | MarkerFamily::LetterParen
+        ) && is_roman_byte(self.first_byte)
     }
 }
 
@@ -132,7 +144,7 @@ fn first_non_ws(bytes: &[u8], start: usize, end: usize) -> usize {
     while i < end && is_horiz_ws(bytes[i]) {
         i += 1;
     }
-    
+
     i
 }
 
@@ -172,9 +184,11 @@ fn classify_marker_at(s: &str) -> Option<MarkerHit> {
 /// unaffected — the line break itself is the structural signal.
 fn is_bare_dot_closer(bytes: &[u8], family: MarkerFamily, marker_len: usize) -> bool {
     bytes[marker_len - 1] == b'.'
-        && matches!(family, MarkerFamily::Numeric | MarkerFamily::LetterDot | MarkerFamily::Roman)
+        && matches!(
+            family,
+            MarkerFamily::Numeric | MarkerFamily::LetterDot | MarkerFamily::Roman
+        )
 }
-
 
 /// Returns the first non-space, non-tab character after `after_marker`, only
 /// if at least one space/tab is present and the resulting character is real
@@ -263,7 +277,9 @@ fn match_letter_dot(s: &str) -> Option<usize> {
 fn match_paren_form(s: &str) -> Option<usize> {
     let inside = s.strip_prefix('(')?;
     let close = inside.find(')')?;
-    let inner = inside[..close].as_bytes();
+
+    // Safe since close lands on a valid utf8 boundary
+    let inner = &inside.as_bytes()[..close];
 
     let short_numeric = (1..=2).contains(&inner.len()) && inner.iter().all(|b| b.is_ascii_digit());
     let single_letter = inner.len() == 1 && inner[0].is_ascii_alphabetic();
@@ -386,7 +402,8 @@ fn pick_winner(candidates: &[Candidate]) -> Option<MarkerFamily> {
         MarkerFamily::Roman,
     ];
 
-    TIER2.iter()
+    TIER2
+        .iter()
         .copied()
         .filter(|&f| counts[f.idx()] >= 2)
         .max_by_key(|&f| (counts[f.idx()], std::cmp::Reverse(first_pos[f.idx()])))
