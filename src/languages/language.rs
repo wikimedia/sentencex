@@ -875,7 +875,15 @@ pub trait Language {
     /// the sentence is continuing rather than starting a new one. This helps avoid breaking
     /// sentences at abbreviations or in the middle of compound sentences.
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        CONTINUE_REGEX.is_match(text_after_boundary)
+        if CONTINUE_REGEX.is_match(text_after_boundary) {
+            return true;
+        }
+
+        // A comma following the terminator (after optional spaces) signals that
+        // the period is stray punctuation and the real clause continues. Treat
+        // it as a continuation rather than a boundary.
+        let trimmed = text_after_boundary.trim_start();
+        trimmed.as_bytes().first() == Some(&b',')
     }
 
     /// Identifies ranges of text that should be skipped during sentence boundary detection.
