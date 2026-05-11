@@ -22,12 +22,9 @@ Besides native Rust, bindings for the following programming languages are availa
 
 ## Approach
 
-- A sentence-terminating punctuation mark (`.`, `?`, `!`, plus language specific terminators like `।` or `။`) ends a sentence by default.
-- Hand-compiled abbreviation lists, exclamation words, numbered references (`See [1]. Next sentence.`), and quote-aware rules (see below) suppress or relocate boundaries where the default rule would over-split.
-
-However, it is not 'period' for many languages. So we will use a list of known punctuations that can cause a sentence break in as many languages as possible.
-
-We also collect a list of known, popular abbreviations in as many languages as possible.
+- A sentence-terminating punctuation mark (`.`, `?`, `!`, plus language specific terminators like `।` or `။`) ends a sentence by default. Some languages use different terminators so a list of known terminator symbols is maintained for supported languages.
+- Hand-compiled abbreviation lists, exclamation words, numbered references (`See [1]. Next sentence.`), and quote-aware rules (see below) suppress or relocate boundaries where the default rule would over-split. We collect a list of known, popular abbreviations in supported languages.
+- List-item starts (e.g., bullets `*` / `+` / `-` / `•`, numeric `1.` / `1)` / `(1)`, lettered `a)` / `(a)`, roman `ii.`) emit sentence boundaries so each item segments cleanly, even when items are written inline on one line. A sibling rule (≥2 matches of the same marker family per paragraph, or a single Tier-1 line-start) keeps prose with stray `(1894)` or `e. e. cummings` from being mis-split.
 
 Sometimes, it is very hard to get the segmentation correct. In such cases this library is opinionated and prefer not segmenting than wrong segmentation. If two sentences are accidentally together, that is ok. It is better than sentence being split in middle.
 Avoid over engineering to get everything linguistically 100% accurate.
@@ -41,9 +38,11 @@ The opinionated *don't-over-split* stance coexists with several rules that *do* 
 Consider this example: `We make a good team, you and I. Did you see Albert I. Jones yesterday?`
 
 The accurate splitting of this sentence is
-`["We make a good team, you and I." ,"Did you see Albert I. Jones yesterday?"]`
+`["We make a good team, you and I.", "Did you see Albert I. Jones yesterday?"]`
 
 However, to achieve this level precision, complex rules need to be added and it could create side effects. Instead, if we just don't segment between `I. Did`, it is ok for most of downstream applications.
+
+List-item detection follows the same conservative posture. Ambiguous inline shapes that collide with prose (bare `1.` / `a.` / `ii.` closers inline, single-letter `a.` patterns that look like initials, parenthesised numbers like `(1894)` that read as years) deliberately do not trigger list segmentation. A sibling rule (≥2 matches of the same marker family per paragraph, or a single Tier-1 line-start) further suppresses one-off occurrences. The result: real lists segment per item, but prose containing list-shaped fragments stays intact.
 
 The sentence segmentation in this library is **non-destructive**. This means, if the sentences are combined together, you can reconstruct the original text. Line breaks, punctuations and whitespaces are preserved in the output.
 
@@ -218,7 +217,7 @@ Total sentences: 150254
 ```
 
 
-Measured on English Golden Rule Set (GRS) using mean F1 score across 60 test cases. List cases are excluded.
+Measured on English Golden Rule Set (GRS) using mean F1 score across 60 test cases.
 The benchmark script is at [`benchmarks/compare.py`](benchmarks/compare.py) and can be run with `uv run benchmarks/compare.py`.
 
 The following libraries are compared:

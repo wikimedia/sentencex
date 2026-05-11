@@ -1,0 +1,176 @@
+# List-item / enumeration test fixtures.
+# Each test case is defined as:
+# Input text
+# ---
+# Expected segments (one per line, trimmed)
+# ===
+#
+# Each expected segment is one non-empty line. Use `\n` (literal backslash-n) inside an expected line to embed a real newline
+# - necessary when a single segment spans multiple lines of input (line-wrapped prose without a paragraph break stays as one
+# segment, with the original `\n` preserved).
+
+# --------------------------------------------------------------------
+# accepts: list shapes that segment as one sentence per item.
+# --------------------------------------------------------------------
+Multi line sentence
+We should not split this as a sanity check
+---
+Multi line sentence We should not split this as a sanity check
+===
+* apples
+* oranges
+* bananas
+---
+* apples
+* oranges
+* bananas
+===
+• apples
+• oranges
+---
+• apples
+• oranges
+===
+a) foo
+b) bar
+---
+a) foo
+b) bar
+===
+(a) only one item here
+---
+(a) only one item here
+===
+(1) foo
+(2) bar
+---
+(1) foo
+(2) bar
+===
+* The report is final. Send it tomorrow.
+* Verify with QA.
+---
+* The report is final. Send it tomorrow.
+* Verify with QA.
+===
+Here are the rules:
+* Be kind.
+* Be honest.
+---
+Here are the rules:
+* Be kind.
+* Be honest.
+===
+ii. First
+iii. Second
+---
+ii. First
+iii. Second
+===
+a. apples
+b. oranges
+c. bananas
+---
+a. apples
+b. oranges
+c. bananas
+===
+1. apples
+2. oranges
+---
+1. apples
+2. oranges
+===
+
+# Indentation note: the harness trims the leading whitespace of the whole
+# case block, so line 1's indent is stripped here. Line 2's indent is
+# preserved and still exercises the indented-bullet path.
+* indented
+   * also indented
+---
+* indented
+* also indented
+===
+
+# --------------------------------------------------------------------
+# inline: enumerations on a single line.
+# --------------------------------------------------------------------
+
+1.) The first item. 2.) The second item.
+---
+1.) The first item.
+2.) The second item.
+===
+1) The first item 2) The second item
+---
+1) The first item
+2) The second item
+===
+• 9. The first item • 10. The second item
+---
+• 9. The first item
+• 10. The second item
+===
+a.) The first item b.) The second item
+---
+a.) The first item
+b.) The second item
+===
+a) The first item b) The second item
+---
+a) The first item
+b) The second item
+===
+i.) The first item ii.) The second item
+---
+i.) The first item
+ii.) The second item
+===
+
+# --------------------------------------------------------------------
+# Deliberately not handled. Scanner must not fire here.
+# Snapshot the pre-existing terminator-driven behaviour so any future drift surfaces as a deliberate decision.
+# --------------------------------------------------------------------
+
+1. The first item. 2. The second item.
+---
+1.
+The first item.
+2.
+The second item.
+===
+a. The first item b. The second item
+---
+a. The first item b. The second item
+===
+ii. The first item iii. The second item
+---
+ii.
+The first item iii.
+The second item
+===
+(1). foo
+(2). bar
+---
+(1).
+foo (2).
+bar
+===
+I. went home today.
+---
+I. went home today.
+===
+On 4 October 1999 , a Su - 24 was shot down by a SAM while searching for the crash site of a downed Su - 25 .
+---
+On 4 October 1999 , a Su - 24 was shot down by a SAM while searching for the crash site of a downed Su - 25 .
+===
+Examples include '' Sonar Tari '' ( 1894 ) , '' Chitra '' ( 1896 ) , and '' Katha O Kahini '' (1900). His essays , poems , and plays of the time also touched on village life .
+---
+Examples include '' Sonar Tari '' ( 1894 ) , '' Chitra '' ( 1896 ) , and '' Katha O Kahini '' (1900).
+His essays , poems , and plays of the time also touched on village life .
+===
+In his first professional season , he led the Gulf Coast League in doubles (20), and ranked third in extra-base hits ( 22 ) . He posted a 5 for 5 game with five doubles , three runs scored and three RBI 's on July 17 , 2003 at GCL Twins .
+---
+In his first professional season , he led the Gulf Coast League in doubles (20), and ranked third in extra-base hits ( 22 ) .
+He posted a 5 for 5 game with five doubles , three runs scored and three RBI 's on July 17 , 2003 at GCL Twins .
+===
