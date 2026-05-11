@@ -636,10 +636,20 @@ pub trait Language {
     /// sentence boundary is a known abbreviation. Returns an empty string if no words
     /// are found. This is a performance-optimized version that avoids collecting all words.
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {
-        // Find the last word without collecting all words
-        text.split(|c: char| c.is_whitespace() || c == '.')
-            .next_back()
-            .unwrap_or("")
+        // Trim trailing whitespace so a stray space before the terminator
+        // (`U.S .`) doesn't blank out the last word. `/` joins route names
+        // to abbreviations (`171/U.S`) without being a real word boundary,
+        // so split on it too. Walk back from the end (rfind) rather than
+        // splitting from the start: this is on the per-match hot path and
+        // we only need the trailing word.
+        let trimmed = text.trim_end();
+        match trimmed
+            .char_indices()
+            .rfind(|(_, c)| c.is_whitespace() || *c == '.' || *c == '/')
+        {
+            Some((i, c)) => &trimmed[i + c.len_utf8()..],
+            None => trimmed,
+        }
     }
 
     /// Checks if a potential sentence boundary is actually an exclamation word that shouldn't
