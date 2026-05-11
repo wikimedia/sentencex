@@ -836,6 +836,23 @@ pub trait Language {
             return None;
         }
 
+        // Digit immediately before the period and a digit-bearing alphanumeric
+        // token immediately after (no space) is a code-like numbered token,
+        // not a sentence end: chess moves (`7.Bg5`). Requiring a digit in the
+        // follower keeps quantities like `1,000.That` on the normal boundary
+        // path. The lowercase variant (`7.f4`) already passes through
+        // `continues`; this handles the uppercase case.
+        if matched == "."
+            && head.bytes().next_back().is_some_and(|b| b.is_ascii_digit())
+            && next_word_approx
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_alphabetic())
+            && next_word_approx.bytes().any(|b| b.is_ascii_digit())
+        {
+            return None;
+        }
+
         if self.is_abbreviation(head, next_word_approx, &text[start..end]) {
             return None;
         }

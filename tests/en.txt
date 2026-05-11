@@ -549,3 +549,19 @@ Really ? ? ? Then we should go .
 Really ? ? ?
 Then we should go .
 ===
+Nf6 , when 7.f4 and 7.Bg5 are the main possibilities for White . However , 6 ... d6 ! ? is an independent alternative for Black .
+---
+Nf6 , when 7.f4 and 7.Bg5 are the main possibilities for White .
+However , 6 ... d6 ! ? is an independent alternative for Black .
+===
+I wasn’t really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn’t mean it.
+---
+I wasn’t really ... well, what I mean...see . . . what I'm saying, the thing is . . . I didn’t mean it.
+===
+Hello world.Today is Tuesday.Mr. Smith went to the store and bought 1,000.That is a lot.
+---
+Hello world.
+Today is Tuesday.
+Mr. Smith went to the store and bought 1,000.
+That is a lot.
+===
