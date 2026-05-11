@@ -12,7 +12,20 @@ use crate::constants::QUOTES_REGEX;
 use crate::constants::SPACE_AFTER_SEPARATOR;
 
 static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
+    // Branch 1 (`\.(?:[ \t]+\.){2,}`) coalesces three-or-more spaced dots
+    // (`. . .`, `. . . .`) into one match. Two-dot `. .` is excluded so a
+    // period followed by a leading ellipsis (`raak. ...en`) is not eaten as a
+    // single run. `[ \t]` (not `\s`) keeps newlines intact for paragraph splits.
+    //
+    // Branch 2 (`[!?…](?:[ \t]+[!?…])+`) coalesces two-or-more spaced runs,
+    // mixed or homogeneous (`! !`, `? ? ?`, `! ?`, `… !`). `+` rather than
+    // `{2,}` is safe here — there's no leading-ellipsis equivalent for `!`/`?`.
+    // Both branches must precede the class for leftmost-first alternation.
+    let pattern = format!(
+        r"\.(?:[ \t]+\.){{2,}}|[!?…](?:[ \t]+[!?…])+|[{}]+",
+        GLOBAL_SENTENCE_TERMINATORS.join("")
+    );
+
     Regex::new(&pattern).unwrap()
 });
 
@@ -23,6 +36,20 @@ static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]
 // check with their own month lists.
 static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\W*[0-9a-z]").unwrap());
+
+// Continuation rule for ellipsis matches: treat the run as mid-sentence when
+// the follow-up is whitespace + a lowercase/digit (`... no`, `. . . what`) or
+// whitespace + a standalone `I` (`... I'm`, `. . . I didn't`). `I` is the one
+// capital that can't be distinguished from a sentence start by case, so it's
+// folded in as continuation; `No`, `Then`, `And` still mark a boundary.
+static ELLIPSIS_CONTINUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\s+(?:[0-9a-z]|I(?:[\s'\u{2019}]|$))").unwrap());
+
+// Glued lowercase after an ellipsis (`mean...see`) is intra-utterance hesitation
+// and continues the sentence. Only fires when the dots are also glued behind -
+// a free-standing leading ellipsis (`raak. ...en`) keeps its boundary.
+static ELLIPSIS_GLUED_CONTINUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
 
 static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
 
@@ -133,6 +160,45 @@ fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
     if boundary > *boundaries.last().unwrap() {
         boundaries.push(boundary);
     }
+}
+
+/// Find terminator-run matches in `text`, folding a whitespace-separated
+/// dot-only follow-up onto a preceding `!`/`?`/`…` run so `Bravo ! .` and
+/// `Happy! . . . no one …` surface as one coalesced terminator.
+///
+/// The regex already coalesces homogeneous runs (`! !`, `. . .`) and
+/// contiguous mixed runs like `! ...` (matched by the contiguous-class
+/// branch as `!...`). Spaced mixed runs like `! . . .` can't be expressed
+/// without lookahead - `[!?…][ \t]+\.` would eat the first dot of an
+/// ellipsis - so they arrive here as two matches and are folded only when
+/// the follow-up is pure `.`s separated by whitespace.
+fn find_terminator_matches(text: &str, regex: &Regex) -> Vec<(usize, usize)> {
+    let mut out: Vec<(usize, usize)> = Vec::new();
+
+    for m in regex.find_iter(text) {
+        let (start, end) = (m.start(), m.end());
+
+        if let Some(last) = out.last_mut() {
+            let prev = &text[last.0..last.1];
+            let candidate = &text[start..end];
+            let gap = &text[last.1..start];
+
+            let is_blank = |c: char| matches!(c, ' ' | '\t');
+            let prev_is_emphatic = prev.ends_with(['!', '?', '…']);
+            let candidate_is_dot_run =
+                candidate.starts_with('.') && candidate.chars().all(|c| c == '.' || is_blank(c));
+            let separated_by_blanks = !gap.is_empty() && gap.chars().all(is_blank);
+
+            if prev_is_emphatic && candidate_is_dot_run && separated_by_blanks {
+                last.1 = end;
+                continue;
+            }
+        }
+
+        out.push((start, end));
+    }
+
+    out
 }
 
 /// Shared helper for languages that continue sentences before month names.
@@ -274,6 +340,7 @@ pub trait Language {
         // Pre-allocate sentence_boundaries once and reuse for all paragraphs
         let estimated_paragraph_sentences = 10; // reasonable default for typical paragraphs
         let mut sentence_boundaries = Vec::with_capacity(estimated_paragraph_sentences);
+        let sentence_break_regex = self.get_sentence_break_regex();
 
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
             if pindex > 0 {
@@ -305,11 +372,7 @@ pub trait Language {
             sentence_boundaries.clear();
             sentence_boundaries.push(0);
 
-            let matches: Vec<(usize, usize)> = self
-                .get_sentence_break_regex()
-                .find_iter(paragraph)
-                .map(|m| (m.start(), m.end()))
-                .collect();
+            let matches = find_terminator_matches(paragraph, sentence_break_regex);
             let mut skippable_ranges = self.get_skippable_ranges(paragraph);
 
             // Detect list-item line starts once per paragraph and reuse the
@@ -735,7 +798,23 @@ pub trait Language {
     /// like abbreviations or mid-sentence punctuation.
     fn find_boundary(&self, text: &str, start: usize, end: usize) -> Option<usize> {
         let head = &text[..start];
-        let next_index = text.ceil_char_boundary(start + 1);
+        let matched = &text[start..end];
+
+        // Any coalesced multi-char terminator run (`...`, `!?`, `. . .`, `! ?`)
+        // allows leading whitespace before the lowercase continuation test, so
+        // `! ? is` and `... no` read as mid-sentence. `chars().nth(1)` rules out
+        // a single multi-byte terminator (`。`, `…`), which would otherwise look
+        // multi-char by byte length.
+        let is_multi_char_run = matched.chars().nth(1).is_some();
+
+        // For any multi-char match (e.g. `...`, `!?`, `!...`), scan continuation
+        // and trailing-space extension from the end of the run, not from one byte
+        // past its first char.
+        let next_index = if is_multi_char_run {
+            end
+        } else {
+            text.ceil_char_boundary(start + 1)
+        };
 
         let next_word_approx = self.get_next_word_approx(text, next_index);
 
@@ -745,7 +824,15 @@ pub trait Language {
             return Some(next_index + number_ref_match.end());
         }
 
-        if self.continue_in_next_word(next_word_approx) {
+        let continues = if is_multi_char_run {
+            ELLIPSIS_CONTINUE_REGEX.is_match(next_word_approx)
+                || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
+                    && ELLIPSIS_GLUED_CONTINUE_REGEX.is_match(next_word_approx))
+        } else {
+            self.continue_in_next_word(next_word_approx)
+        };
+
+        if continues {
             return None;
         }
 
