@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.25] - 2026-05-11
+
+### Added
+- Add targeted list and enumeration support (#62)
+
+### Bug fixes
+- Fix clippy warnings
+
 ## [1.0.24] - 2026-05-07
 
 ### Added
