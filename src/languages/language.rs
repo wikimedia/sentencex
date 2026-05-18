@@ -37,13 +37,12 @@ static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]
 static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\W*[0-9a-z]").unwrap());
 
-// Continuation rule for ellipsis matches: treat the run as mid-sentence when
-// the follow-up is whitespace + a lowercase/digit (`... no`, `. . . what`) or
-// whitespace + a standalone `I` (`... I'm`, `. . . I didn't`). `I` is the one
-// capital that can't be distinguished from a sentence start by case, so it's
-// folded in as continuation; `No`, `Then`, `And` still mark a boundary.
-static ELLIPSIS_CONTINUE_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^\s+(?:[0-9a-z]|I(?:[\s'\u{2019}]|$))").unwrap());
+// Ellipsis continuation: treat a multi-char terminator run as mid-sentence when the follow-up is
+// whitespace + a lowercase letter or digit (`... no`, `. . . what`). Languages with a
+// capitalized word that is ambiguous with a sentence start (English standalone `I`) extend
+// this via the `is_ellipsis_continuation` trait method.
+pub(crate) static ELLIPSIS_CONTINUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\s+[0-9a-z]").unwrap());
 
 // Glued lowercase after an ellipsis (`mean...see`) is intra-utterance hesitation
 // and continues the sentence. Only fires when the dots are also glued behind -
@@ -694,7 +693,7 @@ pub trait Language {
         is_abbrev || is_abbrev_lower || is_abbrev_upper
     }
 
-    /// Extracts the last word from the given text by splitting on whitespace and periods.
+    /// Extracts the last word from the given text by splitting on whitespace, periods, and slashes.
     /// Used primarily by abbreviation detection to check if the word before a potential
     /// sentence boundary is a known abbreviation. Returns an empty string if no words
     /// are found. This is a performance-optimized version that avoids collecting all words.
@@ -702,17 +701,11 @@ pub trait Language {
         // Trim trailing whitespace so a stray space before the terminator
         // (`U.S .`) doesn't blank out the last word. `/` joins route names
         // to abbreviations (`171/U.S`) without being a real word boundary,
-        // so split on it too. Walk back from the end (rfind) rather than
-        // splitting from the start: this is on the per-match hot path and
-        // we only need the trailing word.
-        let trimmed = text.trim_end();
-        match trimmed
-            .char_indices()
-            .rfind(|(_, c)| c.is_whitespace() || *c == '.' || *c == '/')
-        {
-            Some((i, c)) => &trimmed[i + c.len_utf8()..],
-            None => trimmed,
-        }
+        // so split on it too.
+        text.trim_end()
+            .split(|c: char| c.is_whitespace() || c == '.' || c == '/')
+            .next_back()
+            .expect("str::split always yields at least one element")
     }
 
     /// Checks if a potential sentence boundary is actually an exclamation word that shouldn't
@@ -800,21 +793,10 @@ pub trait Language {
         let head = &text[..start];
         let matched = &text[start..end];
 
-        // Any coalesced multi-char terminator run (`...`, `!?`, `. . .`, `! ?`)
-        // allows leading whitespace before the lowercase continuation test, so
-        // `! ? is` and `... no` read as mid-sentence. `chars().nth(1)` rules out
-        // a single multi-byte terminator (`。`, `…`), which would otherwise look
-        // multi-char by byte length.
-        let is_multi_char_run = matched.chars().nth(1).is_some();
-
-        // For any multi-char match (e.g. `...`, `!?`, `!...`), scan continuation
-        // and trailing-space extension from the end of the run, not from one byte
-        // past its first char.
-        let next_index = if is_multi_char_run {
-            end
-        } else {
-            text.ceil_char_boundary(start + 1)
-        };
+        // Scan continuation and trailing-space extension from the end of the
+        // matched terminator. For a single-char match `end` is one-past the
+        // terminator char; for a coalesced run it's the end of the whole run.
+        let next_index = end;
 
         let next_word_approx = self.get_next_word_approx(text, next_index);
 
@@ -824,8 +806,15 @@ pub trait Language {
             return Some(next_index + number_ref_match.end());
         }
 
+        // Any coalesced multi-char terminator run (`...`, `!?`, `. . .`, `! ?`)
+        // allows leading whitespace before the lowercase continuation test, so
+        // `! ? is` and `... no` read as mid-sentence. `chars().nth(1)` rules out
+        // a single multi-byte terminator (`。`, `…`), which would otherwise look
+        // multi-char by byte length.
+        let is_multi_char_run = matched.chars().nth(1).is_some();
+
         let continues = if is_multi_char_run {
-            ELLIPSIS_CONTINUE_REGEX.is_match(next_word_approx)
+            self.is_ellipsis_continuation(next_word_approx)
                 || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
                     && ELLIPSIS_GLUED_CONTINUE_REGEX.is_match(next_word_approx))
         } else {
@@ -868,6 +857,14 @@ pub trait Language {
         }
 
         Some(end)
+    }
+
+    /// True when text following a multi-char terminator run (`...`, `! ?`,
+    /// `. . .`) continues the current sentence rather than starting a new one.
+    /// The default treats only whitespace + a lowercase letter/digit as
+    /// continuation.
+    fn is_ellipsis_continuation(&self, text_after_run: &str) -> bool {
+        ELLIPSIS_CONTINUE_REGEX.is_match(text_after_run)
     }
 
     /// Determines if the text after a potential boundary indicates the sentence should continue.
