@@ -11,6 +11,7 @@ mod es;
 mod fallbacks;
 mod fi;
 mod fr;
+mod fronting;
 mod gu;
 mod hi;
 mod hy;
@@ -31,6 +32,7 @@ mod ru;
 mod sk;
 mod ta;
 mod te;
+mod trailing_markers;
 mod uk;
 
 pub use am::Amharic;
@@ -82,13 +84,75 @@ pub(crate) fn parse_word_list<'a>(sources: impl IntoIterator<Item = &'a str>) ->
         .collect()
 }
 
-pub(crate) fn parse_abbreviation_list<'a>(
+pub(crate) fn parse_lowercase_word_list<'a>(
     sources: impl IntoIterator<Item = &'a str>,
 ) -> FxHashSet<String> {
     parse_word_list(sources)
         .iter()
         .map(|s| s.to_lowercase())
         .collect()
+}
+
+pub(crate) fn parse_markers_list(source: &'static str) -> Vec<trailing_markers::MarkerDef> {
+    source.lines().filter_map(parse_marker_line).collect()
+}
+
+fn parse_marker_line(raw: &'static str) -> Option<trailing_markers::MarkerDef> {
+    let line = raw.trim();
+    if line.is_empty() || line.starts_with("//") {
+        return None;
+    }
+
+    let mut parts = line.split('|').map(str::trim);
+    let suffix = parts.next().expect("split yields at least one element");
+
+    let case = parts
+        .next()
+        .unwrap_or_else(|| panic!("marker line missing `case` field: {raw:?}"));
+
+    let digit_field = parts
+        .next()
+        .unwrap_or_else(|| panic!("marker line missing `digit_breaks` field: {raw:?}"));
+
+    let uppercase_field = parts.next();
+    let flag_field = parts.next();
+    if parts.next().is_some() {
+        panic!("marker line has trailing fields after flag: {raw:?}");
+    }
+
+    let ignore_case = match case {
+        "i" => true,
+        "s" => false,
+        other => panic!("marker line has unknown case `{other}`: {raw:?}"),
+    };
+
+    let digit_only = match flag_field {
+        None => false,
+        Some("digit-only") => true,
+        Some(other) => panic!("marker line has unknown flag `{other}`: {raw:?}"),
+    };
+
+    Some(trailing_markers::MarkerDef {
+        matcher: trailing_markers::SuffixMatcher {
+            suffix,
+            ignore_case,
+            digit_only,
+        },
+        policy: trailing_markers::MarkerPolicy {
+            digit_breaks: parse_break_flag(digit_field, "digit_breaks", raw),
+            uppercase_breaks: uppercase_field
+                .map(|f| parse_break_flag(f, "uppercase_breaks", raw))
+                .unwrap_or(true),
+        },
+    })
+}
+
+fn parse_break_flag(field: &str, axis: &str, raw: &str) -> bool {
+    match field {
+        "break" => true,
+        "cont" => false,
+        other => panic!("marker line has unknown {axis} `{other}`: {raw:?}"),
+    }
 }
 
 #[cfg(test)]

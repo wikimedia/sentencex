@@ -1,5 +1,5 @@
 use super::Language;
-use super::parse_abbreviation_list;
+use super::parse_lowercase_word_list;
 use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 pub struct Punjabi {}
 
 static ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    parse_abbreviation_list([
+    parse_lowercase_word_list([
         include_str!("./abbrev/pa.txt"),
         include_str!("./abbrev/en.txt"),
     ])

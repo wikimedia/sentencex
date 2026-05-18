@@ -1,0 +1,94 @@
+// Trailing-marker definitions for English.
+//
+// Format: suffix | case | digit_breaks [| uppercase_breaks [| digit-only flag ]]
+//   case            : i (ignore case)
+//                   | s (case sensitive)
+//   digit_breaks    : break (Digit follower breaks, e.g. `7 a.m. 7 p.m.` = two readings)
+//                   | cont  (Digit follower continues, e.g. `A.D. 79`, `5 ft. 6 in.`)
+//   uppercase_breaks: break (Default. Uppercase non-starter follower breaks.)
+//                   | cont  (Uppercase non-starter follower continues, subject to starter list override.)
+//                     Not useful for English but there might be languages where a capitalised followe is not a good signal.
+//                     capitalised follower is not a sentence-boundary signal. No English marker uses it.
+//   digit-only flag : digit-only (Requires a digit prefix, e.g. 6 in.)
+// Suffixes must be ASCII.  Parsing code is currently ASCII specific.
+// ----- Time of day -----
+a.m  | i | break
+a. m | i | break
+p.m  | i | break
+p. m | i | break
+
+// ----- Era / calendar -----
+// Case-sensitive: `B.C.` and `b.c.` mean different things in prose contexts.
+// The former era, the latter usually could be a clause.
+// `cont` so `A.D. 79`, `1792 B.C.E.` stay joined to the trailing year.
+A.D   | s | cont
+B.C   | s | cont
+B.C.E | s | cont
+C.E   | s | cont
+
+// ----- Measurement units -----
+// All `cont`. A digit follower extends a compound measurement, e.g., `5 ft. 6 in.` does not start a new sentence.
+// More common in older text.
+// SI (metric) units are not supposed to have a period after the unit, so not added.
+// Compound units like `fl. oz.` should be handled ok if `digit-only` is NOT set.
+// `digit-only` has value for ambiguous cases like `in` that are common words.
+// It gives up compound handling but guards against breaking common usage like `Come in. Sit down.`
+gal | i | cont | break | digit-only
+fl  | i | cont
+ft  | i | cont
+in  | i | cont | break | digit-only
+lb  | i | cont
+mi  | i | cont
+mph | i | cont
+oz  | i | cont
+pt  | i | cont
+qt  | i | cont
+sq  | i | cont
+yd  | i | cont
+
+// ----- Academic / professional titles -----
+// Case-insensitive to accept stylistic variants
+B.A   | i | cont
+BA    | i | cont
+B.Com | i | cont
+BCom  | i | cont
+B.S   | i | cont
+BS    | i | cont
+B.Sc  | i | cont
+BSc   | i | cont
+D.D.S | i | cont
+DDS   | i | cont
+J.D   | i | cont
+JD    | i | cont
+LL.B  | i | cont
+LLB   | i | cont
+LL.D  | i | cont
+LLD   | i | cont
+LL.M  | i | cont
+LLM   | i | cont
+M.A   | i | cont
+MA    | i | cont
+M.B.A | i | cont
+MBA   | i | cont
+M.Com | i | cont
+MCom  | i | cont
+M.D   | i | cont
+MD    | i | cont
+M.S   | i | cont
+MS    | i | cont
+M.Sc  | i | cont
+MSc   | i | cont
+Ph.D  | i | cont
+PhD   | i | cont
+
+// ----- Compass bearings (multi-letter only) -----
+// Single-letter compass (`N./S./E./W.`) is deliberately excluded.
+// They could collide with name initials. More semantic clues would be needed to handle those.
+NE  | i | cont
+N.E | i | cont
+NW  | i | cont
+N.W | i | cont
+SE  | i | cont
+S.E | i | cont
+SW  | i | cont
+S.W | i | cont

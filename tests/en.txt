@@ -724,3 +724,411 @@ Jed only nodded.
 Kate Owen looked at him and said quietly, `And what do you remember next?'
 ' I was in bed, in the infirmary, with bandages.'
 ===
+Cleveland has four trains per day , Train 48 departs Cleveland at 7a.m . All the others run in the middle of the night .
+---
+Cleveland has four trains per day , Train 48 departs Cleveland at 7a.m .
+All the others run in the middle of the night .
+===
+7 a.m. is before 7 p.m. 7 a.m. is before dinner. 7 a.m. is before p. 753
+---
+7 a.m. is before 7 p.m.
+7 a.m. is before dinner.
+7 a.m. is before p. 753
+===
+At 11:58 p.m. PDT on October 1 , the Las Vegas Metropolitan Police Department stated that one suspect , a Nevada resident , was '' down '' . Police stated that no other shooters were believed to be involved .
+---
+At 11:58 p.m. PDT on October 1 , the Las Vegas Metropolitan Police Department stated that one suspect , a Nevada resident , was '' down '' .
+Police stated that no other shooters were believed to be involved .
+===
+At 11:58 p.m. P.D.T. on October 1 , the Las Vegas Metropolitan Police Department stated that one suspect , a Nevada resident , was '' down '' . Police stated that no other shooters were believed to be involved .
+---
+At 11:58 p.m. P.D.T. on October 1 , the Las Vegas Metropolitan Police Department stated that one suspect , a Nevada resident , was '' down '' .
+Police stated that no other shooters were believed to be involved .
+===
+At 5 a.m. Mr. Smith went to the bank. He left the bank at 6 P.M. Mr. Smith then went to the store.
+---
+At 5 a.m. Mr. Smith went to the bank.
+He left the bank at 6 P.M.
+Mr. Smith then went to the store.
+===
+At 5 a.m. Mr. Smith went to the bank. He left the bank at 6 p.m. Mr. Smith then went to the store.
+---
+At 5 a.m. Mr. Smith went to the bank.
+He left the bank at 6 p.m.
+Mr. Smith then went to the store.
+===
+At 5 a.m. we went to a restaurant.
+---
+At 5 a.m. we went to a restaurant.
+===
+At 5 a. m. we went to a restaurant.
+---
+At 5 a. m. we went to a restaurant.
+===
+5 a. m. is wake up time.
+---
+5 a. m. is wake up time.
+===
+You got home at 5 a. m. The sun had already set.
+---
+You got home at 5 a. m.
+The sun had already set.
+===
+At around 5 a.m. we went to a restaurant.
+---
+At around 5 a.m. we went to a restaurant.
+===
+Rome was founded in 753 B.C. Augustus became emperor centuries later.
+---
+Rome was founded in 753 B.C.
+Augustus became emperor centuries later.
+===
+The temple dates to 200 B.C. and was rebuilt in 50 A.D. Augustus dedicated it.
+---
+The temple dates to 200 B.C. and was rebuilt in 50 A.D.
+Augustus dedicated it.
+===
+Hammurabi reigned in 1792 B.C.E. He died in 1750 B.C.E.
+---
+Hammurabi reigned in 1792 B.C.E.
+He died in 1750 B.C.E.
+===
+The eruption occurred in 79 C.E. Pompeii was buried in ash.
+---
+The eruption occurred in 79 C.E.
+Pompeii was buried in ash.
+===
+In 44 B.C. Caesar was assassinated.
+---
+In 44 B.C. Caesar was assassinated.
+===
+Around 300 A.D. Rome began its slow decline.
+---
+Around 300 A.D. Rome began its slow decline.
+===
+Around 300 a.d. Rome began its slow decline.
+---
+Around 300 a.d. Rome began its slow decline.
+===
+This is clause 5.b.c of the contract. Please review it.
+---
+This is clause 5.b.c of the contract.
+Please review it.
+===
+This is clause 5.a.m of the contract. Please review it.
+---
+This is clause 5.a.m of the contract.
+Please review it.
+===
+At 6a.m the birds sing. Good morning.
+---
+At 6a.m the birds sing.
+Good morning.
+===
+At 6a.m. the birds sing. Good morning.
+---
+At 6a.m. the birds sing.
+Good morning.
+===
+This is at 6 a.m. The birds sing. Good morning.
+---
+This is at 6 a.m.
+The birds sing.
+Good morning.
+===
+At 6 a.m. The birds sing. Good morning.
+---
+At 6 a.m.
+The birds sing.
+Good morning.
+===
+He left in Jan. 2020 and never returned.
+---
+He left in Jan. 2020 and never returned.
+===
+She arrived on Feb. 5, 1995, after a long flight.
+---
+She arrived on Feb. 5, 1995, after a long flight.
+===
+at 6 p.m. He went home.
+---
+at 6 p.m.
+He went home.
+===
+On Jan. 5, at 6 a.m. Mr. Smith arrived.
+---
+On Jan. 5, at 6 a.m. Mr. Smith arrived.
+===
+He left at 6 p.m., the meeting was over.
+---
+He left at 6 p.m., the meeting was over.
+===
+By 9:00 P.M. Mr. Smith was home.
+---
+By 9:00 P.M. Mr. Smith was home.
+===
+A.D. 79 saw the eruption.
+---
+A.D. 79 saw the eruption.
+===
+Caesar died in 44 B.C. The empire mourned.
+---
+Caesar died in 44 B.C.
+The empire mourned.
+===
+He arrived, tired and hungry, at 6 a.m. Mr. Smith greeted him.
+---
+He arrived, tired and hungry, at 6 a.m.
+Mr. Smith greeted him.
+===
+On Monday at 6 a.m. Mr. Smith arrived.
+---
+On Monday at 6 a.m. Mr. Smith arrived.
+===
+On Jan. 5; at 6 a.m. Mr. Smith arrived.
+---
+On Jan. 5; at 6 a.m. Mr. Smith arrived.
+===
+She finished her coffee at 6 a.m. Mr. Smith was waiting.
+---
+She finished her coffee at 6 a.m.
+Mr. Smith was waiting.
+===
+He said "yes, of course" at 6 a.m. Mr. Smith left.
+---
+He said "yes, of course" at 6 a.m.
+Mr. Smith left.
+===
+In the morning at 6 a.m. Mr. Smith arrived.
+---
+In the morning at 6 a.m. Mr. Smith arrived.
+===
+On the day "they all left" at 6 a.m. Mr. Smith greeted him.
+---
+On the day "they all left" at 6 a.m. Mr. Smith greeted him.
+===
+She weighed 5 lb. Tom was impressed.
+---
+She weighed 5 lb.
+Tom was impressed.
+===
+The car goes 60 mph. The highway limit is higher.
+---
+The car goes 60 mph.
+The highway limit is higher.
+===
+He bought 8 oz. The recipe needed more.
+---
+He bought 8 oz.
+The recipe needed more.
+===
+She bought 5 lb. of flour.
+---
+She bought 5 lb. of flour.
+===
+The recipe calls for 8 oz. of sugar.
+---
+The recipe calls for 8 oz. of sugar.
+===
+Drive 60 mph on the highway.
+---
+Drive 60 mph on the highway.
+===
+He is 5 ft. 6 in. tall.
+---
+He is 5 ft. 6 in. tall.
+===
+The bag held 2 lb. 4 oz. of nuts.
+---
+The bag held 2 lb. 4 oz. of nuts.
+===
+The room is 12 sq. ft. wide.
+---
+The room is 12 sq. ft. wide.
+===
+Within 5 ft. of the door, the alarm sounded.
+---
+Within 5 ft. of the door, the alarm sounded.
+===
+At 60 mph the trip takes an hour.
+---
+At 60 mph the trip takes an hour.
+===
+He measured 6 in. The wall was solid.
+---
+He measured 6 in.
+The wall was solid.
+===
+Let's go in for the night.
+---
+Let's go in for the night.
+===
+He bought 5 Lb. of meat.
+---
+He bought 5 Lb. of meat.
+===
+Dr. Mi. arrived for the appointment.
+---
+Dr. Mi. arrived for the appointment.
+===
+Mr. Pt. visited yesterday.
+---
+Mr. Pt. visited yesterday.
+===
+He bought 5 ft. 3 in. 2 lb. of materials.
+---
+He bought 5 ft. 3 in. 2 lb. of materials.
+===
+In my truck 5 lb. of groceries spilled.
+---
+In my truck 5 lb. of groceries spilled.
+===
+He ran 5 mi. Tom walked only 2 mi.
+---
+He ran 5 mi.
+Tom walked only 2 mi.
+===
+Smith, Ph.D. graduated yesterday.
+---
+Smith, Ph.D. graduated yesterday.
+===
+Dr. Jones, M.D. attended the conference.
+---
+Dr. Jones, M.D. attended the conference.
+===
+She holds an M.B.A. from Harvard.
+---
+She holds an M.B.A. from Harvard.
+===
+She earned her Ph.D. The school was proud.
+---
+She earned her Ph.D.
+The school was proud.
+===
+She earned her Ph.D. Tom was impressed.
+---
+She earned her Ph.D.
+Tom was impressed.
+===
+Jones, Ph.D., M.B.A. joined the firm.
+---
+Jones, Ph.D., M.B.A. joined the firm.
+===
+As a Ph.D. holder, she taught at the university.
+---
+As a Ph.D. holder, she taught at the university.
+===
+She earned her ph.d. in physics.
+---
+She earned her ph.d. in physics.
+===
+Dr. Brown, D.D.S. opened her practice.
+---
+Dr. Brown, D.D.S. opened her practice.
+===
+She holds a LL.M. Sam holds a J.D.
+---
+She holds a LL.M.
+Sam holds a J.D.
+===
+Drive NE. for five miles.
+---
+Drive NE. for five miles.
+===
+The wind comes from the NW. of the valley.
+---
+The wind comes from the NW. of the valley.
+===
+# Uppercase starter follower — must BREAK (bypass fires via starter).
+Take SW. The road ends there.
+---
+Take SW.
+The road ends there.
+===
+He went NE. Tom followed.
+---
+He went NE.
+Tom followed.
+===
+The directions read N.E. across the map.
+---
+The directions read N.E. across the map.
+===
+The arrow pointed S.W. Then it spun.
+---
+The arrow pointed S.W.
+Then it spun.
+===
+She is gone. Mark left.
+---
+She is gone.
+Mark left.
+===
+Heading NE. through the woods, she found the cabin.
+---
+Heading NE. through the woods, she found the cabin.
+===
+He noted: In 44 B.C. Caesar died.
+---
+He noted: In 44 B.C. Caesar died.
+===
+She remarked: At 5 a.m. the city was silent.
+---
+She remarked: At 5 a.m. the city was silent.
+===
+The shelf is 3 ft. of solid oak.
+---
+The shelf is 3 ft. of solid oak.
+===
+The shelf is 3 ft. Tom measured it twice.
+---
+The shelf is 3 ft.
+Tom measured it twice.
+===
+She earned her Ph.D. in physics.
+---
+She earned her Ph.D. in physics.
+===
+She earned her Ph.D. Sam was impressed.
+---
+She earned her Ph.D.
+Sam was impressed.
+===
+He holds a LL.B. Sam holds a LL.M.
+---
+He holds a LL.B.
+Sam holds a LL.M.
+===
+She holds a LL.D. from Yale.
+---
+She holds a LL.D. from Yale.
+===
+She holds a LL.M. Tom holds a J.D.
+---
+She holds a LL.M.
+Tom holds a J.D.
+===
+Come in. Sit down.
+---
+Come in.
+Sit down.
+===
+Come on in. Sit down.
+---
+Come on in.
+Sit down.
+===
+# Known limitation. Fallback to default behaviour.
+There are several in. of rain forecast.
+---
+There are several in.
+of rain forecast.
+===
+Give me six fl. oz. of milk.
+---
+Give me six fl. oz. of milk.
+===
+Give me 6 fl. oz. of milk.
+---
+Give me 6 fl. oz. of milk.
+===

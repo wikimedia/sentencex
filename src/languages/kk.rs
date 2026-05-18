@@ -4,13 +4,13 @@ use std::sync::LazyLock;
 use regex::Regex;
 
 use super::Language;
-use super::parse_abbreviation_list;
+use super::parse_lowercase_word_list;
 
 #[derive(Debug, Clone)]
 pub struct Kazakh {}
 
 static KAZAKH_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/kk.txt")]));
+    LazyLock::new(|| parse_lowercase_word_list([include_str!("./abbrev/kk.txt")]));
 
 // Extends the base continuation regex with Cyrillic lowercase range (а-я).
 static KAZAKH_CONTINUE_REGEX: LazyLock<Regex> =

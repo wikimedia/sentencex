@@ -14,6 +14,8 @@ use crate::constants::QuotePair;
 use crate::constants::SPACE_AFTER_SEPARATOR;
 use crate::constants::is_sentence_terminator;
 
+use super::trailing_markers::{MarkerTable, classify_trailing_marker, marker_bypasses_suppression};
+
 static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     // Branch 1 (`\.(?:[ \t]+\.){2,}`) coalesces three-or-more spaced dots
     // (`. . .`, `. . . .`) into one match. Two-dot `. .` is excluded so a
@@ -110,7 +112,7 @@ fn is_single_ascii_upper(s: &str) -> bool {
     s.len() == 1 && s.as_bytes()[0].is_ascii_uppercase()
 }
 
-fn abbreviation_set_contains(set: &FxHashSet<String>, word: &str) -> bool {
+pub(crate) fn abbreviation_set_contains(set: &FxHashSet<String>, word: &str) -> bool {
     if word.bytes().all(|b| b < 128 && !b.is_ascii_uppercase()) {
         return set.contains(word);
     }
@@ -835,6 +837,22 @@ pub trait Language {
         &EMPTY_STARTERS
     }
 
+    /// Words permitted in fronted adverbial phrases. Used in `prefix_is_purely_fronting`.
+    /// Languages must opt in.
+    /// Returns an empty set by default.
+    fn get_fronting_words(&self) -> &FxHashSet<String> {
+        static EMPTY_FRONTING: LazyLock<FxHashSet<String>> = LazyLock::new(FxHashSet::default);
+        &EMPTY_FRONTING
+    }
+
+    /// Trailing-marker lookup table.
+    /// Languages must opt in.
+    /// Returns an empty MarkerTable by default.
+    #[inline]
+    fn get_trailing_markers(&self) -> &'static MarkerTable {
+        MarkerTable::empty()
+    }
+
     /// Determines how many characters to extend a boundary when continuing into the next word.
     /// Returns -1 if the word indicates the boundary should not be created (continuation case).
     /// Returns 0 or positive number indicating how many whitespace/punctuation characters
@@ -1022,28 +1040,18 @@ pub trait Language {
         starters.contains(starter_candidate)
     }
 
-    /// One-way override that lets `find_boundary` keep a sentence boundary
-    /// even when the abbreviation / name-initial path would otherwise
-    /// suppress it. Fires when the next word is a registered sentence
-    /// starter and one of the following holds:
-    ///
-    /// - The trailing letter is uppercase. Covers single initials (`I.`),
-    ///   capitalized names (`Penn.`), and all-caps acronyms (`BART.`).
-    /// - The full trailing token is a known multi-dot abbreviation
-    ///   (`w.e.f.`).
-    /// - The trailing token is a lowercase multi-character entry that
-    ///   appears verbatim in the abbreviations list (`etc.`, `man.`).
-    ///   Single-letter lowercase tails (`a.`, `i.`) are excluded — those
-    ///   only match the abbreviations list via case-folding to a
-    ///   single-letter capital abbreviation, and they commonly occur as
-    ///   inline list markers.
-    fn should_override_abbrev_suppression(
+    /// One way override that lets `find_boundary` keep a boundary the abbreviation / name-initial path would
+    /// otherwise suppress. Fires when the next word is a registered sentence starter and the trailing token:
+    /// - Starts with an uppercase letter: initials (`I.`), names (`Penn.`), acronyms (`BART.`).
+    /// - A known multi dot abbreviation (`w.e.f.`).
+    /// - A multi character lowercase abbreviation (`etc.`, `man.`).
+    fn should_override_abbrev_suppression_for(
         &self,
         head: &str,
         last_word: &str,
-        next_word_approx: &str,
+        next_is_starter: bool,
     ) -> bool {
-        if !self.next_word_is_sentence_starter(next_word_approx) {
+        if !next_is_starter {
             return false;
         }
 
@@ -1265,26 +1273,36 @@ pub trait Language {
         let last_word = self.get_last_word(head);
 
         if matched == "." {
-            // Structural name-initial detection plus the abbreviation
-            // table both feed one suppression decision.
-            // `should_override_abbrev_suppression` rescues either branch when
-            // the next token is a known sentence opener — covering single
-            // initials (`I. Then`), capitalized names (`Penn. The`), all-caps
-            // acronyms (`BART. The`), multi-dot abbreviations (`w.e.f. The`),
-            // and multi-letter lowercase abbreviations verbatim in the table
-            // (`Wash. Then`, `man. Well`). Single-letter lowercase list
-            // markers (`a.`, `i.`) keep their suppression because they only
-            // match the abbreviation table via case-folding.
+            // Name-initial detection and the abbreviation table both feed
+            // one suppression flag, which `should_override_abbrev_suppression_for`
+            // can lift when the next token is a sentence starter.
             let is_initial_letter = is_single_ascii_upper(last_word);
 
-            let suppress = (is_initial_letter
+            let name_initial_abbreviation_suppress = (is_initial_letter
                 && self.is_name_initial_for(head, last_word, next_word_approx))
                 || self.is_abbreviation_for(last_word, ".");
 
-            if suppress
-                && !self.should_override_abbrev_suppression(head, last_word, next_word_approx)
-            {
-                return None;
+            let marker = classify_trailing_marker(head, self.get_trailing_markers());
+
+            // A `.` is suppressed by default when its trailing token is a
+            // known abbreviation, name-initial, OR a known marker. The marker
+            // bypass and the starter override can each lift the suppression
+            // independently.
+            if name_initial_abbreviation_suppress || marker.is_some() {
+                let next_is_starter = self.next_word_is_sentence_starter(next_word_approx);
+                let marker_bypass = marker.as_ref().is_some_and(|m| {
+                    marker_bypasses_suppression(m, next_word_approx, next_is_starter, self)
+                });
+
+                if !marker_bypass
+                    && !self.should_override_abbrev_suppression_for(
+                        head,
+                        last_word,
+                        next_is_starter,
+                    )
+                {
+                    return None;
+                }
             }
         } else if self.is_abbreviation_for(last_word, matched) {
             return None;

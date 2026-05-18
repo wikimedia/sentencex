@@ -2,12 +2,12 @@ use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
-use super::parse_abbreviation_list;
+use super::parse_lowercase_word_list;
 
 #[derive(Debug, Clone)]
 pub struct French {}
 static FRENCH_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/fr.txt")]));
+    LazyLock::new(|| parse_lowercase_word_list([include_str!("./abbrev/fr.txt")]));
 
 impl Language for French {
     fn get_abbreviations(&self) -> &FxHashSet<String> {

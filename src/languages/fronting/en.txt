@@ -1,0 +1,96 @@
+// Words permitted in a fronted adverbial phrase opening a sentence.
+// Used by `prefix_is_purely_fronting`.
+// A marker like `a.m.` or `B.C.` reads as adverbial when every lowercase word before it is in this list, plus digits and known abbreviations.
+// Keep verbs, content nouns, and pronouns OUT. They will introduce ambiguity.
+// Lowercase entries. Lookup is case-insensitive.
+
+// Prepositions
+about
+above
+across
+after
+against
+along
+among
+around
+at
+before
+behind
+below
+beneath
+beside
+between
+beyond
+by
+despite
+during
+for
+from
+in
+inside
+into
+near
+of
+off
+on
+onto
+outside
+over
+past
+since
+through
+throughout
+to
+toward
+under
+underneath
+until
+up
+upon
+with
+within
+without
+
+// Articles
+a
+an
+the
+
+// Coordinating conjunctions (when fronting)
+and
+but
+nor
+or
+
+// Common time-of-day / time-period nouns
+afternoon
+dawn
+day
+dusk
+evening
+midnight
+month
+morning
+night
+noon
+today
+tomorrow
+tonight
+week
+weekend
+year
+yesterday
+
+// Common fronting adverbs
+again
+also
+earlier
+finally
+just
+later
+meanwhile
+now
+recently
+soon
+sometimes
+then
