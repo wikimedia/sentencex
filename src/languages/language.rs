@@ -12,7 +12,20 @@ use crate::constants::QUOTES_REGEX;
 use crate::constants::SPACE_AFTER_SEPARATOR;
 
 static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let pattern = format!("[{}]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
+    // Branch 1 (`\.(?:[ \t]+\.){2,}`) coalesces three-or-more spaced dots
+    // (`. . .`, `. . . .`) into one match. Two-dot `. .` is excluded so a
+    // period followed by a leading ellipsis (`raak. ...en`) is not eaten as a
+    // single run. `[ \t]` (not `\s`) keeps newlines intact for paragraph splits.
+    //
+    // Branch 2 (`[!?…](?:[ \t]+[!?…])+`) coalesces two-or-more spaced runs,
+    // mixed or homogeneous (`! !`, `? ? ?`, `! ?`, `… !`). `+` rather than
+    // `{2,}` is safe here — there's no leading-ellipsis equivalent for `!`/`?`.
+    // Both branches must precede the class for leftmost-first alternation.
+    let pattern = format!(
+        r"\.(?:[ \t]+\.){{2,}}|[!?…](?:[ \t]+[!?…])+|[{}]+",
+        GLOBAL_SENTENCE_TERMINATORS.join("")
+    );
+
     Regex::new(&pattern).unwrap()
 });
 
@@ -23,6 +36,19 @@ static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]
 // check with their own month lists.
 static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\W*[0-9a-z]").unwrap());
+
+// Ellipsis continuation: treat a multi-char terminator run as mid-sentence when the follow-up is
+// whitespace + a lowercase letter or digit (`... no`, `. . . what`). Languages with a
+// capitalized word that is ambiguous with a sentence start (English standalone `I`) extend
+// this via the `is_ellipsis_continuation` trait method.
+pub(crate) static ELLIPSIS_CONTINUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\s+[0-9a-z]").unwrap());
+
+// Glued lowercase after an ellipsis (`mean...see`) is intra-utterance hesitation
+// and continues the sentence. Only fires when the dots are also glued behind -
+// a free-standing leading ellipsis (`raak. ...en`) keeps its boundary.
+static ELLIPSIS_GLUED_CONTINUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
 
 static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
 
@@ -133,6 +159,45 @@ fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
     if boundary > *boundaries.last().unwrap() {
         boundaries.push(boundary);
     }
+}
+
+/// Find terminator-run matches in `text`, folding a whitespace-separated
+/// dot-only follow-up onto a preceding `!`/`?`/`…` run so `Bravo ! .` and
+/// `Happy! . . . no one …` surface as one coalesced terminator.
+///
+/// The regex already coalesces homogeneous runs (`! !`, `. . .`) and
+/// contiguous mixed runs like `! ...` (matched by the contiguous-class
+/// branch as `!...`). Spaced mixed runs like `! . . .` can't be expressed
+/// without lookahead - `[!?…][ \t]+\.` would eat the first dot of an
+/// ellipsis - so they arrive here as two matches and are folded only when
+/// the follow-up is pure `.`s separated by whitespace.
+fn find_terminator_matches(text: &str, regex: &Regex) -> Vec<(usize, usize)> {
+    let mut out: Vec<(usize, usize)> = Vec::new();
+
+    for m in regex.find_iter(text) {
+        let (start, end) = (m.start(), m.end());
+
+        if let Some(last) = out.last_mut() {
+            let prev = &text[last.0..last.1];
+            let candidate = &text[start..end];
+            let gap = &text[last.1..start];
+
+            let is_blank = |c: char| matches!(c, ' ' | '\t');
+            let prev_is_emphatic = prev.ends_with(['!', '?', '…']);
+            let candidate_is_dot_run =
+                candidate.starts_with('.') && candidate.chars().all(|c| c == '.' || is_blank(c));
+            let separated_by_blanks = !gap.is_empty() && gap.chars().all(is_blank);
+
+            if prev_is_emphatic && candidate_is_dot_run && separated_by_blanks {
+                last.1 = end;
+                continue;
+            }
+        }
+
+        out.push((start, end));
+    }
+
+    out
 }
 
 /// Shared helper for languages that continue sentences before month names.
@@ -274,6 +339,7 @@ pub trait Language {
         // Pre-allocate sentence_boundaries once and reuse for all paragraphs
         let estimated_paragraph_sentences = 10; // reasonable default for typical paragraphs
         let mut sentence_boundaries = Vec::with_capacity(estimated_paragraph_sentences);
+        let sentence_break_regex = self.get_sentence_break_regex();
 
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
             if pindex > 0 {
@@ -305,11 +371,7 @@ pub trait Language {
             sentence_boundaries.clear();
             sentence_boundaries.push(0);
 
-            let matches: Vec<(usize, usize)> = self
-                .get_sentence_break_regex()
-                .find_iter(paragraph)
-                .map(|m| (m.start(), m.end()))
-                .collect();
+            let matches = find_terminator_matches(paragraph, sentence_break_regex);
             let mut skippable_ranges = self.get_skippable_ranges(paragraph);
 
             // Detect list-item line starts once per paragraph and reuse the
@@ -631,15 +693,19 @@ pub trait Language {
         is_abbrev || is_abbrev_lower || is_abbrev_upper
     }
 
-    /// Extracts the last word from the given text by splitting on whitespace and periods.
+    /// Extracts the last word from the given text by splitting on whitespace, periods, and slashes.
     /// Used primarily by abbreviation detection to check if the word before a potential
     /// sentence boundary is a known abbreviation. Returns an empty string if no words
     /// are found. This is a performance-optimized version that avoids collecting all words.
     fn get_last_word<'a>(&self, text: &'a str) -> &'a str {
-        // Find the last word without collecting all words
-        text.split(|c: char| c.is_whitespace() || c == '.')
+        // Trim trailing whitespace so a stray space before the terminator
+        // (`U.S .`) doesn't blank out the last word. `/` joins route names
+        // to abbreviations (`171/U.S`) without being a real word boundary,
+        // so split on it too.
+        text.trim_end()
+            .split(|c: char| c.is_whitespace() || c == '.' || c == '/')
             .next_back()
-            .unwrap_or("")
+            .expect("str::split always yields at least one element")
     }
 
     /// Checks if a potential sentence boundary is actually an exclamation word that shouldn't
@@ -725,7 +791,12 @@ pub trait Language {
     /// like abbreviations or mid-sentence punctuation.
     fn find_boundary(&self, text: &str, start: usize, end: usize) -> Option<usize> {
         let head = &text[..start];
-        let next_index = text.ceil_char_boundary(start + 1);
+        let matched = &text[start..end];
+
+        // Scan continuation and trailing-space extension from the end of the
+        // matched terminator. For a single-char match `end` is one-past the
+        // terminator char; for a coalesced run it's the end of the whole run.
+        let next_index = end;
 
         let next_word_approx = self.get_next_word_approx(text, next_index);
 
@@ -735,7 +806,39 @@ pub trait Language {
             return Some(next_index + number_ref_match.end());
         }
 
-        if self.continue_in_next_word(next_word_approx) {
+        // Any coalesced multi-char terminator run (`...`, `!?`, `. . .`, `! ?`)
+        // allows leading whitespace before the lowercase continuation test, so
+        // `! ? is` and `... no` read as mid-sentence. `chars().nth(1)` rules out
+        // a single multi-byte terminator (`。`, `…`), which would otherwise look
+        // multi-char by byte length.
+        let is_multi_char_run = matched.chars().nth(1).is_some();
+
+        let continues = if is_multi_char_run {
+            self.is_ellipsis_continuation(next_word_approx)
+                || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
+                    && ELLIPSIS_GLUED_CONTINUE_REGEX.is_match(next_word_approx))
+        } else {
+            self.continue_in_next_word(next_word_approx)
+        };
+
+        if continues {
+            return None;
+        }
+
+        // Digit immediately before the period and a digit-bearing alphanumeric
+        // token immediately after (no space) is a code-like numbered token,
+        // not a sentence end: chess moves (`7.Bg5`). Requiring a digit in the
+        // follower keeps quantities like `1,000.That` on the normal boundary
+        // path. The lowercase variant (`7.f4`) already passes through
+        // `continues`; this handles the uppercase case.
+        if matched == "."
+            && head.bytes().next_back().is_some_and(|b| b.is_ascii_digit())
+            && next_word_approx
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_alphabetic())
+            && next_word_approx.bytes().any(|b| b.is_ascii_digit())
+        {
             return None;
         }
 
@@ -756,12 +859,28 @@ pub trait Language {
         Some(end)
     }
 
+    /// True when text following a multi-char terminator run (`...`, `! ?`,
+    /// `. . .`) continues the current sentence rather than starting a new one.
+    /// The default treats only whitespace + a lowercase letter/digit as
+    /// continuation.
+    fn is_ellipsis_continuation(&self, text_after_run: &str) -> bool {
+        ELLIPSIS_CONTINUE_REGEX.is_match(text_after_run)
+    }
+
     /// Determines if the text after a potential boundary indicates the sentence should continue.
     /// Returns true if the next word starts with a lowercase letter or number, suggesting
     /// the sentence is continuing rather than starting a new one. This helps avoid breaking
     /// sentences at abbreviations or in the middle of compound sentences.
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        CONTINUE_REGEX.is_match(text_after_boundary)
+        if CONTINUE_REGEX.is_match(text_after_boundary) {
+            return true;
+        }
+
+        // A comma following the terminator (after optional spaces) signals that
+        // the period is stray punctuation and the real clause continues. Treat
+        // it as a continuation rather than a boundary.
+        let trimmed = text_after_boundary.trim_start();
+        trimmed.as_bytes().first() == Some(&b',')
     }
 
     /// Identifies ranges of text that should be skipped during sentence boundary detection.

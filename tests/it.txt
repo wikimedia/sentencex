@@ -184,3 +184,9 @@ La macchina viaggiava a 100 km/h.
 ---
 La macchina viaggiava a 100 km/h.
 ===
+
+Aspetta... I gatti stanno miagolando.
+---
+Aspetta...
+I gatti stanno miagolando.
+===

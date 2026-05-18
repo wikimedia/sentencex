@@ -25,6 +25,7 @@ Besides native Rust, bindings for the following programming languages are availa
 - A sentence-terminating punctuation mark (`.`, `?`, `!`, plus language specific terminators like `।` or `။`) ends a sentence by default. Some languages use different terminators so a list of known terminator symbols is maintained for supported languages.
 - Hand-compiled abbreviation lists, exclamation words, numbered references (`See [1]. Next sentence.`), and quote-aware rules (see below) suppress or relocate boundaries where the default rule would over-split. We collect a list of known, popular abbreviations in supported languages.
 - List-item starts (e.g., bullets `*` / `+` / `-` / `•`, numeric `1.` / `1)` / `(1)`, lettered `a)` / `(a)`, roman `ii.`) emit sentence boundaries so each item segments cleanly, even when items are written inline on one line. A sibling rule (≥2 matches of the same marker family per paragraph, or a single Tier-1 line-start) keeps prose with stray `(1894)` or `e. e. cummings` from being mis-split.
+- Multi-character punctuation runs (`. . .`, `! ?`, `? ? ?`, glued or space-separated) are treated as a single terminator. This generalises the ellipsis (`…` / `...`) case: any mix of `.`, `!`, `?` - repeated, spaced, or interleaved - collapses into one boundary candidate instead of several. Continuation heuristics then decide whether the following token starts a new sentence: uppercase non-`I` splits, while lowercase, digits, or glued continuations (e.g. `mean...see`) keep the sentence intact.
 
 Sometimes, it is very hard to get the segmentation correct. In such cases this library is opinionated and prefer not segmenting than wrong segmentation. If two sentences are accidentally together, that is ok. It is better than sentence being split in middle.
 Avoid over engineering to get everything linguistically 100% accurate.
@@ -43,6 +44,12 @@ The accurate splitting of this sentence is
 However, to achieve this level precision, complex rules need to be added and it could create side effects. Instead, if we just don't segment between `I. Did`, it is ok for most of downstream applications.
 
 List-item detection follows the same conservative posture. Ambiguous inline shapes that collide with prose (bare `1.` / `a.` / `ii.` closers inline, single-letter `a.` patterns that look like initials, parenthesised numbers like `(1894)` that read as years) deliberately do not trigger list segmentation. A sibling rule (≥2 matches of the same marker family per paragraph, or a single Tier-1 line-start) further suppresses one-off occurrences. The result: real lists segment per item, but prose containing list-shaped fragments stays intact.
+
+Several other small heuristics follow the same "recover when the signal is clear, otherwise leave it joined" posture:
+
+- **Stray punctuation around terminators**: a period immediately followed by a comma (`…ice cream. , It was…`) is treated as stray punctuation and the sentence continues through it. Whitespace between an abbreviation and its terminator (`U.S .`) is tolerated when looking up the abbreviation, so the boundary is still suppressed.
+- **Dot-coded tokens like chess notation**: tokens of the shape `<digit>.<letter…>` (e.g. `7.Bg5`, `1.e4`) do not emit a boundary, so move codes and similar dot-coded identifiers stay inside their sentence.
+- **Slash-joined abbreviations**: tokens like `171/U.S.` are split on `/` when extracting the trailing word, so the abbreviation on the right-hand side is still recognised.
 
 The sentence segmentation in this library is **non-destructive**. This means, if the sentences are combined together, you can reconstruct the original text. Line breaks, punctuations and whitespaces are preserved in the output.
 
