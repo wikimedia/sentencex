@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.26] - 2026-05-18
+
+### Added
+- Handle multi-character punctuation runs
+
 ## [1.0.25] - 2026-05-11
 
 ### Added
