@@ -4,17 +4,13 @@ use std::sync::LazyLock;
 use regex::Regex;
 
 use super::Language;
+use super::parse_word_list;
 
 #[derive(Debug, Clone)]
 pub struct Kazakh {}
 
-static KAZAKH_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/kk.txt")
-        .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
-});
+static KAZAKH_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
+    LazyLock::new(|| parse_word_list([include_str!("./abbrev/kk.txt")]));
 
 // Extends the base continuation regex with Cyrillic lowercase range (а-я).
 static KAZAKH_CONTINUE_REGEX: LazyLock<Regex> =

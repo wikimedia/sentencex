@@ -2,17 +2,16 @@ use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
+use super::parse_word_list;
 
 #[derive(Debug, Clone)]
 pub struct Telugu {}
 
 static TELUGU_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/te.txt")
-        .lines()
-        .chain(include_str!("./abbrev/en.txt").lines())
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
+    parse_word_list([
+        include_str!("./abbrev/te.txt"),
+        include_str!("./abbrev/en.txt"),
+    ])
 });
 impl Language for Telugu {
     fn get_abbreviations(&self) -> &FxHashSet<String> {

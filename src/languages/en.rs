@@ -7,13 +7,8 @@ use std::sync::LazyLock;
 #[derive(Debug, Clone)]
 pub struct English {}
 
-static ENGLISH_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/en.txt")
-        .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
-});
+static ENGLISH_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
+    LazyLock::new(|| parse_word_list([include_str!("./abbrev/en.txt")]));
 
 static ENGLISH_SENTENCE_STARTERS: LazyLock<FxHashSet<String>> =
     LazyLock::new(|| parse_word_list([include_str!("./starters/en.txt")]));

@@ -6,17 +6,16 @@ use regex::Regex;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 
 use super::Language;
+use super::parse_word_list;
 
 #[derive(Debug, Clone)]
 pub struct Greek {}
 
 static GREEK_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/el.txt")
-        .lines()
-        .chain(include_str!("./abbrev/en.txt").lines())
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
+    parse_word_list([
+        include_str!("./abbrev/el.txt"),
+        include_str!("./abbrev/en.txt"),
+    ])
 });
 
 static GREEK_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {

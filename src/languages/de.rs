@@ -3,17 +3,16 @@ use std::sync::LazyLock;
 
 use super::Language;
 use super::language::continues_after_boundary;
+use super::parse_word_list;
 
 #[derive(Debug, Clone)]
 pub struct German {}
 
 static GERMAN_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/de.txt")
-        .lines()
-        .chain(include_str!("./abbrev/en.txt").lines())
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
+    parse_word_list([
+        include_str!("./abbrev/de.txt"),
+        include_str!("./abbrev/en.txt"),
+    ])
 });
 
 const MONTHS: [&str; 12] = [

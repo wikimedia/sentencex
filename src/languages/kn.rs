@@ -1,4 +1,5 @@
 use super::Language;
+use super::parse_word_list;
 use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
@@ -6,12 +7,10 @@ use std::sync::LazyLock;
 pub struct Kannada {}
 
 static ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/kn.txt")
-        .lines()
-        .chain(include_str!("./abbrev/en.txt").lines())
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
+    parse_word_list([
+        include_str!("./abbrev/kn.txt"),
+        include_str!("./abbrev/en.txt"),
+    ])
 });
 impl Language for Kannada {
     fn get_abbreviations(&self) -> &FxHashSet<String> {
