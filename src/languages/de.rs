@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
@@ -6,7 +7,7 @@ use super::language::continues_after_boundary;
 #[derive(Debug, Clone)]
 pub struct German {}
 
-static GERMAN_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static GERMAN_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/de.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())
@@ -31,7 +32,7 @@ const MONTHS: [&str; 12] = [
 ];
 
 impl Language for German {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &GERMAN_ABBREVIATIONS
     }
 

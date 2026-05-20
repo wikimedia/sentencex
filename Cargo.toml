@@ -16,10 +16,11 @@ exclude = ["release-assets", "release-upload", "bindings/*", ".github/*"]
 name = "sentencex"
 
 [dependencies]
-regex = "1.12.2"
 clap = { version = "4.5.2", features = ["derive"] }
-serde = { version = "1.0", features = ["derive"] }
 memchr = { version = "2" }
+regex = "1.12.2"
+rustc-hash = { version = "2" }
+serde = { version = "1.0", features = ["derive"] }
 strum = { version = "0.28", features = ["derive"] }
 
 [dev-dependencies]

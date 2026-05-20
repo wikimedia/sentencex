@@ -1,10 +1,11 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Bengali {}
-static BENGALI_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static BENGALI_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/bn.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())
@@ -14,7 +15,7 @@ static BENGALI_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
 });
 
 impl Language for Bengali {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &BENGALI_ABBREVIATIONS
     }
 }

@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use crate::SentenceBoundary;
@@ -11,6 +11,7 @@ use crate::constants::QUOTE_CLOSERS_BY_LEN;
 use crate::constants::QUOTE_PAIRS;
 use crate::constants::QUOTES_REGEX;
 use crate::constants::SPACE_AFTER_SEPARATOR;
+use crate::constants::is_sentence_terminator;
 
 static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     // Branch 1 (`\.(?:[ \t]+\.){2,}`) coalesces three-or-more spaced dots
@@ -24,7 +25,7 @@ static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     // Both branches must precede the class for leftmost-first alternation.
     let pattern = format!(
         r"\.(?:[ \t]+\.){{2,}}|[!?…](?:[ \t]+[!?…])+|[{}]+",
-        GLOBAL_SENTENCE_TERMINATORS.join("")
+        GLOBAL_SENTENCE_TERMINATORS.iter().collect::<String>()
     );
 
     Regex::new(&pattern).unwrap()
@@ -510,11 +511,9 @@ pub trait Language {
                     trimmed_slice
                         .char_indices()
                         .next_back()
-                        .and_then(|(idx, _)| {
-                            // Extract the last character from the trimmed slice
-                            let char_str = &trimmed_slice[idx..];
-                            if GLOBAL_SENTENCE_TERMINATORS.contains(&char_str) {
-                                Some(char_str.to_string())
+                        .and_then(|(idx, ch)| {
+                            if is_sentence_terminator(ch) {
+                                Some(trimmed_slice[idx..].to_string())
                             } else {
                                 None
                             }
@@ -584,17 +583,18 @@ pub trait Language {
     /// These are used to prevent false sentence breaks at abbreviation periods.
     /// For example, "Dr." or "etc." should not trigger a sentence boundary.
     /// Languages should override this to provide their specific abbreviation lists.
-    /// Returns an empty slice by default.
-    fn get_abbreviations(&self) -> &[String] {
-        &[]
+    /// Returns an empty set by default.
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
+        static EMPTY_ABBREVS: LazyLock<FxHashSet<String>> = LazyLock::new(FxHashSet::default);
+        &EMPTY_ABBREVS
     }
 
     /// Returns a set of safe sentence-opener words for this language.
     /// Restrict the list to function words and auxiliaries that almost never appear
     /// capitalized mid-sentence. Never include proper nouns.
     /// Returns an empty set to preserve default behaviour. Languages opt in by overriding.
-    fn get_sentence_starters(&self) -> &HashSet<String> {
-        static EMPTY_STARTERS: LazyLock<HashSet<String>> = LazyLock::new(HashSet::new);
+    fn get_sentence_starters(&self) -> &FxHashSet<String> {
+        static EMPTY_STARTERS: LazyLock<FxHashSet<String>> = LazyLock::new(FxHashSet::default);
         &EMPTY_STARTERS
     }
 
@@ -611,8 +611,7 @@ pub trait Language {
 
         let mut count = 0i8;
         for ch in word.chars() {
-            if ch.is_whitespace() || GLOBAL_SENTENCE_TERMINATORS.contains(&ch.to_string().as_str())
-            {
+            if ch.is_whitespace() || is_sentence_terminator(ch) {
                 count += 1;
                 if count == i8::MAX {
                     break; // Prevent overflow
@@ -705,22 +704,25 @@ pub trait Language {
     /// false if it's likely a genuine sentence end. Used to prevent breaking sentences
     /// at abbreviations like "Dr. Smith" or "etc."
     fn is_abbreviation(&self, head: &str, _tail: &str, separator: &str) -> bool {
+        let last_word = self.get_last_word(head);
+        self.is_abbreviation_for(last_word, separator)
+    }
+
+    /// Same check as `is_abbreviation` but skips the `get_last_word(head)` call
+    /// when the caller already has the trailing word. Used on the hot path in
+    /// `find_boundary`, which computes `last_word` once and shares it with
+    /// `is_name_initial`/`next_word_is_sentence_starter`.
+    fn is_abbreviation_for(&self, last_word: &str, separator: &str) -> bool {
         if self.get_abbreviation_char() != separator {
             return false;
         }
-
-        let last_word = self.get_last_word(head);
-
         if last_word.is_empty() {
             return false;
         }
-
         let abbreviations = self.get_abbreviations();
-        let is_abbrev = abbreviations.contains(&last_word.to_string());
-        let is_abbrev_lower = abbreviations.contains(&last_word.to_lowercase());
-        let is_abbrev_upper = abbreviations.contains(&last_word.to_uppercase());
-
-        is_abbrev || is_abbrev_lower || is_abbrev_upper
+        abbreviations.contains(last_word)
+            || abbreviations.contains(last_word.to_lowercase().as_str())
+            || abbreviations.contains(last_word.to_uppercase().as_str())
     }
 
     /// Detects a name initial: a single uppercase ASCII letter followed by a
@@ -736,7 +738,13 @@ pub trait Language {
     /// The helper re-checks the latter so it is safe to call standalone.
     fn is_name_initial(&self, head: &str, next_word_approx: &str) -> bool {
         let last_word = self.get_last_word(head);
+        self.is_name_initial_for(head, last_word, next_word_approx)
+    }
 
+    /// Same check as `is_name_initial` but skips the `get_last_word(head)` call
+    /// when the caller already has the trailing word. Used on the hot path in
+    /// `find_boundary`.
+    fn is_name_initial_for(&self, head: &str, last_word: &str, next_word_approx: &str) -> bool {
         if !is_single_ascii_upper(last_word) {
             return false;
         }
@@ -772,11 +780,7 @@ pub trait Language {
         let trimmed = next_word_approx.trim_start();
 
         let word_end = trimmed
-            .find(|c: char| {
-                c.is_whitespace()
-                    || c == ','
-                    || GLOBAL_SENTENCE_TERMINATORS.contains(&c.to_string().as_str())
-            })
+            .find(|c: char| c.is_whitespace() || c == ',' || is_sentence_terminator(c))
             .unwrap_or(trimmed.len());
 
         if word_end == 0 {
@@ -1021,8 +1025,9 @@ pub trait Language {
             let last_word = self.get_last_word(head);
             let is_initial_letter = is_single_ascii_upper(last_word);
 
-            let suppress = (is_initial_letter && self.is_name_initial(head, next_word_approx))
-                || self.is_abbreviation(head, next_word_approx, &text[start..end]);
+            let suppress = (is_initial_letter
+                && self.is_name_initial_for(head, last_word, next_word_approx))
+                || self.is_abbreviation_for(last_word, ".");
 
             if suppress
                 && !self.should_override_abbrev_suppression(head, last_word, next_word_approx)

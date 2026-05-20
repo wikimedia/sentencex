@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
@@ -5,7 +6,7 @@ use super::Language;
 #[derive(Debug, Clone)]
 pub struct Gujarati {}
 
-static GUJARATI_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static GUJARATI_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/gu.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())
@@ -14,7 +15,7 @@ static GUJARATI_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .collect()
 });
 impl Language for Gujarati {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &GUJARATI_ABBREVIATIONS
     }
 }

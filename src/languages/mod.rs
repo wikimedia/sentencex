@@ -67,11 +67,11 @@ pub use ta::Tamil;
 pub use te::Telugu;
 pub use uk::Ukrainian;
 
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 /// Parse one or more bundled word-list files into a deduplicated set.
 /// Lines are trimmed; blank lines and `//` line comments are dropped.
-pub(crate) fn parse_word_list<'a>(sources: impl IntoIterator<Item = &'a str>) -> HashSet<String> {
+pub(crate) fn parse_word_list<'a>(sources: impl IntoIterator<Item = &'a str>) -> FxHashSet<String> {
     sources
         .into_iter()
         .flat_map(str::lines)

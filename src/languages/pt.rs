@@ -2,10 +2,11 @@ use crate::constants::ROMAN_NUMERALS;
 
 use super::Language;
 
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
-static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
-    let mut abbreviations: Vec<String> = include_str!("./abbrev/pt.txt")
+static ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
+    let mut abbreviations: FxHashSet<String> = include_str!("./abbrev/pt.txt")
         .lines()
         .map(|line| line.trim().to_string())
         .filter(|line| !line.starts_with("//") && !line.is_empty())
@@ -20,7 +21,7 @@ static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
 pub struct Portuguese {}
 
 impl Language for Portuguese {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &ABBREVIATIONS
     }
 }

@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
@@ -6,7 +7,7 @@ use super::language::continues_after_boundary;
 #[derive(Debug, Clone)]
 pub struct Finnish {}
 
-static FINNISH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static FINNISH_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/fi.txt")
         .lines()
         .map(|line| line.trim().to_string())
@@ -30,7 +31,7 @@ const MONTHS: [&str; 12] = [
 ];
 
 impl Language for Finnish {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &FINNISH_ABBREVIATIONS
     }
 

@@ -1,13 +1,13 @@
 use super::Language;
 use super::parse_word_list;
 use regex::Regex;
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 #[derive(Debug, Clone)]
 pub struct English {}
 
-static ENGLISH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static ENGLISH_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/en.txt")
         .lines()
         .map(|line| line.trim().to_string())
@@ -15,7 +15,7 @@ static ENGLISH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .collect()
 });
 
-static ENGLISH_SENTENCE_STARTERS: LazyLock<HashSet<String>> =
+static ENGLISH_SENTENCE_STARTERS: LazyLock<FxHashSet<String>> =
     LazyLock::new(|| parse_word_list([include_str!("./starters/en.txt")]));
 
 // English `I` is the one capital that case cannot distinguish from a sentence
@@ -24,11 +24,11 @@ static ENGLISH_ELLIPSIS_I_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s+I(?:[\s'\u{2019}]|$)").unwrap());
 
 impl Language for English {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &ENGLISH_ABBREVIATIONS
     }
 
-    fn get_sentence_starters(&self) -> &HashSet<String> {
+    fn get_sentence_starters(&self) -> &FxHashSet<String> {
         &ENGLISH_SENTENCE_STARTERS
     }
 

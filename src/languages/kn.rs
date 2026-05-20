@@ -1,10 +1,11 @@
 use super::Language;
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 #[derive(Debug, Clone)]
 pub struct Kannada {}
 
-static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/kn.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())
@@ -13,7 +14,7 @@ static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .collect()
 });
 impl Language for Kannada {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &ABBREVIATIONS
     }
 }

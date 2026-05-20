@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
@@ -5,7 +6,7 @@ use super::Language;
 #[derive(Debug, Clone)]
 pub struct Dutch {}
 
-static DUTCH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static DUTCH_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/nl.txt")
         .lines()
         .map(|line| line.trim().to_string())
@@ -13,7 +14,7 @@ static DUTCH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
         .collect()
 });
 impl Language for Dutch {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &DUTCH_ABBREVIATIONS
     }
 }

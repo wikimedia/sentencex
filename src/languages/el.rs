@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use regex::Regex;
@@ -9,7 +10,7 @@ use super::Language;
 #[derive(Debug, Clone)]
 pub struct Greek {}
 
-static GREEK_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static GREEK_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     include_str!("./abbrev/el.txt")
         .lines()
         .chain(include_str!("./abbrev/en.txt").lines())
@@ -19,12 +20,15 @@ static GREEK_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
 });
 
 static GREEK_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let pattern = format!("[{};]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
+    let pattern = format!(
+        "[{};]+",
+        GLOBAL_SENTENCE_TERMINATORS.iter().collect::<String>()
+    );
     Regex::new(&pattern).unwrap()
 });
 
 impl Language for Greek {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &GREEK_ABBREVIATIONS
     }
 
