@@ -81,6 +81,15 @@ pub(crate) fn parse_word_list<'a>(sources: impl IntoIterator<Item = &'a str>) ->
         .collect()
 }
 
+pub(crate) fn parse_abbreviation_list<'a>(
+    sources: impl IntoIterator<Item = &'a str>,
+) -> FxHashSet<String> {
+    parse_word_list(sources)
+        .iter()
+        .map(|s| s.to_lowercase())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;

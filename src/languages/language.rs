@@ -60,6 +60,14 @@ fn is_single_ascii_upper(s: &str) -> bool {
     s.len() == 1 && s.as_bytes()[0].is_ascii_uppercase()
 }
 
+fn abbreviation_set_contains(set: &FxHashSet<String>, word: &str) -> bool {
+    if word.bytes().all(|b| b < 128 && !b.is_ascii_uppercase()) {
+        set.contains(word)
+    } else {
+        set.contains(word.to_lowercase().as_str())
+    }
+}
+
 /// True iff `s` (after leading whitespace) begins with a name-initial token:
 /// a single uppercase ASCII letter, a `.`, then end-of-string or whitespace.
 /// `J. R. Tolkien` triggers. `Jones`, `J.R.R.`, and `A.B` do not.
@@ -713,16 +721,10 @@ pub trait Language {
     /// `find_boundary`, which computes `last_word` once and shares it with
     /// `is_name_initial`/`next_word_is_sentence_starter`.
     fn is_abbreviation_for(&self, last_word: &str, separator: &str) -> bool {
-        if self.get_abbreviation_char() != separator {
+        if self.get_abbreviation_char() != separator || last_word.is_empty() {
             return false;
         }
-        if last_word.is_empty() {
-            return false;
-        }
-        let abbreviations = self.get_abbreviations();
-        abbreviations.contains(last_word)
-            || abbreviations.contains(last_word.to_lowercase().as_str())
-            || abbreviations.contains(last_word.to_uppercase().as_str())
+        abbreviation_set_contains(self.get_abbreviations(), last_word)
     }
 
     /// Detects a name initial: a single uppercase ASCII letter followed by a
@@ -833,22 +835,14 @@ pub trait Language {
     }
 
     /// True when `head`'s trailing token is a multi-dot abbreviation listed
-    /// in this language's abbreviation table (`w.e.f`, `U.S.`, ...). The
-    /// full dotted token is used for the lookup, not just the post-`.` tail
-    /// `get_last_word` returns. `tail_len = get_last_word(head).len()`
-    /// serves as an O(1) "the full token contains a `.`" check: when the
-    /// full token is no longer than the tail there is no internal dot and
-    /// the lookup is skipped along with its case-folding allocations.
+    /// in this language's abbreviation table (`w.e.f`, `U.S.`, ...).
     fn is_multi_dot_abbreviation(&self, head: &str, tail_len: usize) -> bool {
         let last_word_full = self.get_last_word_full(head);
         if last_word_full.len() <= tail_len {
             return false;
         }
 
-        let abbrevs = self.get_abbreviations();
-        abbrevs.contains(&last_word_full.to_string())
-            || abbrevs.contains(&last_word_full.to_lowercase())
-            || abbrevs.contains(&last_word_full.to_uppercase())
+        abbreviation_set_contains(self.get_abbreviations(), last_word_full)
     }
 
     /// Like `get_last_word`, but keeps internal `.`s so multi-dot
@@ -1012,7 +1006,7 @@ pub trait Language {
         }
 
         if matched == "." {
-            // Hybrid: structural name-initial detection plus the abbreviation
+            // Structural name-initial detection plus the abbreviation
             // table both feed one suppression decision.
             // `should_override_abbrev_suppression` rescues either branch when
             // the next token is a known sentence opener — covering single

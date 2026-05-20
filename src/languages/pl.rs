@@ -1,5 +1,5 @@
 use super::Language;
-use super::parse_word_list;
+use super::parse_abbreviation_list;
 use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 pub struct Polish {}
 
 static ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_word_list([include_str!("./abbrev/pl.txt")]));
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/pl.txt")]));
 impl Language for Polish {
     fn get_abbreviations(&self) -> &FxHashSet<String> {
         &ABBREVIATIONS

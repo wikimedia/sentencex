@@ -2,12 +2,12 @@ use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
-use super::parse_word_list;
+use super::parse_abbreviation_list;
 
 #[derive(Debug, Clone)]
 pub struct Bengali {}
 static BENGALI_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    parse_word_list([
+    parse_abbreviation_list([
         include_str!("./abbrev/bn.txt"),
         include_str!("./abbrev/en.txt"),
     ])

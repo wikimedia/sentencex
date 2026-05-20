@@ -3,13 +3,13 @@ use std::sync::LazyLock;
 
 use super::Language;
 use super::language::continues_after_boundary;
-use super::parse_word_list;
+use super::parse_abbreviation_list;
 
 #[derive(Debug, Clone)]
 pub struct German {}
 
 static GERMAN_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    parse_word_list([
+    parse_abbreviation_list([
         include_str!("./abbrev/de.txt"),
         include_str!("./abbrev/en.txt"),
     ])

@@ -5,13 +5,13 @@ use crate::constants::ROMAN_NUMERALS;
 
 use super::Language;
 use super::language::continues_after_boundary;
-use super::parse_word_list;
+use super::parse_abbreviation_list;
 
 #[derive(Debug, Clone)]
 pub struct Slovak {}
 
 static SLOVAK_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_word_list([include_str!("./abbrev/sk.txt")]));
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/sk.txt")]));
 
 static SLOVAK_ALL_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     let mut abbreviations = SLOVAK_ABBREVIATIONS.clone();

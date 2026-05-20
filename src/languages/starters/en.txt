@@ -1,6 +1,7 @@
 // Function-word and auxiliary sentence openers. Used as a one-way override to force a boundary that the
 // abbreviation/initial path would otherwise suppress. Keep proper nouns OUT of this list - they appear
 // too often mid-sentence to be safe overrides. 'I' and 'A' also removed due to ambiguity.
+// Use a starting upper case for any words added.  Parsing code is case sensitive for simplicity.
 About
 According
 Accordingly

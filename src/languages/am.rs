@@ -2,12 +2,12 @@ use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
-use super::parse_word_list;
+use super::parse_abbreviation_list;
 
 #[derive(Debug, Clone)]
 pub struct Amharic {}
 static AMHARIC_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_word_list([include_str!("./abbrev/am.txt")]));
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/am.txt")]));
 
 impl Language for Amharic {
     fn get_abbreviations(&self) -> &FxHashSet<String> {

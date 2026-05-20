@@ -1,5 +1,5 @@
 use super::Language;
-use super::parse_word_list;
+use super::parse_abbreviation_list;
 use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
@@ -10,7 +10,7 @@ static PATTERN: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"^[0-9a-zа-я]").expect("Failed to compile regex"));
 
 static ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_word_list([include_str!("./abbrev/ru.txt")]));
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/ru.txt")]));
 
 impl Language for Russian {
     fn get_abbreviations(&self) -> &FxHashSet<String> {

@@ -1,5 +1,5 @@
 use super::Language;
-use super::parse_word_list;
+use super::{parse_abbreviation_list, parse_word_list};
 use regex::Regex;
 use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
@@ -8,7 +8,7 @@ use std::sync::LazyLock;
 pub struct English {}
 
 static ENGLISH_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_word_list([include_str!("./abbrev/en.txt")]));
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/en.txt")]));
 
 static ENGLISH_SENTENCE_STARTERS: LazyLock<FxHashSet<String>> =
     LazyLock::new(|| parse_word_list([include_str!("./starters/en.txt")]));
