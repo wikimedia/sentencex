@@ -112,11 +112,11 @@ mod tests {
 
             let expected: Vec<String> = parts[1]
                 .lines()
-                .map(|s| normalise(&s))
+                .map(&normalise)
                 .filter(|s| !s.is_empty())
                 .collect();
 
-            let result = language.segment(&input);
+            let result = language.segment(input);
 
             let actual: Vec<String> = result
                 .iter()
