@@ -5,6 +5,7 @@ use languages::{
     Ukrainian,
 };
 use regex::Regex;
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 mod constants;
@@ -27,7 +28,7 @@ pub struct SentenceBoundary<'a> {
 
 pub fn language_factory(language_code: &str) -> Box<dyn Language> {
     let mut current_code = language_code;
-    let mut visited = std::collections::HashSet::new();
+    let mut visited = FxHashSet::default();
 
     loop {
         if visited.contains(current_code) {

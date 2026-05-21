@@ -1,4 +1,6 @@
 use super::Language;
+use super::parse_abbreviation_list;
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 #[derive(Debug, Clone)]
@@ -7,16 +9,11 @@ pub struct Ukrainian {}
 static PATTERN: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"^[0-9a-zа-яіїєґ]").expect("Failed to compile regex"));
 
-static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/uk.txt")
-        .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
-});
+static ABBREVIATIONS: LazyLock<FxHashSet<String>> =
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/uk.txt")]));
 
 impl Language for Ukrainian {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &ABBREVIATIONS
     }
 

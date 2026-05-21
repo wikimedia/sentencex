@@ -1,19 +1,16 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
+use super::parse_abbreviation_list;
 
 #[derive(Debug, Clone)]
 pub struct Bulgarian {}
-static BULGARIAN_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/bg.txt")
-        .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
-});
+static BULGARIAN_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/bg.txt")]));
 
 impl Language for Bulgarian {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &BULGARIAN_ABBREVIATIONS
     }
 }

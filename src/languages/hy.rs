@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use regex::Regex;
@@ -10,17 +11,16 @@ use super::{English, Language};
 pub struct Armenian {}
 
 static ARMENIAN_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let hy_terminators: Vec<&str> = GLOBAL_SENTENCE_TERMINATORS
+    let hy_terminators: String = GLOBAL_SENTENCE_TERMINATORS
         .iter()
-        .filter(|&&c| c != ".")
-        .cloned()
+        .filter(|&&c| c != '.')
         .collect();
-    let pattern = format!("[{};։՜:]+", hy_terminators.join(""));
+    let pattern = format!("[{hy_terminators};։՜:]+");
     Regex::new(&pattern).unwrap()
 });
 
 impl Language for Armenian {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         English {}.get_abbreviations()
     }
 

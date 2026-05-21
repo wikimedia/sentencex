@@ -199,10 +199,10 @@ She works at Yahoo! in the accounting department.
 ---
 She works at Yahoo! in the accounting department.
 ===
-#We make a good team, you and I. Did you see Albert I. Jones yesterday?
-#---
-#We make a good team, you and I.
-#Did you see Albert I. Jones yesterday?
+We make a good team, you and I. Did you see Albert I. Jones yesterday?
+---
+We make a good team, you and I.
+Did you see Albert I. Jones yesterday?
 ===
 Thoreau argues that by simplifying one's life, "the laws of the universe will appear less complex. . . ."
 ---
@@ -573,4 +573,29 @@ It comes with with edible burritos that are filled with whipped cream. , It is n
 I thought... I would go.
 ---
 I thought... I would go.
+===
+Something like U. A. E. Start of another sentence.
+---
+Something like U. A. E.
+Start of another sentence.
+===
+She agreed with him and I. We left.
+---
+She agreed with him and I.
+We left.
+===
+J. R. R. Tolkien wrote it. He was English.
+---
+J. R. R. Tolkien wrote it.
+He was English.
+===
+George W. Bush spoke. The crowd cheered.
+---
+George W. Bush spoke.
+The crowd cheered.
+===
+He left. Albert went home.
+---
+He left.
+Albert went home.
 ===

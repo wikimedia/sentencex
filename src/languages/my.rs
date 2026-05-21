@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use regex::Regex;
@@ -10,12 +11,15 @@ use super::{English, Language};
 pub struct Burmese {}
 
 static BURMESE_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    let pattern = format!("[{}၏]+", GLOBAL_SENTENCE_TERMINATORS.join(""));
+    let pattern = format!(
+        "[{}၏]+",
+        GLOBAL_SENTENCE_TERMINATORS.iter().collect::<String>()
+    );
     Regex::new(&pattern).unwrap()
 });
 
 impl Language for Burmese {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         English {}.get_abbreviations()
     }
 

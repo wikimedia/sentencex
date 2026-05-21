@@ -1,26 +1,23 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use regex::Regex;
 
 use super::Language;
+use super::parse_abbreviation_list;
 
 #[derive(Debug, Clone)]
 pub struct Kazakh {}
 
-static KAZAKH_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/kk.txt")
-        .lines()
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
-});
+static KAZAKH_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
+    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/kk.txt")]));
 
 // Extends the base continuation regex with Cyrillic lowercase range (а-я).
 static KAZAKH_CONTINUE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\W*[0-9a-zа-я]").unwrap());
 
 impl Language for Kazakh {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &KAZAKH_ABBREVIATIONS
     }
 

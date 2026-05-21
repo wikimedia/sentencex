@@ -1,10 +1,11 @@
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
 
 #[derive(Debug, Clone)]
 pub struct Tamil {}
-static TAMIL_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
+static TAMIL_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
     let vowel_signs = vec!["ா", "ி", "ீ", "ু", "ূ", "ে", "ে", "ৈ", "ও", "ো", "ৌ"];
     let vowels = vec!["அ", "ஆ", "இ", "ஈ", "உ", "ஊ", "எ", "ஏ", "ஐ", "ஒ", "ஓ", "ஔ"];
     let consonants = vec![
@@ -32,7 +33,7 @@ static TAMIL_ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
 });
 
 impl Language for Tamil {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &TAMIL_ABBREVIATIONS
     }
 }

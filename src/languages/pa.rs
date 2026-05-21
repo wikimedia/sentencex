@@ -1,19 +1,19 @@
 use super::Language;
+use super::parse_abbreviation_list;
+use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 #[derive(Debug, Clone)]
 pub struct Punjabi {}
 
-static ABBREVIATIONS: LazyLock<Vec<String>> = LazyLock::new(|| {
-    include_str!("./abbrev/pa.txt")
-        .lines()
-        .chain(include_str!("./abbrev/en.txt").lines())
-        .map(|line| line.trim().to_string())
-        .filter(|line| !line.starts_with("//") && !line.is_empty())
-        .collect()
+static ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
+    parse_abbreviation_list([
+        include_str!("./abbrev/pa.txt"),
+        include_str!("./abbrev/en.txt"),
+    ])
 });
 impl Language for Punjabi {
-    fn get_abbreviations(&self) -> &[String] {
+    fn get_abbreviations(&self) -> &FxHashSet<String> {
         &ABBREVIATIONS
     }
 }
