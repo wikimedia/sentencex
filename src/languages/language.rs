@@ -339,32 +339,34 @@ pub trait Language {
         let mut boundaries = Vec::with_capacity(estimated_sentences);
 
         // Split by paragraph breaks (one or more newlines with optional whitespace)
-        let paragraphs: Vec<&str> = PARA_SPLIT_REGEX.split(text).collect();
-
-        // Pre-calculate all paragraph offsets in one pass
         // CRITICAL: We track both byte offsets AND character offsets separately.
-        // This is essential for correct handling of multi-byte UTF-8 characters (e.g., CJK, emoji).
-        //
-        // - `paragraph_offsets`: byte indices into the original text (for slicing with &text[start..end])
-        // - `paragraph_char_offsets`: character counts (for SentenceBoundary.start_index/end_index)
-        //
-        // Example: "日本語" is 3 characters but 9 bytes in UTF-8:
+        // This is essential for correct handling of multi-byte UTF-8 characters like CJK and emojis.
+        // Example: "日本語" is 3 characters but 9 bytes:
         //   - byte offset: 0..9
         //   - char offset: 0..3
-        let mut paragraph_offsets = Vec::with_capacity(paragraphs.len());
-        let mut current_offset = 0;
-        let mut paragraph_char_offsets = Vec::with_capacity(paragraphs.len());
+        // Roughly estimate 4 sentences per paragraph
+        let estimated_paragraphs = (estimated_sentences / 4).max(1);
+        let mut paragraphs: Vec<&str> = Vec::with_capacity(estimated_paragraphs);
+        let mut paragraph_offsets: Vec<usize> = Vec::with_capacity(estimated_paragraphs);
+        let mut paragraph_char_offsets: Vec<usize> = Vec::with_capacity(estimated_paragraphs);
+
+        let mut last_end = 0;
         let mut current_char_offset = 0;
-        for (i, paragraph) in paragraphs.iter().enumerate() {
-            paragraph_offsets.push(current_offset);
+        for m in PARA_SPLIT_REGEX.find_iter(text) {
+            let paragraph = &text[last_end..m.start()];
+            paragraphs.push(paragraph);
+            paragraph_offsets.push(last_end);
             paragraph_char_offsets.push(current_char_offset);
-            current_offset += paragraph.len();
-            current_char_offset += paragraph.chars().count();
-            if i < paragraphs.len() - 1 {
-                current_offset += 2; // for "\n\n" bytes
-                current_char_offset += 2; // for "\n\n" chars (always 2, regardless of encoding)
-            }
+
+            let separator_chars = text[m.start()..m.end()].chars().count();
+            current_char_offset += paragraph.chars().count() + separator_chars;
+            last_end = m.end();
         }
+
+        // Final paragraph after the last separator (the whole text if none).
+        paragraphs.push(&text[last_end..]);
+        paragraph_offsets.push(last_end);
+        paragraph_char_offsets.push(current_char_offset);
 
         // Pre-allocate sentence_boundaries once and reuse for all paragraphs
         let estimated_paragraph_sentences = 10; // reasonable default for typical paragraphs
@@ -374,13 +376,16 @@ pub trait Language {
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
             if pindex > 0 {
                 let paragraph_start = paragraph_offsets[pindex];
+                let separator_start = paragraph_offsets[pindex - 1] + paragraphs[pindex - 1].len();
+                let separator = &text[separator_start..paragraph_start];
                 let paragraph_char_start = paragraph_char_offsets[pindex];
+
                 boundaries.push(SentenceBoundary {
-                    start_index: paragraph_char_start - 2,
+                    start_index: paragraph_char_start - separator.chars().count(),
                     end_index: paragraph_char_start,
-                    start_byte: paragraph_start - 2,
+                    start_byte: paragraph_start - separator.len(),
                     end_byte: paragraph_start,
-                    text: "\n\n",
+                    text: separator,
                     boundary_symbol: None,
                     is_paragraph_break: true,
                 });
