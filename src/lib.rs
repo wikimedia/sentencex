@@ -85,86 +85,50 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
     }
 }
 
-fn chunk_text(text: &str, chunk_size: usize) -> Vec<&str> {
+fn paragraph_spans(text: &str) -> Vec<(usize, usize)> {
+    let mut spans = Vec::new();
+    let mut next_start = 0;
+
+    for sep in PARA_SPLIT_REGEX.find_iter(text) {
+        spans.push((next_start, sep.start()));
+        next_start = sep.end();
+    }
+
+    if next_start < text.len() {
+        spans.push((next_start, text.len()));
+    }
+
+    spans
+}
+
+/// Split `text` into chunks of at most `chunk_size` bytes at paragraph
+/// boundaries. Returns `(byte_offset, chunk)` pairs.
+fn chunk_text(text: &str, chunk_size: usize) -> Vec<(usize, &str)> {
     if chunk_size == 0 || text.len() <= chunk_size {
-        return vec![text];
+        return vec![(0, text)];
     }
 
-    let mut chunks = Vec::new();
+    let mut chunks: Vec<(usize, &str)> = Vec::with_capacity(text.len() / chunk_size + 1);
+    let mut chunk: Option<(usize, usize)> = None;
 
-    // Split by paragraph breaks (one or more newlines with optional whitespace)
-    // Get paragraph parts and their positions
-    let mut paragraphs = Vec::new();
-    let mut last_end = 0;
-
-    for mat in PARA_SPLIT_REGEX.find_iter(text) {
-        // Add the text before this match
-        paragraphs.push((last_end, mat.start()));
-        last_end = mat.end();
-    }
-    // Add the final paragraph
-    if last_end < text.len() {
-        paragraphs.push((last_end, text.len()));
-    }
-
-    if paragraphs.is_empty() {
-        return vec![text];
-    }
-
-    let mut current_start = 0;
-    let mut current_end = 0;
-    let mut i = 0;
-
-    while i < paragraphs.len() {
-        let (para_start, para_end) = paragraphs[i];
-        let para_size = para_end - para_start;
-
-        if para_size > chunk_size {
-            if current_end > current_start {
-                let safe_end = text.ceil_char_boundary(current_end);
-                chunks.push(&text[current_start..safe_end]);
-                current_start = 0;
-                current_end = 0;
+    for (start, end) in paragraph_spans(text) {
+        match chunk {
+            Some((chunk_start, _)) if end - chunk_start <= chunk_size => {
+                chunk = Some((chunk_start, end));
             }
 
-            // Paragraph exceeds chunk_size but has no \n\n boundary to split on.
-            // Pass it through whole to avoid splitting mid-sentence or mid-word.
-            chunks.push(&text[para_start..para_end]);
-            i += 1;
-            continue;
+            _ => {
+                if let Some((chunk_start, chunk_end)) = chunk {
+                    chunks.push((chunk_start, &text[chunk_start..chunk_end]));
+                }
+
+                chunk = Some((start, end));
+            }
         }
-
-        // If this is the first paragraph in the chunk
-        if current_end == current_start {
-            current_start = para_start;
-            current_end = para_end;
-            i += 1;
-            continue;
-        }
-
-        // Check if adding this paragraph would exceed chunk_size
-        let potential_size = para_end - current_start;
-
-        if potential_size > chunk_size {
-            // Finalize current chunk
-            let safe_end = text.ceil_char_boundary(current_end);
-            chunks.push(&text[current_start..safe_end]);
-
-            // Start new chunk with current paragraph
-            current_start = para_start;
-            current_end = para_end;
-        } else {
-            // Add this paragraph to current chunk
-            current_end = para_end;
-        }
-
-        i += 1;
     }
 
-    // Add the final chunk if there's remaining content
-    if current_end > current_start {
-        let safe_end = text.ceil_char_boundary(current_end);
-        chunks.push(&text[current_start..safe_end]);
+    if let Some((chunk_start, chunk_end)) = chunk {
+        chunks.push((chunk_start, &text[chunk_start..chunk_end]));
     }
 
     chunks
@@ -205,9 +169,9 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
     if text.len() > CHUNK_SIZE {
         let chunks = chunk_text(text, CHUNK_SIZE);
         let mut all_sentences = Vec::new();
-        for chunk in chunks {
-            let chunk_sentences = language.segment(chunk);
-            all_sentences.extend(chunk_sentences);
+
+        for (_offset, chunk) in chunks {
+            all_sentences.extend(language.segment(chunk));
         }
 
         all_sentences
@@ -225,8 +189,8 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
 /// For texts larger than 10KB, the function chunks the text at paragraph boundaries
 /// (`\n\n`) to process large inputs efficiently. Paragraphs that exceed 10KB and
 /// contain no internal paragraph breaks are processed as a single unit to avoid
-/// splitting mid-sentence or mid-word. The returned boundaries maintain correct
-/// indices relative to the original text.
+/// splitting mid-sentence or mid-word. The returned character indices and byte
+/// offsets are correct relative to the original text.
 ///
 /// # Arguments
 ///
@@ -239,6 +203,9 @@ pub fn segment<'a>(language_code: &str, text: &'a str) -> Vec<&'a str> {
 /// Each `SentenceBoundary` includes:
 /// - `start_index`: The character index (Unicode scalar count) where the sentence starts
 /// - `end_index`: The character index (Unicode scalar count) where the sentence ends
+/// - `start_byte`: The byte offset into the original `text` where the sentence starts
+/// - `end_byte`: The byte offset into the original `text` where the sentence ends
+///   (`&text[start_byte..end_byte]` reproduces the sentence under normal operation)
 /// - `text`: A reference to the sentence text (zero-copy)
 /// - `boundary_symbol`: The punctuation mark that ended the sentence (if any)
 /// - `is_paragraph_break`: Whether this boundary represents a paragraph break ("\n\n")
@@ -268,25 +235,21 @@ pub fn get_sentence_boundaries<'a>(
     if text.len() > CHUNK_SIZE {
         let chunks = chunk_text(text, CHUNK_SIZE);
         let mut all_boundaries = Vec::new();
-        let mut chunk_offset = 0;
+        let mut prev_end_byte = 0usize;
+        let mut prev_end_index = 0usize;
 
-        for chunk in chunks {
-            let chunk_boundaries = language.get_sentence_boundaries(chunk);
-
-            // Adjust indices to be relative to original text
-            let mut prev_end_index = 0;
-            for boundary in chunk_boundaries {
+        for (chunk_offset, chunk) in chunks {
+            for boundary in language.get_sentence_boundaries(chunk) {
                 let start_byte = boundary.start_byte + chunk_offset;
                 let end_byte = boundary.end_byte + chunk_offset;
 
-                let start_index = if prev_end_index > 0 {
+                let start_index = if start_byte == prev_end_byte {
                     prev_end_index
                 } else {
-                    text[..start_byte].chars().count()
+                    prev_end_index + text[prev_end_byte..start_byte].chars().count()
                 };
 
                 let end_index = start_index + boundary.text.chars().count();
-                prev_end_index = end_index;
 
                 all_boundaries.push(SentenceBoundary {
                     start_index,
@@ -297,9 +260,10 @@ pub fn get_sentence_boundaries<'a>(
                     boundary_symbol: boundary.boundary_symbol,
                     is_paragraph_break: boundary.is_paragraph_break,
                 });
-            }
 
-            chunk_offset += chunk.len();
+                prev_end_byte = end_byte;
+                prev_end_index = end_index;
+            }
         }
 
         all_boundaries
@@ -362,9 +326,9 @@ mod tests {
         let text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.";
         let chunks = chunk_text(text, 20);
         assert_eq!(chunks.len(), 3);
-        assert_eq!(chunks[0], "First paragraph.");
-        assert_eq!(chunks[1], "Second paragraph.");
-        assert_eq!(chunks[2], "Third paragraph.");
+        assert_eq!(chunks[0], (0, "First paragraph."));
+        assert_eq!(chunks[1], (18, "Second paragraph."));
+        assert_eq!(chunks[2], (37, "Third paragraph."));
     }
 
     #[test]
@@ -375,7 +339,7 @@ mod tests {
             "This is a long text without paragraph breaks that should be returned as one chunk.";
         let chunks = chunk_text(text, 20);
         assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0], text);
+        assert_eq!(chunks[0], (0, text));
     }
 
     #[test]
@@ -815,7 +779,6 @@ mod tests {
 
     #[test]
     fn test_get_sentence_boundaries_handles_multibyte_across_chunks() {
-        const CHUNK_SIZE: usize = 10 * 1024;
         let para = format!("{}end’.", "Filler sentence number one here. ".repeat(160));
         let text = format!("{para}\n\n{para}\n\n{para}");
         let boundaries = get_sentence_boundaries("en", &text);
