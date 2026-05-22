@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.28] - 2026-05-22
+
+### Bug fixes
+- Fix panics with paragraph break handling
+
 ## [1.0.27] - 2026-05-22
 
 ### Added
