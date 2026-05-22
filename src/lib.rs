@@ -806,4 +806,24 @@ mod tests {
             assert_eq!(b.text, &text[b.start_byte..b.end_byte]);
         }
     }
+
+    #[test]
+    fn test_get_sentence_boundaries_paragraph_separator_offsets() {
+        let para = format!("{}’", "Filler sentence here. ".repeat(150));
+        let text = std::iter::repeat(para.as_str())
+            .take(6)
+            .collect::<Vec<_>>()
+            .join("\r\n\r\n");
+        assert!(text.len() > 10 * 1024, "input must exceed the chunk size");
+
+        let boundaries = get_sentence_boundaries("en", &text);
+
+        for b in &boundaries {
+            assert_eq!(
+                b.text,
+                &text[b.start_byte..b.end_byte],
+                "byte offsets must reconstruct boundary text (CRLF separator drift)"
+            );
+        }
+    }
 }
