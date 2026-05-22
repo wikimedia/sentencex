@@ -812,4 +812,35 @@ mod tests {
             "Text reconstruction failed with mixed whitespace"
         );
     }
+
+    #[test]
+    fn test_get_sentence_boundaries_handles_multibyte_across_chunks() {
+        const CHUNK_SIZE: usize = 10 * 1024;
+        let para = format!("{}end’.", "Filler sentence number one here. ".repeat(160));
+        let text = format!("{para}\n\n{para}\n\n{para}");
+        let boundaries = get_sentence_boundaries("en", &text);
+
+        assert!(!boundaries.is_empty());
+        assert_eq!(boundaries.last().unwrap().end_index, text.chars().count());
+
+        for w in boundaries.windows(2) {
+            assert!(
+                w[0].end_index <= w[1].start_index,
+                "char indices regressed: {} > {}",
+                w[0].end_index,
+                w[1].start_index,
+            );
+
+            assert!(
+                w[0].end_byte <= w[1].start_byte,
+                "byte offsets regressed: {} > {}",
+                w[0].end_byte,
+                w[1].start_byte,
+            );
+        }
+
+        for b in &boundaries {
+            assert_eq!(b.text, &text[b.start_byte..b.end_byte]);
+        }
+    }
 }
