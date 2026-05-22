@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.27] - 2026-05-22
+
+### Added
+- Add sentence starter words with custom boundary detection (#64)
+
+### Bug fixes
+- Fix clippy warnings
+
 ## [1.0.26] - 2026-05-18
 
 ### Added
