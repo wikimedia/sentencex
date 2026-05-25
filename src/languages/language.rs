@@ -10,6 +10,7 @@ use crate::constants::PARENS_REGEX;
 use crate::constants::QUOTE_CLOSERS_BY_LEN;
 use crate::constants::QUOTE_PAIRS;
 use crate::constants::QUOTES_REGEX;
+use crate::constants::QuotePair;
 use crate::constants::SPACE_AFTER_SEPARATOR;
 use crate::constants::is_sentence_terminator;
 
@@ -53,6 +54,25 @@ static ELLIPSIS_GLUED_CONTINUE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
 
 static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
+
+/// True iff it finds a `.[ \t]+[A-Z]` shape.
+/// Using memchr here instead of regex for speed
+fn has_possible_inline_sentence_break(span: &str) -> bool {
+    let bytes = span.as_bytes();
+    for dot_pos in memchr::memchr_iter(b'.', bytes) {
+        let tail = &bytes[dot_pos + 1..];
+
+        let Some(blanks) = tail.iter().position(|&b| !matches!(b, b' ' | b'\t')) else {
+            continue;
+        };
+
+        if blanks > 0 && tail[blanks].is_ascii_uppercase() {
+            return true;
+        }
+    }
+
+    false
+}
 
 /// True iff `s` is a single ASCII uppercase letter. Used to recognise name
 /// initials and gate the structural / starter override.
@@ -98,8 +118,9 @@ fn is_symmetric_quote_closer(closer: &str) -> bool {
 ///
 /// Asymmetric closers (`»`, `”`, …) are unambiguous and always orphan once
 /// `QUOTES_REGEX` has had a chance to pair them. For symmetric closers we
-/// inspect the closer's distribution across the paragraph, ignoring any
-/// occurrence already consumed by an asymmetric quote pair.
+/// inspect the closer's distribution across the paragraph, ignoring
+/// occurrences already consumed by a paired quote range and contractions
+/// like `wasn't`.
 fn is_orphan_closer(
     paragraph: &str,
     boundary: usize,
@@ -110,17 +131,12 @@ fn is_orphan_closer(
         return true;
     }
 
-    let consumed_by_asymmetric_pair = |idx: usize| {
-        skippable_ranges
-            .iter()
-            .any(|r| r.is_quote() && idx >= r.start && idx < r.end)
-    };
-
     let (mut before, mut at_or_after) = (0usize, 0usize);
     for (idx, _) in paragraph.match_indices(closer) {
-        if consumed_by_asymmetric_pair(idx) {
+        if !is_quote_candidate(paragraph, idx, closer, skippable_ranges) {
             continue;
         }
+
         if idx < boundary {
             before += 1;
         } else {
@@ -133,18 +149,15 @@ fn is_orphan_closer(
     unmatched_opener_before || lone_stray_at_boundary
 }
 
-/// True when `range` is a quote range whose opener and closer are the same
-/// token — `''…''`, `'…'`, `"…"`, etc. These pairs are inherently ambiguous
-/// for the regex pairer and need extra scrutiny when they appear to veto a
-/// sentence boundary.
-fn is_symmetric_quote_range(text: &str, range: &SkippableRange) -> bool {
-    if !range.is_quote() {
-        return false;
-    }
-    let span = &text[range.start..range.end];
-    QUOTE_PAIRS.iter().filter(|p| p.open == p.close).any(|p| {
-        span.len() >= 2 * p.open.len() && span.starts_with(p.open) && span.ends_with(p.close)
-    })
+/// Find the first `QUOTE_PAIRS` entry whose `open` is a prefix of `span`.
+fn identify_quote_pair(span: &str) -> Option<&'static QuotePair> {
+    QUOTE_PAIRS.iter().find(|p| span.starts_with(p.open))
+}
+
+/// True when `range` was constructed for a symmetric-pair quote token,
+/// e.g., `''…''`, `'…'`, `"…"`.
+fn is_symmetric_quote_range(range: &SkippableRange) -> bool {
+    range.quote_pair.is_some_and(|p| p.open == p.close)
 }
 
 /// True when the paragraph contains an odd number of the symmetric quote
@@ -153,11 +166,7 @@ fn is_symmetric_quote_range(text: &str, range: &SkippableRange) -> bool {
 /// opener, `QUOTES_REGEX` will mispair across a real sentence break. Even
 /// counts are structurally consistent and should be trusted.
 fn symmetric_token_count_is_odd(paragraph: &str, range: &SkippableRange) -> bool {
-    let Some(pair) = QUOTE_PAIRS
-        .iter()
-        .filter(|p| p.open == p.close)
-        .find(|p| paragraph[range.start..].starts_with(p.open))
-    else {
+    let Some(pair) = range.quote_pair else {
         return false;
     };
 
@@ -177,6 +186,178 @@ fn quote_partially_overlaps_parens(quote: &SkippableRange, ranges: &[SkippableRa
             (quote.start < p.start && p.start < quote.end && quote.end < p.end)
                 || (p.start < quote.start && quote.start < p.end && p.end < quote.end)
         })
+}
+
+/// Trim leading whitespace from `s`, then if a symmetric quote closer
+/// follows, peel one such closer plus its trailing whitespace. Used to
+/// look "through" a stray closing apostrophe when checking for a comma
+/// continuation, e.g., `. ' , Tim …`.
+fn peel_leading_symmetric_quote(s: &str) -> &str {
+    let trimmed = s.trim_start();
+    let Some(&first) = trimmed.as_bytes().first() else {
+        return trimmed;
+    };
+
+    // Fast check for ASCII quotes
+    if first.is_ascii() && !matches!(first, b'\'' | b'"' | b'`') {
+        return trimmed;
+    }
+
+    QUOTE_PAIRS
+        .iter()
+        .filter(|p| p.open == p.close)
+        .find_map(|p| trimmed.strip_prefix(p.close))
+        .map(str::trim_start)
+        .unwrap_or(trimmed)
+}
+
+/// True when `idx` lies inside an existing quote `SkippableRange`.
+/// Ranges are sorted so use a binary search to filter out irrelevant ranges.
+fn is_in_quote_range(ranges: &[SkippableRange], idx: usize) -> bool {
+    let pos = ranges.partition_point(|r| r.start <= idx);
+    ranges[..pos].iter().any(|r| r.is_quote() && idx < r.end)
+}
+
+/// Chars immediately before `idx` and immediately after `idx + token.len()`.
+/// Returned as `(prev, next)`; either side is `None` at the text boundary.
+fn neighbors(text: &str, idx: usize, token: &str) -> (Option<char>, Option<char>) {
+    (
+        text[..idx].chars().next_back(),
+        text[idx + token.len()..].chars().next(),
+    )
+}
+
+/// True when the `token` occurrence at `idx` is a contraction (`wasn't`,
+/// `o'clock`) sandwiched between two alphanumerics. Such `'` are not quote
+/// characters. Counting them flips the parity-based orphan check.
+fn is_contraction_quote(text: &str, idx: usize, token: &str) -> bool {
+    let (prev, next) = neighbors(text, idx, token);
+    prev.is_some_and(|c| c.is_alphanumeric()) && next.is_some_and(|c| c.is_alphanumeric())
+}
+
+/// True when the `token` occurrence at `idx` is a free-standing quote
+/// candidate not already inside a paired quote range and not a contraction.
+fn is_quote_candidate(text: &str, idx: usize, token: &str, ranges: &[SkippableRange]) -> bool {
+    !is_in_quote_range(ranges, idx) && !is_contraction_quote(text, idx, token)
+}
+
+/// True when the `'` or `` ` `` at `idx` is preceded by start of text or
+/// whitespace AND followed by whitespace. The shape `QUOTES_REGEX`'s guarded
+/// pattern can't pair. It requires `\b` after the opener.
+fn is_opener_shape(text: &str, idx: usize, token: &str) -> bool {
+    let (prev, next) = neighbors(text, idx, token);
+    prev.is_none_or(char::is_whitespace) && next.is_some_and(char::is_whitespace)
+}
+
+/// True when `text[from..]` starts with one or more ASCII blanks followed by
+/// an ASCII uppercase letter, the signature of a fresh utterance opening.
+fn starts_new_utterance(text: &str, from: usize) -> bool {
+    let tail = &text[from..];
+    let trimmed = tail.trim_start_matches([' ', '\t']);
+
+    trimmed.len() < tail.len()
+        && trimmed
+            .as_bytes()
+            .first()
+            .is_some_and(u8::is_ascii_uppercase)
+}
+
+/// True when the candidate `'` or `` ` `` at `opener` should pair with the
+/// candidate at `closer` into a quote range. Rejects two shapes:
+/// * `opener` isn't space-padded. It's not opener-like to begin with.
+/// * The span looks like two back to back utterances rather than one
+///   multi-sentence quotation. The closer itself starts a fresh utterance
+///   (whitespace + uppercase) AND the intervening text contains an inline
+///   `[.!] + ws + uppercase` sentence break.
+fn quote_candidates_should_pair(text: &str, opener: usize, closer: usize, token: &str) -> bool {
+    if !is_opener_shape(text, opener, token) {
+        return false;
+    }
+
+    let span = &text[opener + token.len()..closer];
+    let after_closer = closer + token.len();
+    let back_to_back =
+        starts_new_utterance(text, after_closer) && has_possible_inline_sentence_break(span);
+
+    !back_to_back
+}
+
+/// Define quote mispairings to improve readability in the orphan quote handling.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum QuoteMispairing {
+    #[default]
+    None,
+    Certain,
+    Possible,
+}
+
+/// Tag each symmetric-pair quote range with a mispairing label.
+fn populate_quote_mispairing(paragraph: &str, ranges: &mut [SkippableRange]) {
+    for i in 0..ranges.len() {
+        if !ranges[i].is_quote() {
+            continue;
+        }
+
+        let range = ranges[i];
+
+        let class = if !is_symmetric_quote_range(&range) {
+            QuoteMispairing::None
+        } else if quote_partially_overlaps_parens(&range, ranges) {
+            QuoteMispairing::Certain
+        } else if symmetric_token_count_is_odd(paragraph, &range) {
+            QuoteMispairing::Possible
+        } else {
+            QuoteMispairing::None
+        };
+
+        ranges[i].quote_mispairing = class;
+    }
+}
+
+/// Append `'…'` / `` `…` `` ranges that `QUOTES_REGEX` couldn't pair.
+/// Guarded patterns require `\b` immediately after the opener, so
+/// space padded openers like `' word ` go unpaired even when they form a
+/// real `' … '` pair.
+fn append_space_padded_quote_pairs(text: &str, ranges: &mut Vec<SkippableRange>) {
+    let bytes = text.as_bytes();
+
+    // Fast check
+    if memchr::memchr2(b'\'', b'`', bytes).is_none() {
+        return;
+    }
+
+    for pair in QUOTE_PAIRS
+        .iter()
+        .filter(|p| p.ambiguous && p.open == p.close)
+    {
+        let token = pair.close;
+        debug_assert_eq!(
+            token.len(),
+            1,
+            "ambiguous symmetric tokens are single-byte ASCII"
+        );
+
+        if !bytes.contains(&token.as_bytes()[0]) {
+            continue;
+        }
+
+        let mut pending: Option<usize> = None;
+        for (idx, _) in text.match_indices(token) {
+            if !is_quote_candidate(text, idx, token, ranges) {
+                continue;
+            }
+
+            if let Some(opener) = pending
+                && quote_candidates_should_pair(text, opener, idx, token)
+            {
+                let end = idx + token.len();
+                ranges.push(SkippableRange::new_quote(opener, end, pair));
+                pending = None;
+            } else {
+                pending = Some(idx);
+            }
+        }
+    }
 }
 
 /// Push `boundary` only if it advances past the last recorded position.
@@ -279,6 +460,8 @@ pub struct SkippableRange {
     pub start: usize,
     pub end: usize,
     pub range_type: SkippableRangeType,
+    pub quote_pair: Option<&'static QuotePair>,
+    pub quote_mispairing: QuoteMispairing,
 }
 
 impl SkippableRange {
@@ -287,6 +470,18 @@ impl SkippableRange {
             start,
             end,
             range_type,
+            quote_pair: None,
+            quote_mispairing: QuoteMispairing::None,
+        }
+    }
+
+    pub fn new_quote(start: usize, end: usize, pair: &'static QuotePair) -> Self {
+        Self {
+            start,
+            end,
+            range_type: SkippableRangeType::Quote,
+            quote_pair: Some(pair),
+            quote_mispairing: QuoteMispairing::None,
         }
     }
 
@@ -446,19 +641,7 @@ pub trait Language {
                         continue;
                     }
 
-                    // Symmetric-pair quote ranges (`''…''`, `'…'`, `"…"`) are
-                    // greedy: when a paragraph has more than one closer the
-                    // regex can pair across what's really a sentence break.
-                    // Detect that mispairing structurally — the range's
-                    // endpoints straddle a parens boundary, or the paragraph
-                    // has an odd count of the token and there's a strong
-                    // sentence break here — and let the boundary through
-                    // instead of vetoing it.
-                    if is_symmetric_quote_range(paragraph, range)
-                        && (quote_partially_overlaps_parens(range, &skippable_ranges)
-                            || (symmetric_token_count_is_odd(paragraph, range)
-                                && self.has_strong_sentence_break(paragraph, start, end)))
-                    {
+                    if self.is_symmetric_quote_mispairing(paragraph, range, start, end) {
                         continue;
                     }
 
@@ -673,7 +856,7 @@ pub trait Language {
         if is_symmetric_quote_closer(closer) {
             let has_earlier_symmetric_pair = skippable_ranges.iter().any(|r| {
                 r.end <= boundary
-                    && is_symmetric_quote_range(paragraph, r)
+                    && is_symmetric_quote_range(r)
                     && paragraph[r.start..].starts_with(*closer)
             });
 
@@ -886,55 +1069,67 @@ pub trait Language {
         EXCLAMATION_WORDS.contains(&exclamation_word.as_str())
     }
 
+    /// True when this symmetric-pair quote range (`''…''`, `'…'`, `"…"`) is
+    /// a likely `QUOTES_REGEX` mispairing across a sentence break.
+    /// - Certain: range straddles a parens boundary. Override always
+    ///   fires. A quote pair shouldn't cross a parens edge.
+    /// - Possible: paragraph has an odd token count (one or more
+    ///   orphans). Override fires only if `[start, end)` also looks like
+    ///   a strong sentence break.
+    /// - None: not a symmetric pair or evenly balanced. No override.
+    fn is_symmetric_quote_mispairing(
+        &self,
+        paragraph: &str,
+        range: &SkippableRange,
+        start: usize,
+        end: usize,
+    ) -> bool {
+        match range.quote_mispairing {
+            QuoteMispairing::None => false,
+            QuoteMispairing::Certain => true,
+            QuoteMispairing::Possible => self.has_strong_sentence_break(paragraph, start, end),
+        }
+    }
+
     /// True when the terminator at `[start, end)` looks like a confident
     /// sentence end: a single `.` whose preceding word is a symmetric quote
     /// closer (`''`, `"`, …) and whose follower starts with a capital letter
     /// — the `closer + . + UpperWord` shape. Used as a structural escape
     /// valve for symmetric-pair quote ranges (`''…''`, `'…'`, `"…"`) that the
     /// non-greedy `QUOTES_REGEX` may have mispaired across a real boundary.
-    ///
-    /// TODO: a starter-word fallback (last_word non-closer + next word in
-    /// language's starter list) belongs here once starter-word infrastructure
-    /// lands on this branch. Until then, only the closer-branch is implemented.
     fn has_strong_sentence_break(&self, paragraph: &str, start: usize, end: usize) -> bool {
-        if &paragraph[start..end] != "." {
-            return false;
-        }
-        let head = &paragraph[..start];
-
-        // The terminator is typically space-separated from the closer
-        // (`'' .`), so trim trailing whitespace before walking back to find
-        // the last token.
-        let trimmed = head.trim_end();
-
-        let last_word = match trimmed
-            .char_indices()
-            .rfind(|(_, c)| c.is_whitespace() || *c == '.')
-        {
-            Some((i, c)) => &trimmed[i + c.len_utf8()..],
-            None => trimmed,
-        };
-
-        if last_word.is_empty() {
+        if end - start != 1 || paragraph.as_bytes()[start] != b'.' {
             return false;
         }
 
-        if self.is_abbreviation(head, last_word, ".") {
-            return false;
-        }
-
-        if !is_symmetric_quote_closer(last_word) {
-            return false;
-        }
-
-        let next_index = paragraph.ceil_char_boundary(start + 1);
-        let next_word_approx = self.get_next_word_approx(paragraph, next_index);
-
-        next_word_approx
-            .trim_start()
+        debug_assert!(paragraph.is_char_boundary(start + 1));
+        let next_word_approx = self.get_next_word_approx(paragraph, start + 1);
+        let trimmed_next = next_word_approx.trim_start();
+        if !trimmed_next
             .chars()
             .next()
             .is_some_and(|c| c.is_ascii_uppercase())
+        {
+            return false;
+        }
+
+        let head = &paragraph[..start];
+        let last_word = self.get_last_word(head);
+        if last_word.is_empty() || is_single_ascii_upper(last_word) {
+            return false;
+        }
+
+        if self.is_abbreviation(head, last_word, ".")
+            || self.is_multi_dot_abbreviation(head, last_word.len())
+        {
+            return false;
+        }
+
+        if is_symmetric_quote_closer(last_word) {
+            return true;
+        }
+
+        self.next_word_is_sentence_starter(trimmed_next)
     }
 
     /// Returns an approximate substring of the next word(s) starting from the given position.
@@ -1067,11 +1262,7 @@ pub trait Language {
             return true;
         }
 
-        // A comma following the terminator (after optional spaces) signals that
-        // the period is stray punctuation and the real clause continues. Treat
-        // it as a continuation rather than a boundary.
-        let trimmed = text_after_boundary.trim_start();
-        trimmed.as_bytes().first() == Some(&b',')
+        peel_leading_symmetric_quote(text_after_boundary).starts_with(',')
     }
 
     /// Identifies ranges of text that should be skipped during sentence boundary detection.
@@ -1085,12 +1276,13 @@ pub trait Language {
         let mut skippable_ranges = Vec::with_capacity(estimated_ranges);
 
         for mat in QUOTES_REGEX.find_iter(text) {
-            skippable_ranges.push(SkippableRange::new(
-                mat.start(),
-                mat.end(),
-                SkippableRangeType::Quote,
-            ));
+            let pair = identify_quote_pair(&text[mat.start()..])
+                .expect("QUOTES_REGEX match must start with a known pair opener");
+
+            skippable_ranges.push(SkippableRange::new_quote(mat.start(), mat.end(), pair));
         }
+
+        append_space_padded_quote_pairs(text, &mut skippable_ranges);
 
         for mat in PARENS_REGEX.find_iter(text) {
             skippable_ranges.push(SkippableRange::new(
@@ -1110,6 +1302,10 @@ pub trait Language {
 
         // Sort ranges by start position for more efficient lookups
         skippable_ranges.sort_unstable_by_key(|r| r.start);
+
+        // Cache mispairing on each quote range for re-use
+        populate_quote_mispairing(text, &mut skippable_ranges);
+
         skippable_ranges
     }
 }

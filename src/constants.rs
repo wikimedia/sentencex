@@ -8,6 +8,7 @@ pub const ROMAN_NUMERALS: [&str; 20] = [
 ];
 
 /// A quoted-region delimiter pair used to build [`QUOTES_REGEX`].
+#[derive(Debug)]
 pub struct QuotePair {
     pub open: &'static str,
     pub close: &'static str,
