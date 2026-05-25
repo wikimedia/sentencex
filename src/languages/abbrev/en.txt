@@ -47,6 +47,8 @@ ct
 d.phil
 D
 dak
+dc
+d.c
 dec
 del
 dept
@@ -56,13 +58,15 @@ dr.phil
 dr.philos
 dr
 drs
+E
+e.d
 eg
 e.g
-E
 ens
 esp
 esq
 etc
+exec
 exp
 expy
 ext
@@ -73,6 +77,7 @@ ff
 f.f
 fig
 fla
+fr
 ft
 fwy
 fy
@@ -111,6 +116,13 @@ ken
 ky
 L
 la
+ll
+llb
+ll.b
+ll.d
+lld
+llm
+ll.m
 loc
 lt
 ltd
@@ -167,6 +179,8 @@ ore
 p
 P
 pa
+pg
+p.g
 pd
 pde
 penn
@@ -177,6 +191,7 @@ ph
 pl
 plz
 pp
+pres
 prof
 ps
 p.s
@@ -231,9 +246,13 @@ viz
 vs
 vt
 W
+wef
+w.e.f
 // wash
 wis
 wisc
+wrt
+w.r.t
 wy
 wyo
 X
