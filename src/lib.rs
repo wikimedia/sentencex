@@ -4,16 +4,14 @@ use languages::{
     Malayalam, Marathi, Polish, Portuguese, Punjabi, Russian, Slovak, Spanish, Tamil, Telugu,
     Ukrainian,
 };
-use regex::Regex;
+
+use languages::paragraph_breaks;
 use rustc_hash::FxHashSet;
-use std::sync::LazyLock;
 
 mod constants;
 pub mod languages;
 
 use serde::Serialize;
-
-static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SentenceBoundary<'a> {
@@ -89,9 +87,9 @@ fn paragraph_spans(text: &str) -> Vec<(usize, usize)> {
     let mut spans = Vec::new();
     let mut next_start = 0;
 
-    for sep in PARA_SPLIT_REGEX.find_iter(text) {
-        spans.push((next_start, sep.start()));
-        next_start = sep.end();
+    for (sep_start, sep_end) in paragraph_breaks(text) {
+        spans.push((next_start, sep_start));
+        next_start = sep_end;
     }
 
     if next_start < text.len() {

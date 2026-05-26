@@ -32,8 +32,6 @@ static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(&pattern).unwrap()
 });
 
-static CONTINUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
-
 // Matches a lowercase letter or digit, optionally preceded by non-word characters
 // (e.g. a space or punctuation). Used by languages that extend the base continuation
 // check with their own month lists.
@@ -47,13 +45,47 @@ static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
 pub(crate) static ELLIPSIS_CONTINUE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s+[0-9a-z]").unwrap());
 
-// Glued lowercase after an ellipsis (`mean...see`) is intra-utterance hesitation
-// and continues the sentence. Only fires when the dots are also glued behind -
-// a free-standing leading ellipsis (`raak. ...en`) keeps its boundary.
-static ELLIPSIS_GLUED_CONTINUE_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[0-9a-z]").unwrap());
+/// Equivalent to regex `^[0-9a-z]`. Direct byte check is faster for simple pattern.
+fn starts_with_ascii_lowercase_or_digit(s: &str) -> bool {
+    s.as_bytes()
+        .first()
+        .is_some_and(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9'))
+}
 
-static PARA_SPLIT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[\r]*\n").unwrap());
+/// If the bytes at `at` start a `\n[\r]*\n` paragraph separator, return
+/// the byte range of the entire separator, else `None`.
+fn paragraph_break_at(bytes: &[u8], at: usize) -> Option<(usize, usize)> {
+    if bytes.get(at) != Some(&b'\n') {
+        return None;
+    }
+
+    let mut end = at + 1;
+    while bytes.get(end) == Some(&b'\r') {
+        end += 1;
+    }
+
+    (bytes.get(end) == Some(&b'\n')).then_some((at, end + 1))
+}
+
+/// Replaces the previous paragraph split regex `\n[\r]*\n` with memchr scan for performance.
+/// Iterate over `\n[\r]*\n` paragraph separators in `text` as `(start, end)` byte ranges.
+pub(crate) fn paragraph_breaks(text: &str) -> impl Iterator<Item = (usize, usize)> + '_ {
+    let bytes = text.as_bytes();
+    let mut cursor = 0;
+
+    std::iter::from_fn(move || {
+        loop {
+            let newline = cursor + memchr::memchr(b'\n', &bytes[cursor..])?;
+            if let Some((start, end)) = paragraph_break_at(bytes, newline) {
+                cursor = end;
+                return Some((start, end));
+            }
+
+            // Lone `\n` — advance past it and keep scanning.
+            cursor = newline + 1;
+        }
+    })
+}
 
 /// True iff it finds a `.[ \t]+[A-Z]` shape.
 /// Using memchr here instead of regex for speed
@@ -74,18 +106,28 @@ fn has_possible_inline_sentence_break(span: &str) -> bool {
     false
 }
 
-/// True iff `s` is a single ASCII uppercase letter. Used to recognise name
-/// initials and gate the structural / starter override.
 fn is_single_ascii_upper(s: &str) -> bool {
     s.len() == 1 && s.as_bytes()[0].is_ascii_uppercase()
 }
 
 fn abbreviation_set_contains(set: &FxHashSet<String>, word: &str) -> bool {
     if word.bytes().all(|b| b < 128 && !b.is_ascii_uppercase()) {
-        set.contains(word)
-    } else {
-        set.contains(word.to_lowercase().as_str())
+        return set.contains(word);
     }
+
+    // For small words a stack buffer avoids a string allocation
+    if word.is_ascii() && word.len() <= 32 {
+        let mut buf = [0u8; 32];
+        for (i, b) in word.bytes().enumerate() {
+            buf[i] = b.to_ascii_lowercase();
+        }
+
+        // SAFETY: ASCII is valid UTF-8
+        let lower = unsafe { std::str::from_utf8_unchecked(&buf[..word.len()]) };
+        return set.contains(lower);
+    }
+
+    set.contains(word.to_lowercase().as_str())
 }
 
 /// True iff `s` (after leading whitespace) begins with a name-initial token:
@@ -382,8 +424,8 @@ fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
 /// without lookahead - `[!?…][ \t]+\.` would eat the first dot of an
 /// ellipsis - so they arrive here as two matches and are folded only when
 /// the follow-up is pure `.`s separated by whitespace.
-fn find_terminator_matches(text: &str, regex: &Regex) -> Vec<(usize, usize)> {
-    let mut out: Vec<(usize, usize)> = Vec::new();
+fn find_terminator_matches(text: &str, regex: &Regex, out: &mut Vec<(usize, usize)>) {
+    out.clear();
 
     for m in regex.find_iter(text) {
         let (start, end) = (m.start(), m.end());
@@ -407,8 +449,6 @@ fn find_terminator_matches(text: &str, regex: &Regex) -> Vec<(usize, usize)> {
 
         out.push((start, end));
     }
-
-    out
 }
 
 /// Shared helper for languages that continue sentences before month names.
@@ -547,15 +587,15 @@ pub trait Language {
 
         let mut last_end = 0;
         let mut current_char_offset = 0;
-        for m in PARA_SPLIT_REGEX.find_iter(text) {
-            let paragraph = &text[last_end..m.start()];
+        for (sep_start, sep_end) in paragraph_breaks(text) {
+            let paragraph = &text[last_end..sep_start];
             paragraphs.push(paragraph);
             paragraph_offsets.push(last_end);
             paragraph_char_offsets.push(current_char_offset);
 
-            let separator_chars = text[m.start()..m.end()].chars().count();
+            let separator_chars = text[sep_start..sep_end].chars().count();
             current_char_offset += paragraph.chars().count() + separator_chars;
-            last_end = m.end();
+            last_end = sep_end;
         }
 
         // Final paragraph after the last separator (the whole text if none).
@@ -566,6 +606,7 @@ pub trait Language {
         // Pre-allocate sentence_boundaries once and reuse for all paragraphs
         let estimated_paragraph_sentences = 10; // reasonable default for typical paragraphs
         let mut sentence_boundaries = Vec::with_capacity(estimated_paragraph_sentences);
+        let mut matches: Vec<(usize, usize)> = Vec::with_capacity(estimated_paragraph_sentences);
         let sentence_break_regex = self.get_sentence_break_regex();
 
         for (pindex, paragraph) in paragraphs.iter().enumerate() {
@@ -601,7 +642,7 @@ pub trait Language {
             sentence_boundaries.clear();
             sentence_boundaries.push(0);
 
-            let matches = find_terminator_matches(paragraph, sentence_break_regex);
+            find_terminator_matches(paragraph, sentence_break_regex, &mut matches);
             let mut skippable_ranges = self.get_skippable_ranges(paragraph);
 
             // Detect list-item line starts once per paragraph and reuse the
@@ -631,7 +672,7 @@ pub trait Language {
                 skippable_ranges.sort_unstable_by_key(|r| r.start);
             }
 
-            'next_match: for (start, end) in matches {
+            'next_match: for &(start, end) in &matches {
                 let Some(mut boundary) = self.find_boundary(paragraph, start, end) else {
                     continue;
                 };
@@ -1019,7 +1060,7 @@ pub trait Language {
             return true;
         }
 
-        last_word.chars().count() > 1 && self.get_abbreviations().contains(&last_word.to_string())
+        last_word.chars().nth(1).is_some() && self.get_abbreviations().contains(last_word)
     }
 
     /// True when `head`'s trailing token is a multi-dot abbreviation listed
@@ -1054,9 +1095,9 @@ pub trait Language {
         // to abbreviations (`171/U.S`) without being a real word boundary,
         // so split on it too.
         text.trim_end()
-            .split(|c: char| c.is_whitespace() || c == '.' || c == '/')
-            .next_back()
-            .expect("str::split always yields at least one element")
+            .rsplit(|c: char| c.is_whitespace() || c == '.' || c == '/')
+            .next()
+            .expect("str::rsplit always yields at least one element")
     }
 
     /// Checks if a potential sentence boundary is actually an exclamation word that shouldn't
@@ -1065,8 +1106,20 @@ pub trait Language {
     /// Returns true if this is an exclamation that should not break the sentence.
     fn is_exclamation(&self, head: &str, _tail: &str) -> bool {
         let last_word = self.get_last_word(head);
-        let exclamation_word = format!("{}!", last_word);
-        EXCLAMATION_WORDS.contains(&exclamation_word.as_str())
+        self.is_exclamation_for(last_word)
+    }
+
+    /// Same check as `is_exclamation` but skips the `get_last_word(head)`
+    /// call when the caller already has the trailing word. Used on the hot
+    /// path in `find_boundary`.
+    fn is_exclamation_for(&self, last_word: &str) -> bool {
+        if last_word.is_empty() {
+            return false;
+        }
+
+        EXCLAMATION_WORDS
+            .iter()
+            .any(|w| w.strip_suffix('!').is_some_and(|p| p == last_word))
     }
 
     /// True when this symmetric-pair quote range (`''…''`, `'…'`, `"…"`) is
@@ -1179,24 +1232,16 @@ pub trait Language {
         let continues = if is_multi_char_run {
             self.is_ellipsis_continuation(next_word_approx)
                 || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
-                    && ELLIPSIS_GLUED_CONTINUE_REGEX.is_match(next_word_approx))
+                    && starts_with_ascii_lowercase_or_digit(next_word_approx))
         } else {
             self.continue_in_next_word(next_word_approx)
+                // e.g., "Father Came Too ! is a British comedy film".
+                || (matches!(matched, "!" | "?")
+                    && matches!(head.as_bytes().last(), Some(b' ' | b'\t'))
+                    && CONTINUE_AFTER_NONWORD_REGEX.is_match(next_word_approx))
         };
 
         if continues {
-            return None;
-        }
-
-        // Orphan emphatic terminator: a free-standing `!`/`?` with whitespace
-        // before it followed by a lowercase/digit continuation (after any
-        // stray non-word punctuation like a leftover `''` closer) is part of a
-        // title, not a sentence end,
-        // e.g., "Father Came Too ! is a British comedy film".
-        if (matched == "!" || matched == "?")
-            && matches!(head.chars().next_back(), Some(' ' | '\t'))
-            && CONTINUE_AFTER_NONWORD_REGEX.is_match(next_word_approx)
-        {
             return None;
         }
 
@@ -1217,6 +1262,8 @@ pub trait Language {
             return None;
         }
 
+        let last_word = self.get_last_word(head);
+
         if matched == "." {
             // Structural name-initial detection plus the abbreviation
             // table both feed one suppression decision.
@@ -1228,7 +1275,6 @@ pub trait Language {
             // (`Wash. Then`, `man. Well`). Single-letter lowercase list
             // markers (`a.`, `i.`) keep their suppression because they only
             // match the abbreviation table via case-folding.
-            let last_word = self.get_last_word(head);
             let is_initial_letter = is_single_ascii_upper(last_word);
 
             let suppress = (is_initial_letter
@@ -1240,11 +1286,11 @@ pub trait Language {
             {
                 return None;
             }
-        } else if self.is_abbreviation(head, next_word_approx, &text[start..end]) {
+        } else if self.is_abbreviation_for(last_word, matched) {
             return None;
         }
 
-        if self.is_exclamation(head, next_word_approx) {
+        if self.is_exclamation_for(last_word) {
             return None;
         }
 
@@ -1270,7 +1316,7 @@ pub trait Language {
     /// the sentence is continuing rather than starting a new one. This helps avoid breaking
     /// sentences at abbreviations or in the middle of compound sentences.
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        if CONTINUE_REGEX.is_match(text_after_boundary) {
+        if starts_with_ascii_lowercase_or_digit(text_after_boundary) {
             return true;
         }
 

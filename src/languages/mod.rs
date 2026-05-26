@@ -54,6 +54,7 @@ pub use ja::Japanese;
 pub use kk::Kazakh;
 pub use kn::Kannada;
 pub use language::Language;
+pub(crate) use language::paragraph_breaks;
 pub use ml::Malayalam;
 pub use mr::Marathi;
 pub use my::Burmese;
