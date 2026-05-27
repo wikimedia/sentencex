@@ -8,6 +8,7 @@ pub const ROMAN_NUMERALS: [&str; 20] = [
 ];
 
 /// A quoted-region delimiter pair used to build [`QUOTES_REGEX`].
+#[derive(Debug)]
 pub struct QuotePair {
     pub open: &'static str,
     pub close: &'static str,
@@ -368,6 +369,11 @@ pub static GLOBAL_SENTENCE_TERMINATORS_SET: LazyLock<FxHashSet<char>> =
 
 #[inline]
 pub fn is_sentence_terminator(c: char) -> bool {
+    // Fast check for ASCII to avoid unicode hashing
+    if c.is_ascii() {
+        return matches!(c, '!' | '.' | '?');
+    }
+
     GLOBAL_SENTENCE_TERMINATORS_SET.contains(&c)
 }
 
