@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.29] - 2026-05-27
+
+### Added
+- Improve orphan quote handling, lowercase-continuation rule, and hot-path performance (#67)
+
 ## [1.0.28] - 2026-05-22
 
 ### Bug fixes
