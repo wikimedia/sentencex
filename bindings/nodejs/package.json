@@ -4,6 +4,7 @@
   "description": "sentence segmentation library",
   "type": "module",
   "main": "index.cjs",
+  "types": "./index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wikimedia/sentencex.git"
@@ -24,14 +25,15 @@
     "*.cjs",
     "*.mjs",
     "*.js",
+    "*.d.ts",
     "*.md",
     "LICENSE",
     "*.node"
   ],
   "exports": {
     ".": {
-    "require": "./index.cjs",
-    "import": "./index.mjs"
+      "require": { "types": "./index.d.ts", "default": "./index.cjs" },
+      "import": { "types": "./index.d.ts", "default": "./index.mjs" }
     }
   },
   "optionalDependencies": {
