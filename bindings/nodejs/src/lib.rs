@@ -35,6 +35,20 @@ fn get_sentence_boundaries(mut cx: FunctionContext) -> JsResult<JsArray> {
         let text = cx.string(boundary.text);
         js_object.set(&mut cx, "text", text)?;
 
+        match &boundary.boundary_symbol {
+            Some(symbol) => {
+                let js_symbol = cx.string(symbol);
+                js_object.set(&mut cx, "boundary_symbol", js_symbol)?;
+            }
+            None => {
+                let js_null = cx.null();
+                js_object.set(&mut cx, "boundary_symbol", js_null)?;
+            }
+        }
+
+        let is_paragraph_break = cx.boolean(boundary.is_paragraph_break);
+        js_object.set(&mut cx, "is_paragraph_break", is_paragraph_break)?;
+
         js_array.set(&mut cx, i as u32, js_object)?;
     }
 
