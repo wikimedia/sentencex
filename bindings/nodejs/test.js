@@ -65,6 +65,11 @@ describe("sentencex", () => {
         assert(typeof boundary.start_index === "number");
         assert(typeof boundary.end_index === "number");
         assert(typeof boundary.text === "string");
+        assert(
+          boundary.boundary_symbol === null ||
+            typeof boundary.boundary_symbol === "string",
+        );
+        assert(typeof boundary.is_paragraph_break === "boolean");
       });
     });
 
