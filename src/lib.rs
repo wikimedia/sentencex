@@ -20,7 +20,7 @@ pub struct SentenceBoundary<'a> {
     pub start_byte: usize,
     pub end_byte: usize,
     pub text: &'a str,
-    pub boundary_symbol: Option<String>,
+    pub boundary_symbol: Option<&'a str>,
     pub is_paragraph_break: bool,
 }
 
