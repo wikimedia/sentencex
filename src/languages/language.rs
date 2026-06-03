@@ -877,9 +877,8 @@ fn inner_terminator_boundary<L: Language + ?Sized>(
     }
 
     let next_word = lang.get_next_word_approx(paragraph, range.end);
-    let extend = lang.get_boundary_extend(next_word);
-
-    (extend >= 0).then(|| range.end + extend as usize)
+    lang.get_boundary_extend(next_word)
+        .map(|extend| range.end + extend)
 }
 
 /// Push a skippable range for each list-item line span (the last to `paragraph_len`)
@@ -1168,30 +1167,23 @@ pub trait Language {
         MarkerTable::empty()
     }
 
-    /// Determines how many characters to extend a boundary when continuing into the next word.
-    /// Returns -1 if the word indicates the boundary should not be created (continuation case).
-    /// Returns 0 or positive number indicating how many whitespace/punctuation characters
-    /// to skip when positioning the boundary. Used to handle cases like quoted sentences
-    /// where the boundary should include trailing punctuation and whitespace.
-    fn get_boundary_extend(&self, word: &str) -> i8 {
+    /// Byte offset past the leading run of whitespace/terminators in `word`,
+    /// or `None` when `word` continues the current sentence.
+    fn get_boundary_extend(&self, word: &str) -> Option<usize> {
         if self.continue_in_next_word(word.trim()) || CONTINUE_AFTER_NONWORD_REGEX.is_match(word) {
-            // not a boundary.
-            return -1;
+            return None;
         }
 
-        let mut count = 0i8;
+        let mut count = 0;
         for ch in word.chars() {
             if ch.is_whitespace() || is_sentence_terminator(ch) {
-                count += 1;
-                if count == i8::MAX {
-                    break; // Prevent overflow
-                }
+                count += ch.len_utf8();
             } else {
                 break;
             }
         }
 
-        word.ceil_char_boundary(count as usize) as i8
+        Some(count)
     }
 
     /// If `boundary` sits at an orphan trailing quote closer (e.g. `.'` with no
@@ -1683,10 +1675,11 @@ mod tests {
     fn get_boundary_extend_sums_run_in_bytes() {
         let lang = Japanese {};
 
-        assert_eq!(lang.get_boundary_extend(". X"), 2);
-        assert_eq!(lang.get_boundary_extend("。次"), 3);
-        assert_eq!(lang.get_boundary_extend("。。次"), 6);
-        assert_eq!(lang.get_boundary_extend(""), 0);
-        assert_eq!(lang.get_boundary_extend(" foo"), -1);
+        assert_eq!(lang.get_boundary_extend(". X"), Some(2));
+        assert_eq!(lang.get_boundary_extend("。次"), Some(3));
+        assert_eq!(lang.get_boundary_extend("。。次"), Some(6));
+        assert_eq!(lang.get_boundary_extend("　　X"), Some(6));
+        assert_eq!(lang.get_boundary_extend(""), Some(0));
+        assert_eq!(lang.get_boundary_extend(" foo"), None);
     }
 }
