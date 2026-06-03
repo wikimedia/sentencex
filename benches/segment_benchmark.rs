@@ -93,7 +93,7 @@ fn bench_real_corpus_boundaries(c: &mut Criterion) {
 fn bench_multi_language(c: &mut Criterion) {
     let mut group = c.benchmark_group("multi_language");
 
-    let languages = vec![
+    let languages = [
         (
             "en",
             "This is an English sentence. Another one follows. And yet another!",
