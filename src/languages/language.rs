@@ -1501,18 +1501,22 @@ pub trait Language {
     }
 
     /// Returns an approximate substring of the next word(s) starting from the given position.
-    /// Limited to a maximum of 30 characters for performance. Used to analyze context
+    /// Limited to a maximum of 30 bytes (+ codepoint rounding) for performance. Used to analyze context
     /// after a potential sentence boundary to determine if the boundary should be created.
     /// Handles UTF-8 character boundaries safely to avoid panics on non-ASCII text.
+    /// NOTE: If the longest special words (abbreviations, starters, etc) ever exceed 30 bytes, then
+    /// consider raising the cap, or making the cap max special word length aware.
     fn get_next_word_approx<'a>(&self, text: &'a str, start: usize) -> &'a str {
         if start >= text.len() {
             return "";
         }
 
-        let max_chars = 30;
-        let safe_start = text.floor_char_boundary(start);
-        let end_pos = (start + max_chars).min(text.len());
-        &text[safe_start..text.ceil_char_boundary(end_pos)]
+        // The current call site guarantees a character boundary. Catch any future drift.
+        debug_assert!(text.is_char_boundary(start));
+
+        let max_bytes = 30;
+        let end_pos = (start + max_bytes).min(text.len());
+        &text[start..text.ceil_char_boundary(end_pos)]
     }
 
     /// When a lowercase/digit (or comma) follower, an ellipsis continuation, or a spaced `!`/`?`
