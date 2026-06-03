@@ -1673,3 +1673,20 @@ pub trait Language {
         populate_quote_mispairing(text, out);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Language;
+    use crate::languages::Japanese;
+
+    #[test]
+    fn get_boundary_extend_sums_run_in_bytes() {
+        let lang = Japanese {};
+
+        assert_eq!(lang.get_boundary_extend(". X"), 2);
+        assert_eq!(lang.get_boundary_extend("。次"), 3);
+        assert_eq!(lang.get_boundary_extend("。。次"), 6);
+        assert_eq!(lang.get_boundary_extend(""), 0);
+        assert_eq!(lang.get_boundary_extend(" foo"), -1);
+    }
+}
