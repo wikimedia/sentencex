@@ -619,6 +619,71 @@ mod tests {
     }
 
     #[test]
+    fn test_segment_many_symmetric_quotes_per_sentence() {
+        // A single paragraph carrying several symmetric `"…"` quotes, one per
+        // sentence. Quote pairing inspects the per-token parity of the `"`
+        // symbol once per quote range; this guards that segmentation stays
+        // correct when many ranges share the same symmetric token.
+        let text =
+            "She said \"Be quiet.\" He said \"No way.\" Then \"Maybe later.\" Finally \"Done.\"";
+        let sentences = segment("en", text);
+
+        assert_eq!(
+            sentences,
+            vec![
+                "She said \"Be quiet.\" ",
+                "He said \"No way.\" ",
+                "Then \"Maybe later.\" ",
+                "Finally \"Done.\"",
+            ]
+        );
+
+        // Segmentation must be lossless: joining the pieces rebuilds the input.
+        assert_eq!(sentences.join(""), text);
+    }
+
+    #[test]
+    fn test_segment_large_single_paragraph_with_many_quotes_completes() {
+        // One large single-paragraph input with thousands of symmetric quote
+        // ranges. Quote pairing used to re-scan the whole paragraph once per
+        // range (O(n^2)); this exercises the linear, parity-cached path and
+        // documents that large inputs segment quickly and losslessly.
+        let unit =
+            "She said \"Be quiet.\" He said \"No way.\" Then \"Maybe later.\" Finally \"Done.\" ";
+        let text = unit.repeat(2000);
+
+        let sentences = segment("en", &text);
+
+        assert_eq!(sentences.join(""), text);
+        // Each repeated unit contributes four sentences.
+        assert_eq!(sentences.len(), 4 * 2000);
+    }
+
+    #[test]
+    fn test_segment_mixed_symmetric_quote_tokens_per_sentence() {
+        // Three *distinct* symmetric quote tokens (`"`, `'`, `` ` ``) in one
+        // paragraph, each opening a separate range. The per-paragraph parity
+        // is cached per token, so this exercises the multi-key path (the
+        // single-token tests above only ever populate one cache entry) and
+        // pins that each token's parity is looked up independently.
+        let text = "She said \"Be quiet.\" He muttered 'go away.' Then `enough.` Done.";
+        let sentences = segment("en", text);
+
+        assert_eq!(
+            sentences,
+            vec![
+                "She said \"Be quiet.\" ",
+                "He muttered 'go away.' ",
+                "Then `enough.` ",
+                "Done.",
+            ]
+        );
+
+        // Segmentation must be lossless: joining the pieces rebuilds the input.
+        assert_eq!(sentences.join(""), text);
+    }
+
+    #[test]
     fn test_segment_quote_followed_by_spaced_dots_does_not_panic() {
         // Minimized from a JPMorgan annual-report TOC line that previously caused
         // quote-extension to push a later boundary backwards.

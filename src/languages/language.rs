@@ -1,4 +1,5 @@
 use regex::Regex;
+use rustc_hash::FxHashMap;
 use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
@@ -207,12 +208,23 @@ fn is_symmetric_quote_range(range: &SkippableRange) -> bool {
 /// occurrence — and when that orphan sits earlier than a real downstream
 /// opener, `QUOTES_REGEX` will mispair across a real sentence break. Even
 /// counts are structurally consistent and should be trusted.
-fn symmetric_token_count_is_odd(paragraph: &str, range: &SkippableRange) -> bool {
+///
+/// The parity depends only on the quote token, not on the individual range,
+/// so the result is memoized in `parity_cache` keyed by the token. This keeps
+/// the per-paragraph cost of counting a given token to a single scan even when
+/// many ranges share that token (see `populate_quote_mispairing`).
+fn symmetric_token_count_is_odd(
+    paragraph: &str,
+    range: &SkippableRange,
+    parity_cache: &mut FxHashMap<&'static str, bool>,
+) -> bool {
     let Some(pair) = range.quote_pair else {
         return false;
     };
 
-    paragraph.matches(pair.open).count() % 2 == 1
+    *parity_cache
+        .entry(pair.open)
+        .or_insert_with(|| paragraph.matches(pair.open).count() % 2 == 1)
 }
 
 /// True when `quote` and any parens range in `ranges` partially overlap —
@@ -334,7 +346,16 @@ pub enum QuoteMispairing {
 }
 
 /// Tag each symmetric-pair quote range with a mispairing label.
+///
+/// The token-count parity check below scans the whole paragraph. Since a
+/// single symmetric token (`'`, `"`, …) can open many ranges in one
+/// paragraph, computing that scan per range is O(ranges × len) — quadratic
+/// on large single-paragraph inputs with many quotes. The parity is a
+/// property of the token alone, so it is computed once per distinct token
+/// and reused via `parity_cache`, bringing the scanning cost back to O(len).
 fn populate_quote_mispairing(paragraph: &str, ranges: &mut [SkippableRange]) {
+    let mut parity_cache: FxHashMap<&'static str, bool> = FxHashMap::default();
+
     for i in 0..ranges.len() {
         if !ranges[i].is_quote() {
             continue;
@@ -346,7 +367,7 @@ fn populate_quote_mispairing(paragraph: &str, ranges: &mut [SkippableRange]) {
             QuoteMispairing::None
         } else if quote_partially_overlaps_parens(&range, ranges) {
             QuoteMispairing::Certain
-        } else if symmetric_token_count_is_odd(paragraph, &range) {
+        } else if symmetric_token_count_is_odd(paragraph, &range, &mut parity_cache) {
             QuoteMispairing::Possible
         } else {
             QuoteMispairing::None

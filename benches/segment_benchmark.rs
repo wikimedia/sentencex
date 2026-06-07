@@ -197,6 +197,36 @@ fn bench_quote_heavy_inner_terminators(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_single_paragraph_symmetric_quotes(c: &mut Criterion) {
+    // One *single paragraph* (no blank-line breaks) carrying many symmetric
+    // `"…"` quote ranges. Quote-pair mispairing classification scans the
+    // whole paragraph once per symmetric quote token; without per-token
+    // memoization that is O(ranges x len), i.e. quadratic as the paragraph
+    // grows. Parametrizing by byte size makes the scaling visible: throughput
+    // (bytes/s) should stay roughly flat for a linear implementation and
+    // collapse for a quadratic one.
+    let unit =
+        "She said \"Be quiet.\" He said \"No way.\" Then \"Maybe later.\" Finally \"Done.\" ";
+
+    let mut group = c.benchmark_group("single_paragraph_symmetric_quotes");
+    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(20);
+
+    for size in [10_000usize, 50_000, 150_000].iter() {
+        let mut text = String::with_capacity(size + unit.len());
+        while text.len() < *size {
+            text.push_str(unit);
+        }
+
+        group.throughput(Throughput::Bytes(text.len() as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(size), &text, |b, text| {
+            b.iter(|| segment(black_box("en"), black_box(text)))
+        });
+    }
+
+    group.finish();
+}
+
 fn bench_real_wikipedia_sample(c: &mut Criterion) {
     // Sample from a real Wikipedia article
     let text = "The James Webb Space Telescope (JWST) is a space telescope specifically designed \
@@ -227,6 +257,7 @@ criterion_group!(
     bench_list_heavy_text,
     bench_quoted_text,
     bench_quote_heavy_inner_terminators,
+    bench_single_paragraph_symmetric_quotes,
     bench_real_wikipedia_sample
 );
 criterion_main!(benches);
