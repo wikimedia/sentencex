@@ -3,13 +3,13 @@ use std::sync::LazyLock;
 
 use super::Language;
 use super::language::continues_after_boundary;
-use super::parse_abbreviation_list;
+use super::parse_lowercase_word_list;
 
 #[derive(Debug, Clone)]
 pub struct Finnish {}
 
 static FINNISH_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/fi.txt")]));
+    LazyLock::new(|| parse_lowercase_word_list([include_str!("./abbrev/fi.txt")]));
 
 const MONTHS: [&str; 12] = [
     "tammikuu",

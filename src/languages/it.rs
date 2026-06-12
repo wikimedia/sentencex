@@ -2,13 +2,13 @@ use rustc_hash::FxHashSet;
 use std::sync::LazyLock;
 
 use super::Language;
-use super::parse_abbreviation_list;
+use super::parse_lowercase_word_list;
 
 #[derive(Debug, Clone)]
 pub struct Italian {}
 
 static ITALIAN_ABBREVIATIONS: LazyLock<FxHashSet<String>> =
-    LazyLock::new(|| parse_abbreviation_list([include_str!("./abbrev/it.txt")]));
+    LazyLock::new(|| parse_lowercase_word_list([include_str!("./abbrev/it.txt")]));
 impl Language for Italian {
     fn get_abbreviations(&self) -> &FxHashSet<String> {
         &ITALIAN_ABBREVIATIONS

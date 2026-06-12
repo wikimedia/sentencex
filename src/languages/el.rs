@@ -6,13 +6,13 @@ use regex::Regex;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 
 use super::Language;
-use super::parse_abbreviation_list;
+use super::parse_lowercase_word_list;
 
 #[derive(Debug, Clone)]
 pub struct Greek {}
 
 static GREEK_ABBREVIATIONS: LazyLock<FxHashSet<String>> = LazyLock::new(|| {
-    parse_abbreviation_list([
+    parse_lowercase_word_list([
         include_str!("./abbrev/el.txt"),
         include_str!("./abbrev/en.txt"),
     ])
