@@ -28,6 +28,7 @@ mod nl;
 mod pa;
 mod pl;
 mod pt;
+mod quotes;
 mod ru;
 mod sk;
 mod ta;

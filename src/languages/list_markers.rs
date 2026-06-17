@@ -120,6 +120,11 @@ fn scan_line(text: &str, line_start: usize, line_end: usize, out: &mut Vec<Candi
         out.push(Candidate::line_start(line_start, hit));
     }
 
+    // Fast check against `)`, and unicode bullets which have a 0xE2 leading byte.
+    if memchr::memchr2(b')', 0xE2, &bytes[content_start..line_end]).is_none() {
+        return;
+    }
+
     // Each whitespace run is a candidate boundary; the byte after it may
     // begin an inline list marker. memchr2 jumps between runs.
     let mut cursor = content_start;
@@ -217,6 +222,11 @@ fn consume_marker(s: &str) -> Option<(MarkerFamily, usize)> {
 }
 
 fn match_unicode_bullet(s: &str) -> Option<usize> {
+    // Fast check: the current UNICODE_BULLETS have a 0xE2 lead byte.
+    if s.as_bytes().first() != Some(&0xE2) {
+        return None;
+    }
+
     let c = s.chars().next()?;
     UNICODE_BULLETS.contains(&c).then(|| c.len_utf8())
 }

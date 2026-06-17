@@ -639,7 +639,7 @@ mod tests {
         assert_eq!(boundaries[0].end_index, text.chars().count());
         assert_eq!(boundaries[0].start_byte, 0);
         assert_eq!(boundaries[0].end_byte, text.len());
-        assert_eq!(boundaries[0].boundary_symbol.as_deref(), Some("."));
+        assert_eq!(boundaries[0].boundary_symbol, Some("."));
         assert!(!boundaries[0].is_paragraph_break);
     }
 
@@ -671,7 +671,7 @@ mod tests {
                 i
             );
             assert_eq!(
-                boundary.boundary_symbol.as_deref(),
+                boundary.boundary_symbol,
                 Some("."),
                 "Boundary {} should have period as symbol",
                 i
@@ -693,7 +693,7 @@ mod tests {
         // All sentence boundaries should have period symbol
         for (i, boundary) in non_paragraph.iter().enumerate() {
             assert_eq!(
-                boundary.boundary_symbol.as_deref(),
+                boundary.boundary_symbol,
                 Some("."),
                 "Boundary {} should have period symbol despite trailing spaces",
                 i
@@ -715,7 +715,7 @@ mod tests {
         // Verify we detect the different terminators
         let symbols: Vec<_> = non_paragraph
             .iter()
-            .filter_map(|b| b.boundary_symbol.as_deref())
+            .filter_map(|b| b.boundary_symbol)
             .collect();
 
         assert!(symbols.contains(&"!"), "Should detect exclamation mark");
@@ -737,7 +737,7 @@ mod tests {
         // Should detect CJK terminators
         let with_cjk_stop = non_paragraph
             .iter()
-            .filter(|b| b.boundary_symbol.as_deref() == Some("。"))
+            .filter(|b| b.boundary_symbol == Some("。"))
             .count();
 
         assert!(
@@ -808,7 +808,7 @@ mod tests {
     #[test]
     fn test_get_sentence_boundaries_paragraph_separator_offsets() {
         let para = format!("{}’", "Filler sentence here. ".repeat(150));
-        let text = std::iter::repeat(para.as_str())
+        let text = std::iter::repeat_n(para.as_str(), 6)
             .take(6)
             .collect::<Vec<_>>()
             .join("\r\n\r\n");

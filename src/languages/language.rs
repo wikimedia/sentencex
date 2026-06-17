@@ -7,12 +7,14 @@ use crate::constants::EMAIL_REGEX;
 use crate::constants::EXCLAMATION_WORDS;
 use crate::constants::GLOBAL_SENTENCE_TERMINATORS;
 use crate::constants::PARENS_REGEX;
-use crate::constants::QUOTE_CLOSERS_BY_LEN;
-use crate::constants::QUOTE_PAIRS;
-use crate::constants::QUOTES_REGEX;
 use crate::constants::QuotePair;
-use crate::constants::SPACE_AFTER_SEPARATOR;
 use crate::constants::is_sentence_terminator;
+
+use super::quotes::{
+    OrphanCloserPositions, QuoteMispairing, collect_quote_ranges, extend_past_orphan_closer,
+    inner_terminator_boundary, is_symmetric_quote_closer, is_symmetric_quote_mispairing,
+    peel_leading_symmetric_quote, tag_quote_mispairing,
+};
 
 use super::trailing_markers::{MarkerTable, classify_trailing_marker, marker_bypasses_suppression};
 
@@ -89,23 +91,13 @@ pub(crate) fn paragraph_breaks(text: &str) -> impl Iterator<Item = (usize, usize
     })
 }
 
-/// True iff it finds a `.[ \t]+[A-Z]` shape.
-/// Using memchr here instead of regex for speed
-fn has_possible_inline_sentence_break(span: &str) -> bool {
-    let bytes = span.as_bytes();
-    for dot_pos in memchr::memchr_iter(b'.', bytes) {
-        let tail = &bytes[dot_pos + 1..];
-
-        let Some(blanks) = tail.iter().position(|&b| !matches!(b, b' ' | b'\t')) else {
-            continue;
-        };
-
-        if blanks > 0 && tail[blanks].is_ascii_uppercase() {
-            return true;
-        }
-    }
-
-    false
+/// True when a `.` sits inside a code-like numbered token rather than ending a
+/// sentence. A digit immediately before, and an alphanumeric token with a digit
+/// after with no space, e.g. the chess move `7.Bg5`.
+fn is_code_like_numbered_token(head: &str, next_word_approx: &str) -> bool {
+    head.bytes().next_back().is_some_and(|b| b.is_ascii_digit())
+        && next_word_approx.starts_with(|c: char| c.is_alphabetic())
+        && next_word_approx.bytes().any(|b| b.is_ascii_digit())
 }
 
 fn is_single_ascii_upper(s: &str) -> bool {
@@ -146,267 +138,7 @@ fn starts_with_initial(s: &str) -> bool {
         && chars.next().is_none_or(char::is_whitespace)
 }
 
-/// True when `closer` is the closing token of a symmetric quote pair —
-/// `'`, `''`, `"`, etc., where opener equals closer. These pairs are
-/// inherently ambiguous: `QUOTES_REGEX` can fail to pair them when they're
-/// space-padded, so callers need extra logic to decide orphanhood.
-fn is_symmetric_quote_closer(closer: &str) -> bool {
-    QUOTE_PAIRS
-        .iter()
-        .any(|p| p.open == p.close && p.close == closer)
-}
-
-/// True when the `closer` token at `boundary` in `paragraph` is an orphan —
-/// either it has no matching opener earlier in the paragraph, or it is a
-/// lone stray with no counterpart anywhere.
-///
-/// Asymmetric closers (`»`, `”`, …) are unambiguous and always orphan once
-/// `QUOTES_REGEX` has had a chance to pair them. For symmetric closers we
-/// inspect the closer's distribution across the paragraph, ignoring
-/// occurrences already consumed by a paired quote range and contractions
-/// like `wasn't`.
-fn is_orphan_closer(
-    paragraph: &str,
-    boundary: usize,
-    closer: &str,
-    skippable_ranges: &[SkippableRange],
-) -> bool {
-    if !is_symmetric_quote_closer(closer) {
-        return true;
-    }
-
-    let (mut before, mut at_or_after) = (0usize, 0usize);
-    for (idx, _) in paragraph.match_indices(closer) {
-        if !is_quote_candidate(paragraph, idx, closer, skippable_ranges) {
-            continue;
-        }
-
-        if idx < boundary {
-            before += 1;
-        } else {
-            at_or_after += 1;
-        }
-    }
-
-    let unmatched_opener_before = before % 2 == 1;
-    let lone_stray_at_boundary = before == 0 && at_or_after == 1;
-    unmatched_opener_before || lone_stray_at_boundary
-}
-
-/// Find the first `QUOTE_PAIRS` entry whose `open` is a prefix of `span`.
-fn identify_quote_pair(span: &str) -> Option<&'static QuotePair> {
-    QUOTE_PAIRS.iter().find(|p| span.starts_with(p.open))
-}
-
-/// True when `range` was constructed for a symmetric-pair quote token,
-/// e.g., `''…''`, `'…'`, `"…"`.
-fn is_symmetric_quote_range(range: &SkippableRange) -> bool {
-    range.quote_pair.is_some_and(|p| p.open == p.close)
-}
-
-/// True when the paragraph contains an odd number of the symmetric quote
-/// token that opens `range`. An odd count guarantees at least one orphan
-/// occurrence — and when that orphan sits earlier than a real downstream
-/// opener, `QUOTES_REGEX` will mispair across a real sentence break. Even
-/// counts are structurally consistent and should be trusted.
-fn symmetric_token_count_is_odd(paragraph: &str, range: &SkippableRange) -> bool {
-    let Some(pair) = range.quote_pair else {
-        return false;
-    };
-
-    paragraph.matches(pair.open).count() % 2 == 1
-}
-
-/// True when `quote` and any parens range in `ranges` partially overlap —
-/// one endpoint inside, the other outside. Full containment in either
-/// direction (a quote wrapping parens, or parens wrapping a quote) is fine
-/// and returns false. Partial overlap is the signature of a greedy
-/// symmetric-pair pairing that crossed what's really a sentence break.
-fn quote_partially_overlaps_parens(quote: &SkippableRange, ranges: &[SkippableRange]) -> bool {
-    ranges
-        .iter()
-        .filter(|r| r.range_type == SkippableRangeType::Parentheses)
-        .any(|p| {
-            (quote.start < p.start && p.start < quote.end && quote.end < p.end)
-                || (p.start < quote.start && quote.start < p.end && p.end < quote.end)
-        })
-}
-
-/// Trim leading whitespace from `s`, then if a symmetric quote closer
-/// follows, peel one such closer plus its trailing whitespace. Used to
-/// look "through" a stray closing apostrophe when checking for a comma
-/// continuation, e.g., `. ' , Tim …`.
-fn peel_leading_symmetric_quote(s: &str) -> &str {
-    let trimmed = s.trim_start();
-    let Some(&first) = trimmed.as_bytes().first() else {
-        return trimmed;
-    };
-
-    // Fast check for ASCII quotes
-    if first.is_ascii() && !matches!(first, b'\'' | b'"' | b'`') {
-        return trimmed;
-    }
-
-    QUOTE_PAIRS
-        .iter()
-        .filter(|p| p.open == p.close)
-        .find_map(|p| trimmed.strip_prefix(p.close))
-        .map(str::trim_start)
-        .unwrap_or(trimmed)
-}
-
-/// True when `idx` lies inside an existing quote `SkippableRange`.
-/// Ranges are sorted so use a binary search to filter out irrelevant ranges.
-fn is_in_quote_range(ranges: &[SkippableRange], idx: usize) -> bool {
-    let pos = ranges.partition_point(|r| r.start <= idx);
-    ranges[..pos].iter().any(|r| r.is_quote() && idx < r.end)
-}
-
-/// Chars immediately before `idx` and immediately after `idx + token.len()`.
-/// Returned as `(prev, next)`; either side is `None` at the text boundary.
-fn neighbors(text: &str, idx: usize, token: &str) -> (Option<char>, Option<char>) {
-    (
-        text[..idx].chars().next_back(),
-        text[idx + token.len()..].chars().next(),
-    )
-}
-
-/// True when the `token` occurrence at `idx` is a contraction (`wasn't`,
-/// `o'clock`) sandwiched between two alphanumerics. Such `'` are not quote
-/// characters. Counting them flips the parity-based orphan check.
-fn is_contraction_quote(text: &str, idx: usize, token: &str) -> bool {
-    let (prev, next) = neighbors(text, idx, token);
-    prev.is_some_and(|c| c.is_alphanumeric()) && next.is_some_and(|c| c.is_alphanumeric())
-}
-
-/// True when the `token` occurrence at `idx` is a free-standing quote
-/// candidate not already inside a paired quote range and not a contraction.
-fn is_quote_candidate(text: &str, idx: usize, token: &str, ranges: &[SkippableRange]) -> bool {
-    !is_in_quote_range(ranges, idx) && !is_contraction_quote(text, idx, token)
-}
-
-/// True when the `'` or `` ` `` at `idx` is preceded by start of text or
-/// whitespace AND followed by whitespace. The shape `QUOTES_REGEX`'s guarded
-/// pattern can't pair. It requires `\b` after the opener.
-fn is_opener_shape(text: &str, idx: usize, token: &str) -> bool {
-    let (prev, next) = neighbors(text, idx, token);
-    prev.is_none_or(char::is_whitespace) && next.is_some_and(char::is_whitespace)
-}
-
-/// True when `text[from..]` starts with one or more ASCII blanks followed by
-/// an ASCII uppercase letter, the signature of a fresh utterance opening.
-fn starts_new_utterance(text: &str, from: usize) -> bool {
-    let tail = &text[from..];
-    let trimmed = tail.trim_start_matches([' ', '\t']);
-
-    trimmed.len() < tail.len()
-        && trimmed
-            .as_bytes()
-            .first()
-            .is_some_and(u8::is_ascii_uppercase)
-}
-
-/// True when the candidate `'` or `` ` `` at `opener` should pair with the
-/// candidate at `closer` into a quote range. Rejects two shapes:
-/// * `opener` isn't space-padded. It's not opener-like to begin with.
-/// * The span looks like two back to back utterances rather than one
-///   multi-sentence quotation. The closer itself starts a fresh utterance
-///   (whitespace + uppercase) AND the intervening text contains an inline
-///   `[.!] + ws + uppercase` sentence break.
-fn quote_candidates_should_pair(text: &str, opener: usize, closer: usize, token: &str) -> bool {
-    if !is_opener_shape(text, opener, token) {
-        return false;
-    }
-
-    let span = &text[opener + token.len()..closer];
-    let after_closer = closer + token.len();
-    let back_to_back =
-        starts_new_utterance(text, after_closer) && has_possible_inline_sentence_break(span);
-
-    !back_to_back
-}
-
-/// Define quote mispairings to improve readability in the orphan quote handling.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum QuoteMispairing {
-    #[default]
-    None,
-    Certain,
-    Possible,
-}
-
-/// Tag each symmetric-pair quote range with a mispairing label.
-fn populate_quote_mispairing(paragraph: &str, ranges: &mut [SkippableRange]) {
-    for i in 0..ranges.len() {
-        if !ranges[i].is_quote() {
-            continue;
-        }
-
-        let range = ranges[i];
-
-        let class = if !is_symmetric_quote_range(&range) {
-            QuoteMispairing::None
-        } else if quote_partially_overlaps_parens(&range, ranges) {
-            QuoteMispairing::Certain
-        } else if symmetric_token_count_is_odd(paragraph, &range) {
-            QuoteMispairing::Possible
-        } else {
-            QuoteMispairing::None
-        };
-
-        ranges[i].quote_mispairing = class;
-    }
-}
-
-/// Append `'…'` / `` `…` `` ranges that `QUOTES_REGEX` couldn't pair.
-/// Guarded patterns require `\b` immediately after the opener, so
-/// space padded openers like `' word ` go unpaired even when they form a
-/// real `' … '` pair.
-fn append_space_padded_quote_pairs(text: &str, ranges: &mut Vec<SkippableRange>) {
-    let bytes = text.as_bytes();
-
-    // Fast check
-    if memchr::memchr2(b'\'', b'`', bytes).is_none() {
-        return;
-    }
-
-    for pair in QUOTE_PAIRS
-        .iter()
-        .filter(|p| p.ambiguous && p.open == p.close)
-    {
-        let token = pair.close;
-        debug_assert_eq!(
-            token.len(),
-            1,
-            "ambiguous symmetric tokens are single-byte ASCII"
-        );
-
-        if !bytes.contains(&token.as_bytes()[0]) {
-            continue;
-        }
-
-        let mut pending: Option<usize> = None;
-        for (idx, _) in text.match_indices(token) {
-            if !is_quote_candidate(text, idx, token, ranges) {
-                continue;
-            }
-
-            if let Some(opener) = pending
-                && quote_candidates_should_pair(text, opener, idx, token)
-            {
-                let end = idx + token.len();
-                ranges.push(SkippableRange::new_quote(opener, end, pair));
-                pending = None;
-            } else {
-                pending = Some(idx);
-            }
-        }
-    }
-}
-
 /// Push `boundary` only if it advances past the last recorded position.
-/// Quote-extension can move a boundary past later regex matches in the same
-/// paragraph; this keeps the boundary list strictly increasing.
 /// Assumes the caller is passing a non empty list of boundaries.
 fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
     debug_assert!(!boundaries.is_empty());
@@ -429,28 +161,375 @@ fn push_if_increasing(boundaries: &mut Vec<usize>, boundary: usize) {
 fn find_terminator_matches(text: &str, regex: &Regex, out: &mut Vec<(usize, usize)>) {
     out.clear();
 
+    // Faster path for ASCII + DEFAULT_SENTENCE_BREAK_REGEX
+    if std::ptr::eq(regex, &*DEFAULT_SENTENCE_BREAK_REGEX) && text.is_ascii() {
+        scan_ascii_matches(text, out);
+        return;
+    }
+
     for m in regex.find_iter(text) {
-        let (start, end) = (m.start(), m.end());
+        fold_match(out, text, m.start(), m.end());
+    }
+}
 
-        if let Some(last) = out.last_mut() {
-            let prev = &text[last.0..last.1];
-            let candidate = &text[start..end];
-            let gap = &text[last.1..start];
+/// Push `[start, end)` onto `out`. If `should_fold` says the two form a single run
+/// like `Happy ! . . .`, fold it into the previous match.
+fn fold_match(out: &mut Vec<(usize, usize)>, text: &str, start: usize, end: usize) {
+    if let Some(last) = out.last_mut()
+        && should_fold(text, *last, start, end)
+    {
+        last.1 = end;
+        return;
+    }
 
-            let is_blank = |c: char| matches!(c, ' ' | '\t');
-            let prev_is_emphatic = prev.ends_with(['!', '?', '…']);
-            let candidate_is_dot_run =
-                candidate.starts_with('.') && candidate.chars().all(|c| c == '.' || is_blank(c));
-            let separated_by_blanks = !gap.is_empty() && gap.chars().all(is_blank);
+    out.push((start, end));
+}
 
-            if prev_is_emphatic && candidate_is_dot_run && separated_by_blanks {
-                last.1 = end;
-                continue;
-            }
+/// True when match `[start, end)` should fold onto the previous match `[prev_start, prev_end)`,
+/// i.e., whitespace separated dot only run like `. . .` following a `!`/`?`/`…` ending.
+fn should_fold(
+    text: &str,
+    (prev_start, prev_end): (usize, usize),
+    start: usize,
+    end: usize,
+) -> bool {
+    let prev = &text[prev_start..prev_end];
+    let candidate = &text[start..end];
+    let gap = &text[prev_end..start];
+
+    let is_blank = |c: char| matches!(c, ' ' | '\t');
+    let prev_is_emphatic = prev.ends_with(['!', '?', '…']);
+    let candidate_is_dot_run =
+        candidate.starts_with('.') && candidate.chars().all(|c| c == '.' || is_blank(c));
+    let separated_by_blanks = !gap.is_empty() && gap.chars().all(is_blank);
+
+    prev_is_emphatic && candidate_is_dot_run && separated_by_blanks
+}
+
+/// ASCII fast path for `find_terminator_matches`.
+/// Only valid for the default regex.
+/// branch 1 `\.(?:[ \t]+\.){2,}` (3+ blank separated dots).
+/// branch 2 `[!?](?:[ \t]+[!?])+` (2+ blank separated `!`/`?`)
+/// branch 3 (`[.!?]+`) via `contiguous_run`
+fn scan_ascii_matches(text: &str, out: &mut Vec<(usize, usize)>) {
+    let bytes = text.as_bytes();
+
+    let mut cursor = 0;
+    while let Some(rel) = memchr::memchr3(b'.', b'!', b'?', &bytes[cursor..]) {
+        let p = cursor + rel;
+
+        let spaced = if bytes[p] == b'.' {
+            spaced_run(bytes, p, |b| b == b'.', 3)
+        } else {
+            spaced_run(bytes, p, |b| b == b'!' || b == b'?', 2)
+        };
+
+        let end = spaced.unwrap_or_else(|| contiguous_run(bytes, p));
+
+        fold_match(out, text, p, end);
+        cursor = end;
+    }
+}
+
+/// Scans a space/tab-separated run of `is_member` bytes starting at `p`.
+/// Returns the offset just past the last member,
+/// or `None` if the run has fewer than `min_total` members.
+fn spaced_run(
+    bytes: &[u8],
+    p: usize,
+    is_member: impl Fn(u8) -> bool,
+    min_total: usize,
+) -> Option<usize> {
+    let mut count = 1;
+    let mut end = p + 1;
+
+    loop {
+        let mut k = end;
+        while matches!(bytes.get(k), Some(b' ' | b'\t')) {
+            k += 1;
         }
 
-        out.push((start, end));
+        if k > end && bytes.get(k).is_some_and(|&b| is_member(b)) {
+            count += 1;
+            end = k + 1;
+        } else {
+            break;
+        }
     }
+
+    (count >= min_total).then_some(end)
+}
+
+/// End offset of the contiguous terminator run starting at `p`
+fn contiguous_run(bytes: &[u8], p: usize) -> usize {
+    let mut end = p + 1;
+
+    while matches!(bytes.get(end), Some(b'.' | b'!' | b'?')) {
+        end += 1;
+    }
+
+    end
+}
+
+/// Scratch buffer
+#[derive(Default)]
+struct ParagraphScratch {
+    sentence_boundaries: Vec<usize>,
+    matches: Vec<(usize, usize)>,
+    skippable_ranges: Vec<SkippableRange>,
+    orphan_closers: OrphanCloserPositions,
+}
+
+impl ParagraphScratch {
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            sentence_boundaries: Vec::with_capacity(capacity),
+            matches: Vec::with_capacity(capacity),
+            skippable_ranges: Vec::with_capacity(capacity),
+            orphan_closers: OrphanCloserPositions::default(),
+        }
+    }
+}
+
+fn boundary_symbol(paragraph: &str, end: usize) -> Option<&str> {
+    let trimmed = paragraph[..end].trim_end();
+    trimmed
+        .char_indices()
+        .next_back()
+        .and_then(|(idx, ch)| is_sentence_terminator(ch).then(|| &trimmed[idx..]))
+}
+
+fn push_separator_boundary<'a>(
+    boundaries: &mut Vec<SentenceBoundary<'a>>,
+    separator: &'a str,
+    start_byte: usize,
+    end_byte: usize,
+    char_offset: &mut usize,
+) {
+    let separator_chars = separator.chars().count();
+
+    boundaries.push(SentenceBoundary {
+        start_index: *char_offset,
+        end_index: *char_offset + separator_chars,
+        start_byte,
+        end_byte,
+        text: separator,
+        boundary_symbol: None,
+        is_paragraph_break: true,
+    });
+
+    *char_offset += separator_chars;
+}
+
+/// Convert the paragraph's sentence-break offsets into `SentenceBoundary` values,
+/// advancing the running character cursor `char_offset`.
+fn push_paragraph_sentences<'a>(
+    paragraph: &'a str,
+    para_start: usize,
+    sentence_boundaries: &[usize],
+    char_offset: &mut usize,
+    boundaries: &mut Vec<SentenceBoundary<'a>>,
+) {
+    debug_assert_eq!(sentence_boundaries.first().copied(), Some(0));
+    debug_assert_eq!(sentence_boundaries.last().copied(), Some(paragraph.len()));
+
+    for window in sentence_boundaries.windows(2) {
+        let seg_start = window[0];
+        let seg_end = window[1];
+        let sentence_text = &paragraph[seg_start..seg_end];
+        let end_offset = *char_offset + sentence_text.chars().count();
+
+        boundaries.push(SentenceBoundary {
+            start_index: *char_offset,
+            end_index: end_offset,
+            start_byte: para_start + seg_start,
+            end_byte: para_start + seg_end,
+            text: sentence_text,
+            boundary_symbol: boundary_symbol(paragraph, seg_end),
+            is_paragraph_break: false,
+        });
+
+        *char_offset = end_offset;
+    }
+}
+
+/// Properties of the sorted non list region of a paragraph's skippable ranges.
+/// `len` is the number of skippable ranges.
+/// `binary_search` is whether to use binary search when searching in the ranges, i.e., is there enough data to
+/// justify the overhead of binary search.
+#[derive(Clone, Copy)]
+pub(crate) struct NonListRegion {
+    pub(crate) len: usize,
+    pub(crate) binary_search: bool,
+}
+
+/// Minimum number of ranges required before it's worth while to use binary search (rather than a linear scan).
+const BINARY_SEARCH_MIN_RANGES: usize = 64;
+
+/// Get the byte offsets in `paragraph` where sentences break. Skip terminators inside quotes, parens, and lists.
+fn collect_sentence_breaks<L: Language + ?Sized>(
+    lang: &L,
+    paragraph: &str,
+    sentence_break_regex: &Regex,
+    scratch: &mut ParagraphScratch,
+) {
+    let ParagraphScratch {
+        sentence_boundaries,
+        matches,
+        skippable_ranges,
+        orphan_closers,
+    } = scratch;
+
+    orphan_closers.reset();
+
+    sentence_boundaries.clear();
+    sentence_boundaries.push(0);
+
+    find_terminator_matches(paragraph, sentence_break_regex, matches);
+    lang.get_skippable_ranges(paragraph, skippable_ranges);
+
+    let non_list_len = skippable_ranges.len();
+    let non_list_region = NonListRegion {
+        len: non_list_len,
+        binary_search: non_list_len > BINARY_SEARCH_MIN_RANGES && !ranges_overlap(skippable_ranges),
+    };
+
+    let list_starts = super::list_markers::detect_list_items(paragraph);
+    add_list_item_ranges(skippable_ranges, &list_starts, paragraph.len());
+
+    for &(match_start, match_end) in matches.iter() {
+        let Some(boundary) = lang.find_boundary(paragraph, match_start, match_end) else {
+            continue;
+        };
+
+        let break_at = match containing_range(
+            lang,
+            paragraph,
+            boundary,
+            match_start,
+            match_end,
+            skippable_ranges,
+            non_list_region,
+        ) {
+            Some(range) => inner_terminator_boundary(lang, paragraph, range, boundary),
+            None => Some(extend_past_orphan_closer(
+                lang,
+                paragraph,
+                boundary,
+                skippable_ranges,
+                non_list_region,
+                orphan_closers,
+            )),
+        };
+
+        if let Some(break_at) = break_at {
+            push_if_increasing(sentence_boundaries, break_at);
+        }
+    }
+
+    merge_list_item_boundaries(sentence_boundaries, &list_starts);
+
+    if *sentence_boundaries.last().unwrap() != paragraph.len() {
+        sentence_boundaries.push(paragraph.len());
+    }
+}
+
+/// True iff a range overlaps another one.
+fn ranges_overlap(start_sorted_ranges: &[SkippableRange]) -> bool {
+    let mut max_end = 0;
+
+    for r in start_sorted_ranges {
+        if r.start < max_end {
+            return true;
+        }
+
+        max_end = max_end.max(r.end);
+    }
+
+    false
+}
+
+/// Binary search the non list region of `ranges` for the range satisfying `is_break`.
+/// Fall back to the appended list ranges.
+/// `ranges` needs to be sorted and non overlapping.
+fn select_containing_binary(
+    ranges: &[SkippableRange],
+    non_list_len: usize,
+    boundary: usize,
+    is_break: impl Fn(&SkippableRange) -> bool,
+) -> Option<&SkippableRange> {
+    let (non_list, list) = ranges.split_at(non_list_len);
+
+    non_list
+        .partition_point(|r| r.start < boundary)
+        .checked_sub(1)
+        .map(|i| &non_list[i])
+        .filter(|&r| is_break(r))
+        .or_else(|| list.iter().find(|&r| is_break(r)))
+}
+
+/// The first skippable range that genuinely encloses `boundary`: it contains the
+/// offset and is not a symmetric-quote mispairing (which only looks like containment).
+/// `Some` means the terminator at `boundary` should be suppressed rather than split on.
+fn containing_range<'r, L: Language + ?Sized>(
+    lang: &L,
+    paragraph: &str,
+    boundary: usize,
+    match_start: usize,
+    match_end: usize,
+    ranges: &'r [SkippableRange],
+    region: NonListRegion,
+) -> Option<&'r SkippableRange> {
+    let is_break = |range: &SkippableRange| {
+        range.contains(boundary)
+            && !is_symmetric_quote_mispairing(lang, paragraph, range, match_start, match_end)
+    };
+
+    if region.binary_search {
+        select_containing_binary(ranges, region.len, boundary, is_break)
+    } else {
+        ranges.iter().find(|&r| is_break(r))
+    }
+}
+
+/// Push a skippable range for each list-item line span (the last to `paragraph_len`)
+/// so a terminator inside an item does not split it.
+fn add_list_item_ranges(
+    skippable_ranges: &mut Vec<SkippableRange>,
+    list_starts: &[usize],
+    paragraph_len: usize,
+) {
+    for pair in list_starts.windows(2) {
+        skippable_ranges.push(SkippableRange::new(
+            pair[0],
+            pair[1],
+            SkippableRangeType::ListItem,
+        ));
+    }
+
+    if let Some(&last) = list_starts.last() {
+        skippable_ranges.push(SkippableRange::new(
+            last,
+            paragraph_len,
+            SkippableRangeType::ListItem,
+        ));
+    }
+}
+
+/// Add each list item line start as a sentence boundary, then sort and dedup.
+fn merge_list_item_boundaries(sentence_boundaries: &mut Vec<usize>, list_starts: &[usize]) {
+    if list_starts.is_empty() {
+        return;
+    }
+
+    for &start in list_starts {
+        if start > 0 {
+            sentence_boundaries.push(start);
+        }
+    }
+
+    sentence_boundaries.sort_unstable();
+    sentence_boundaries.dedup();
 }
 
 /// Shared helper for languages that continue sentences before month names.
@@ -534,25 +613,6 @@ impl SkippableRange {
     pub fn is_quote(&self) -> bool {
         self.range_type == SkippableRangeType::Quote
     }
-
-    /// True if `boundary` lies just before this quote's closing mark — i.e. the
-    /// sentence terminator sits inside the quoted span with only the closer left.
-    /// Opinionated behaviour, but it can help to resolve some real world cases with erroneous
-    /// or ambiguous punctuation placement.
-    ///
-    /// Example: in (start of line) `He said "Hello."`, the `.` boundary is immediately followed
-    /// by the closing `"`, so the sentence should extend past the quote rather than break
-    /// between the `.` and the `"`.
-    pub fn is_inner_terminator(&self, text: &str, boundary: usize) -> bool {
-        if !self.is_quote() || boundary >= self.end {
-            return false;
-        }
-
-        let head = &text[..self.end];
-        QUOTE_CLOSERS_BY_LEN
-            .iter()
-            .any(|c| head.ends_with(*c) && boundary + c.len() == self.end)
-    }
 }
 
 pub trait Language {
@@ -571,239 +631,85 @@ pub trait Language {
     ///
     /// Each boundary contains the sentence text, position indices, and metadata about the boundary type.
     fn get_sentence_boundaries<'a>(&self, text: &'a str) -> Vec<SentenceBoundary<'a>> {
-        // Pre-allocate boundaries with estimated capacity (rough estimate: 1 sentence per 50 characters)
-        let estimated_sentences = (text.len() / 50).max(1);
-        let mut boundaries = Vec::with_capacity(estimated_sentences);
+        let text_len = text.len();
+        let capacity = (text_len / 50).max(1);
+        let mut boundaries = Vec::with_capacity(capacity);
+        let mut scratch = ParagraphScratch::with_capacity(capacity);
+        let regex = self.get_sentence_break_regex();
 
-        // Split by paragraph breaks (one or more newlines with optional whitespace)
-        // CRITICAL: We track both byte offsets AND character offsets separately.
-        // This is essential for correct handling of multi-byte UTF-8 characters like CJK and emojis.
-        // Example: "日本語" is 3 characters but 9 bytes:
-        //   - byte offset: 0..9
-        //   - char offset: 0..3
-        // Roughly estimate 4 sentences per paragraph
-        let estimated_paragraphs = (estimated_sentences / 4).max(1);
-        let mut paragraphs: Vec<&str> = Vec::with_capacity(estimated_paragraphs);
-        let mut paragraph_offsets: Vec<usize> = Vec::with_capacity(estimated_paragraphs);
-        let mut paragraph_char_offsets: Vec<usize> = Vec::with_capacity(estimated_paragraphs);
+        // Walk each paragraph paired with its trailing separator (`None` after the last
+        // paragraph). `para_start` / `char_offset` are the running byte / character
+        // cursors, tracked separately for correct multi-byte UTF-8 handling ("日本語"
+        // is 3 characters but 9 bytes).
+        let (mut para_start, mut char_offset) = (0usize, 0usize);
+        let trailing_separators = paragraph_breaks(text)
+            .map(Some)
+            .chain(std::iter::once(None));
 
-        let mut last_end = 0;
-        let mut current_char_offset = 0;
-        for (sep_start, sep_end) in paragraph_breaks(text) {
-            let paragraph = &text[last_end..sep_start];
-            paragraphs.push(paragraph);
-            paragraph_offsets.push(last_end);
-            paragraph_char_offsets.push(current_char_offset);
+        for trailing_separator in trailing_separators {
+            let para_end = trailing_separator.map_or(text_len, |(sep_start, _)| sep_start);
+            let paragraph = &text[para_start..para_end];
 
-            let separator_chars = text[sep_start..sep_end].chars().count();
-            current_char_offset += paragraph.chars().count() + separator_chars;
-            last_end = sep_end;
-        }
+            collect_sentence_breaks(self, paragraph, regex, &mut scratch);
+            push_paragraph_sentences(
+                paragraph,
+                para_start,
+                &scratch.sentence_boundaries,
+                &mut char_offset,
+                &mut boundaries,
+            );
 
-        // Final paragraph after the last separator (the whole text if none).
-        paragraphs.push(&text[last_end..]);
-        paragraph_offsets.push(last_end);
-        paragraph_char_offsets.push(current_char_offset);
+            // Emit the separator that follows this paragraph (none after the last).
+            if let Some((sep_start, sep_end)) = trailing_separator {
+                push_separator_boundary(
+                    &mut boundaries,
+                    &text[sep_start..sep_end],
+                    sep_start,
+                    sep_end,
+                    &mut char_offset,
+                );
 
-        // Pre-allocate sentence_boundaries once and reuse for all paragraphs
-        let estimated_paragraph_sentences = 10; // reasonable default for typical paragraphs
-        let mut sentence_boundaries = Vec::with_capacity(estimated_paragraph_sentences);
-        let mut matches: Vec<(usize, usize)> = Vec::with_capacity(estimated_paragraph_sentences);
-        let sentence_break_regex = self.get_sentence_break_regex();
-
-        for (pindex, paragraph) in paragraphs.iter().enumerate() {
-            if pindex > 0 {
-                let paragraph_start = paragraph_offsets[pindex];
-                let separator_start = paragraph_offsets[pindex - 1] + paragraphs[pindex - 1].len();
-                let separator = &text[separator_start..paragraph_start];
-                let paragraph_char_start = paragraph_char_offsets[pindex];
-
-                boundaries.push(SentenceBoundary {
-                    start_index: paragraph_char_start - separator.chars().count(),
-                    end_index: paragraph_char_start,
-                    start_byte: paragraph_start - separator.len(),
-                    end_byte: paragraph_start,
-                    text: separator,
-                    boundary_symbol: None,
-                    is_paragraph_break: true,
-                });
-            }
-
-            let paragraph_start_offset = if pindex == 0 {
-                0
-            } else {
-                paragraph_offsets[pindex]
-            };
-
-            let paragraph_start_char_offset = if pindex == 0 {
-                0
-            } else {
-                paragraph_char_offsets[pindex]
-            };
-
-            sentence_boundaries.clear();
-            sentence_boundaries.push(0);
-
-            find_terminator_matches(paragraph, sentence_break_regex, &mut matches);
-            let mut skippable_ranges = self.get_skippable_ranges(paragraph);
-
-            // Detect list-item line starts once per paragraph and reuse the
-            // result for both atomic-item ranges (so terminator-driven boundaries
-            // inside an item are dropped) and explicit boundary emission below.
-            let list_starts = super::list_markers::detect_list_items(paragraph);
-
-            if !list_starts.is_empty() {
-                for window in list_starts.windows(2) {
-                    skippable_ranges.push(SkippableRange::new(
-                        window[0],
-                        window[1],
-                        SkippableRangeType::ListItem,
-                    ));
-                }
-
-                let last = *list_starts.last().unwrap();
-
-                skippable_ranges.push(SkippableRange::new(
-                    last,
-                    paragraph.len(),
-                    SkippableRangeType::ListItem,
-                ));
-
-                // Consumers of skippable_ranges don't seem to rely on order, but I'm not sure if this is
-                // intentional or incidental.  If it's intentional, we can drop this sort.
-                skippable_ranges.sort_unstable_by_key(|r| r.start);
-            }
-
-            'next_match: for &(start, end) in &matches {
-                let Some(mut boundary) = self.find_boundary(paragraph, start, end) else {
-                    continue;
-                };
-
-                for range in &skippable_ranges {
-                    if !range.contains(boundary) {
-                        continue;
-                    }
-
-                    if self.is_symmetric_quote_mispairing(paragraph, range, start, end) {
-                        continue;
-                    }
-
-                    // Inside a quoted/parens/email range. Either advance past the
-                    // closer (if the boundary sits at an inner terminator) or drop
-                    // this match entirely. Either way, no further extension applies.
-                    if range.is_inner_terminator(paragraph, boundary) {
-                        let next_word = self.get_next_word_approx(paragraph, range.end);
-                        let extend = self.get_boundary_extend(next_word);
-                        if extend >= 0 {
-                            push_if_increasing(
-                                &mut sentence_boundaries,
-                                range.end + extend as usize,
-                            );
-                        }
-                    }
-                    continue 'next_match;
-                }
-
-                boundary = self.extend_past_orphan_closer(paragraph, boundary, &skippable_ranges);
-                push_if_increasing(&mut sentence_boundaries, boundary);
-            }
-
-            // Merge in list-item line starts as sentence boundaries. They may
-            // interleave with terminator boundaries in source order, so we
-            // sort + dedup once rather than maintain the increasing invariant
-            // during insertion.
-            if !list_starts.is_empty() {
-                for &start in &list_starts {
-                    if start > 0 {
-                        sentence_boundaries.push(start);
-                    }
-                }
-
-                sentence_boundaries.sort_unstable();
-                sentence_boundaries.dedup();
-            }
-
-            if *sentence_boundaries.last().unwrap() != paragraph.len() {
-                sentence_boundaries.push(paragraph.len());
-            }
-
-            let mut prev_end_index = paragraph_start_char_offset;
-            let mut prev_end_byte = 0;
-
-            for i in 0..sentence_boundaries.len() - 1 {
-                let start = sentence_boundaries[i];
-                let end = sentence_boundaries[i + 1];
-
-                if start >= paragraph.len() || end > paragraph.len() || start > end {
-                    continue;
-                }
-
-                let sentence_text = &paragraph[start..end];
-                let boundary_symbol = if end > 0 && end <= paragraph.len() {
-                    // Trim trailing whitespace before looking for the boundary symbol.
-                    // This fixes the issue where boundary symbols are not detected when
-                    // followed by whitespace (e.g., "Hello. " should detect "." as symbol).
-                    let sentence_slice = &paragraph[..end];
-                    let trimmed_slice = sentence_slice.trim_end();
-
-                    // Use char_indices for more efficient character iteration on the trimmed slice
-                    trimmed_slice
-                        .char_indices()
-                        .next_back()
-                        .and_then(|(idx, ch)| {
-                            if is_sentence_terminator(ch) {
-                                Some(&trimmed_slice[idx..])
-                            } else {
-                                None
-                            }
-                        })
-                } else {
-                    None
-                };
-
-                let start_byte = paragraph_start_offset + start;
-                let end_byte = paragraph_start_offset + end;
-
-                let start_index = if start == prev_end_byte {
-                    prev_end_index
-                } else {
-                    let safe_prev = paragraph.floor_char_boundary(prev_end_byte);
-                    let safe_start = paragraph.floor_char_boundary(start);
-                    prev_end_index + paragraph[safe_prev..safe_start].chars().count()
-                };
-                let end_index = start_index + sentence_text.chars().count();
-
-                boundaries.push(SentenceBoundary {
-                    start_index,
-                    end_index,
-                    start_byte,
-                    end_byte,
-                    text: sentence_text,
-                    boundary_symbol,
-                    is_paragraph_break: false,
-                });
-
-                prev_end_index = end_index;
-                prev_end_byte = end;
+                para_start = sep_end;
             }
         }
 
         boundaries
     }
 
-    /// Segments the input text into individual sentences and returns them as string slices.
-    /// This is a convenience method that builds on get_sentence_boundaries() but returns
-    /// only the sentence text content without the additional boundary metadata.
-    /// Used when you only need the segmented sentences and not their position information.
+    /// Segments `text` into sentence and paragraph separator slices.
+    /// Emits slices directly instead of building per-sentence index/symbol metadata.
     fn segment<'a>(&self, text: &'a str) -> Vec<&'a str> {
-        // Pre-allocate with estimated capacity based on text length
-        let estimated_sentences = (text.len() / 50).max(1);
-        let mut sentences = Vec::with_capacity(estimated_sentences);
+        let text_len = text.len();
+        let capacity = (text_len / 50).max(1);
+        let mut sentences = Vec::with_capacity(capacity);
+        let mut scratch = ParagraphScratch::with_capacity(capacity);
+        let regex = self.get_sentence_break_regex();
 
-        let boundaries = self.get_sentence_boundaries(text);
-        for boundary in boundaries {
-            if !boundary.text.is_empty() {
-                sentences.push(boundary.text);
+        let mut para_start = 0usize;
+        let trailing_separators = paragraph_breaks(text)
+            .map(Some)
+            .chain(std::iter::once(None));
+
+        for trailing_separator in trailing_separators {
+            let para_end = trailing_separator.map_or(text_len, |(sep_start, _)| sep_start);
+            let paragraph = &text[para_start..para_end];
+
+            collect_sentence_breaks(self, paragraph, regex, &mut scratch);
+
+            for window in scratch.sentence_boundaries.windows(2) {
+                let sentence = &paragraph[window[0]..window[1]];
+                if !sentence.is_empty() {
+                    sentences.push(sentence);
+                }
+            }
+
+            if let Some((sep_start, sep_end)) = trailing_separator {
+                let separator = &text[sep_start..sep_end];
+                if !separator.is_empty() {
+                    sentences.push(separator);
+                }
+
+                para_start = sep_end;
             }
         }
 
@@ -853,104 +759,23 @@ pub trait Language {
         MarkerTable::empty()
     }
 
-    /// Determines how many characters to extend a boundary when continuing into the next word.
-    /// Returns -1 if the word indicates the boundary should not be created (continuation case).
-    /// Returns 0 or positive number indicating how many whitespace/punctuation characters
-    /// to skip when positioning the boundary. Used to handle cases like quoted sentences
-    /// where the boundary should include trailing punctuation and whitespace.
-    fn get_boundary_extend(&self, word: &str) -> i8 {
+    /// Byte offset past the leading run of whitespace/terminators in `word`,
+    /// or `None` when `word` continues the current sentence.
+    fn get_boundary_extend(&self, word: &str) -> Option<usize> {
         if self.continue_in_next_word(word.trim()) || CONTINUE_AFTER_NONWORD_REGEX.is_match(word) {
-            // not a boundary.
-            return -1;
+            return None;
         }
 
-        let mut count = 0i8;
+        let mut count = 0;
         for ch in word.chars() {
             if ch.is_whitespace() || is_sentence_terminator(ch) {
-                count += 1;
-                if count == i8::MAX {
-                    break; // Prevent overflow
-                }
+                count += ch.len_utf8();
             } else {
                 break;
             }
         }
 
-        word.ceil_char_boundary(count as usize) as i8
-    }
-
-    /// If `boundary` sits at an orphan trailing quote closer (e.g. `.'` with no
-    /// matching opener captured by `QUOTES_REGEX`), advance past the closer, any
-    /// trailing whitespace, and any stranded terminator that would otherwise
-    /// form a single-punctuation sentence. Returns `boundary` unchanged otherwise.
-    fn extend_past_orphan_closer(
-        &self,
-        paragraph: &str,
-        boundary: usize,
-        skippable_ranges: &[SkippableRange],
-    ) -> usize {
-        // If the next char opens a known quoted range, that quote belongs to
-        // the upcoming sentence — leave the boundary alone.
-        if skippable_ranges.iter().any(|r| r.start == boundary) {
-            return boundary;
-        }
-
-        // Find an orphan closer starting at `boundary`, if any. Longest first
-        // so `''` wins over `'` when both could match.
-        let Some(closer) = QUOTE_CLOSERS_BY_LEN.iter().find(|c| {
-            paragraph[boundary..].starts_with(**c)
-                && is_orphan_closer(paragraph, boundary, c, skippable_ranges)
-        }) else {
-            return boundary;
-        };
-
-        // A symmetric closer (`''`, `'`, `"`, …) that follows a terminator+space
-        // and precedes whitespace + a capitalized word is more plausibly the
-        // *opener* of the next sentence than a trailing orphan — but only when
-        // the same token has already been used as a paired opener/closer
-        // earlier in the paragraph. That paired use is the signal that the
-        // text is using this token in opener position too; without it, the
-        // token is more likely a stray closer (e.g. `… do ? ''` with no
-        // earlier opener).
-        if is_symmetric_quote_closer(closer) {
-            let has_earlier_symmetric_pair = skippable_ranges.iter().any(|r| {
-                r.end <= boundary
-                    && is_symmetric_quote_range(r)
-                    && paragraph[r.start..].starts_with(*closer)
-            });
-
-            if has_earlier_symmetric_pair {
-                let after = &paragraph[boundary + closer.len()..];
-                let mut chars = after.chars();
-                let first = chars.next();
-                if first.is_some_and(char::is_whitespace) {
-                    let next_non_ws = chars.find(|c| !c.is_whitespace());
-                    if next_non_ws.is_some_and(|c| c.is_ascii_uppercase()) {
-                        return boundary;
-                    }
-                }
-            }
-        }
-
-        let advance_past_space = |pos: usize| {
-            SPACE_AFTER_SEPARATOR
-                .find(&paragraph[pos..])
-                .map_or(pos, |m| pos + m.end())
-        };
-
-        let mut boundary = advance_past_space(boundary + closer.len());
-        let sentence_break_regex = self.get_sentence_break_regex();
-
-        // Absorb any stranded terminators (e.g. `'' .`) that would otherwise
-        // form a single-punctuation sentence.
-        while let Some(m) = sentence_break_regex
-            .find(&paragraph[boundary..])
-            .filter(|m| m.start() == 0)
-        {
-            boundary = advance_past_space(boundary + m.end());
-        }
-
-        boundary
+        Some(count)
     }
 
     /// Checks if a potential sentence boundary is actually part of an abbreviation.
@@ -1130,28 +955,6 @@ pub trait Language {
             .any(|w| w.strip_suffix('!').is_some_and(|p| p == last_word))
     }
 
-    /// True when this symmetric-pair quote range (`''…''`, `'…'`, `"…"`) is
-    /// a likely `QUOTES_REGEX` mispairing across a sentence break.
-    /// - Certain: range straddles a parens boundary. Override always
-    ///   fires. A quote pair shouldn't cross a parens edge.
-    /// - Possible: paragraph has an odd token count (one or more
-    ///   orphans). Override fires only if `[start, end)` also looks like
-    ///   a strong sentence break.
-    /// - None: not a symmetric pair or evenly balanced. No override.
-    fn is_symmetric_quote_mispairing(
-        &self,
-        paragraph: &str,
-        range: &SkippableRange,
-        start: usize,
-        end: usize,
-    ) -> bool {
-        match range.quote_mispairing {
-            QuoteMispairing::None => false,
-            QuoteMispairing::Certain => true,
-            QuoteMispairing::Possible => self.has_strong_sentence_break(paragraph, start, end),
-        }
-    }
-
     /// True when the terminator at `[start, end)` looks like a confident
     /// sentence end: a single `.` whose preceding word is a symmetric quote
     /// closer (`''`, `"`, …) and whose follower starts with a capital letter
@@ -1194,18 +997,62 @@ pub trait Language {
     }
 
     /// Returns an approximate substring of the next word(s) starting from the given position.
-    /// Limited to a maximum of 30 characters for performance. Used to analyze context
+    /// Limited to a maximum of 30 bytes (+ codepoint rounding) for performance. Used to analyze context
     /// after a potential sentence boundary to determine if the boundary should be created.
     /// Handles UTF-8 character boundaries safely to avoid panics on non-ASCII text.
+    /// NOTE: If the longest special words (abbreviations, starters, etc) ever exceed 30 bytes, then
+    /// consider raising the cap, or making the cap max special word length aware.
     fn get_next_word_approx<'a>(&self, text: &'a str, start: usize) -> &'a str {
         if start >= text.len() {
             return "";
         }
 
-        let max_chars = 30;
-        let safe_start = text.floor_char_boundary(start);
-        let end_pos = (start + max_chars).min(text.len());
-        &text[safe_start..text.ceil_char_boundary(end_pos)]
+        // The current call site guarantees a character boundary. Catch any future drift.
+        debug_assert!(text.is_char_boundary(start));
+
+        let max_bytes = 30;
+        let end_pos = (start + max_bytes).min(text.len());
+        &text[start..text.ceil_char_boundary(end_pos)]
+    }
+
+    /// When a lowercase/digit (or comma) follower, an ellipsis continuation, or a spaced `!`/`?`
+    /// before a lowercase word occurs after a terminator, suppress the sentence break.
+    fn terminator_continues(&self, matched: &str, head: &str, next_word_approx: &str) -> bool {
+        if matched.chars().nth(1).is_some() {
+            return self.is_ellipsis_continuation(next_word_approx)
+                || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
+                    && starts_with_ascii_lowercase_or_digit(next_word_approx));
+        }
+
+        self.continue_in_next_word(next_word_approx)
+            // e.g., "Father Came Too ! is a British comedy film".
+            || (matches!(matched, "!" | "?")
+                && matches!(head.as_bytes().last(), Some(b' ' | b'\t'))
+                && CONTINUE_AFTER_NONWORD_REGEX.is_match(next_word_approx))
+    }
+
+    /// Whether a `.` terminator should be suppressed.
+    fn period_suppresses_boundary(
+        &self,
+        head: &str,
+        last_word: &str,
+        next_word_approx: &str,
+    ) -> bool {
+        let suppress = self.is_name_initial_for(head, last_word, next_word_approx)
+            || self.is_abbreviation_for(last_word, ".");
+
+        let marker = classify_trailing_marker(head, self.get_trailing_markers());
+        if !suppress && marker.is_none() {
+            return false;
+        }
+
+        let next_is_starter = self.next_word_is_sentence_starter(next_word_approx);
+        let marker_bypass = marker.as_ref().is_some_and(|m| {
+            marker_bypasses_suppression(m, next_word_approx, next_is_starter, self)
+        });
+
+        !marker_bypass
+            && !self.should_override_abbrev_suppression_for(head, last_word, next_is_starter)
     }
 
     /// Analyzes a potential sentence boundary and determines the exact position where
@@ -1216,109 +1063,39 @@ pub trait Language {
     fn find_boundary(&self, text: &str, start: usize, end: usize) -> Option<usize> {
         let head = &text[..start];
         let matched = &text[start..end];
+        let next_word_approx = self.get_next_word_approx(text, end);
 
-        // Scan continuation and trailing-space extension from the end of the
-        // matched terminator. For a single-char match `end` is one-past the
-        // terminator char; for a coalesced run it's the end of the whole run.
-        let next_index = end;
-
-        let next_word_approx = self.get_next_word_approx(text, next_index);
-
-        if let Some(number_ref_match) =
-            crate::constants::NUMBERED_REFERENCE_REGEX.find(next_word_approx)
+        // Gate the regex to only run if `[` is found
+        if memchr::memchr(b'[', next_word_approx.as_bytes()).is_some()
+            && let Some(m) = crate::constants::NUMBERED_REFERENCE_REGEX.find(next_word_approx)
         {
-            return Some(next_index + number_ref_match.end());
+            return Some(end + m.end());
         }
 
-        // Any coalesced multi-char terminator run (`...`, `!?`, `. . .`, `! ?`)
-        // allows leading whitespace before the lowercase continuation test, so
-        // `! ? is` and `... no` read as mid-sentence. `chars().nth(1)` rules out
-        // a single multi-byte terminator (`。`, `…`), which would otherwise look
-        // multi-char by byte length.
-        let is_multi_char_run = matched.chars().nth(1).is_some();
-
-        let continues = if is_multi_char_run {
-            self.is_ellipsis_continuation(next_word_approx)
-                || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
-                    && starts_with_ascii_lowercase_or_digit(next_word_approx))
-        } else {
-            self.continue_in_next_word(next_word_approx)
-                // e.g., "Father Came Too ! is a British comedy film".
-                || (matches!(matched, "!" | "?")
-                    && matches!(head.as_bytes().last(), Some(b' ' | b'\t'))
-                    && CONTINUE_AFTER_NONWORD_REGEX.is_match(next_word_approx))
-        };
-
-        if continues {
-            return None;
-        }
-
-        // Digit immediately before the period and a digit-bearing alphanumeric
-        // token immediately after (no space) is a code-like numbered token,
-        // not a sentence end: chess moves (`7.Bg5`). Requiring a digit in the
-        // follower keeps quantities like `1,000.That` on the normal boundary
-        // path. The lowercase variant (`7.f4`) already passes through
-        // `continues`; this handles the uppercase case.
-        if matched == "."
-            && head.bytes().next_back().is_some_and(|b| b.is_ascii_digit())
-            && next_word_approx
-                .chars()
-                .next()
-                .is_some_and(|c| c.is_alphabetic())
-            && next_word_approx.bytes().any(|b| b.is_ascii_digit())
-        {
+        if self.terminator_continues(matched, head, next_word_approx) {
             return None;
         }
 
         let last_word = self.get_last_word(head);
 
         if matched == "." {
-            // Name-initial detection and the abbreviation table both feed
-            // one suppression flag, which `should_override_abbrev_suppression_for`
-            // can lift when the next token is a sentence starter.
-            let is_initial_letter = is_single_ascii_upper(last_word);
-
-            let name_initial_abbreviation_suppress = (is_initial_letter
-                && self.is_name_initial_for(head, last_word, next_word_approx))
-                || self.is_abbreviation_for(last_word, ".");
-
-            let marker = classify_trailing_marker(head, self.get_trailing_markers());
-
-            // A `.` is suppressed by default when its trailing token is a
-            // known abbreviation, name-initial, OR a known marker. The marker
-            // bypass and the starter override can each lift the suppression
-            // independently.
-            if name_initial_abbreviation_suppress || marker.is_some() {
-                let next_is_starter = self.next_word_is_sentence_starter(next_word_approx);
-                let marker_bypass = marker.as_ref().is_some_and(|m| {
-                    marker_bypasses_suppression(m, next_word_approx, next_is_starter, self)
-                });
-
-                if !marker_bypass
-                    && !self.should_override_abbrev_suppression_for(
-                        head,
-                        last_word,
-                        next_is_starter,
-                    )
-                {
-                    return None;
-                }
+            if is_code_like_numbered_token(head, next_word_approx) {
+                return None;
             }
-        } else if self.is_abbreviation_for(last_word, matched) {
-            return None;
+
+            if self.period_suppresses_boundary(head, last_word, next_word_approx) {
+                return None;
+            }
         }
 
         if self.is_exclamation_for(last_word) {
             return None;
         }
 
-        if let Some(space_after_sep_match) =
-            crate::constants::SPACE_AFTER_SEPARATOR.find(next_word_approx)
-        {
-            return Some(next_index + space_after_sep_match.end());
-        }
-
-        Some(end)
+        // Swallow any whitespace after the terminator into the boundary.
+        // Replaces the `^\s+` regex.
+        let trailing_ws = next_word_approx.len() - next_word_approx.trim_start().len();
+        Some(end + trailing_ws)
     }
 
     /// True when text following a multi-char terminator run (`...`, `! ?`,
@@ -1346,22 +1123,13 @@ pub trait Language {
     /// internal punctuation should not trigger sentence breaks. Returns a sorted vector
     /// of ranges that can be efficiently checked during boundary detection to avoid
     /// false positives within these special text regions.
-    fn get_skippable_ranges(&self, text: &str) -> Vec<SkippableRange> {
-        // Pre-allocate with estimated capacity based on text length (rough estimate: 1 range per 200 characters)
-        let estimated_ranges = (text.len() / 200).max(1);
-        let mut skippable_ranges = Vec::with_capacity(estimated_ranges);
+    fn get_skippable_ranges(&self, text: &str, out: &mut Vec<SkippableRange>) {
+        out.clear();
 
-        for mat in QUOTES_REGEX.find_iter(text) {
-            let pair = identify_quote_pair(&text[mat.start()..])
-                .expect("QUOTES_REGEX match must start with a known pair opener");
-
-            skippable_ranges.push(SkippableRange::new_quote(mat.start(), mat.end(), pair));
-        }
-
-        append_space_padded_quote_pairs(text, &mut skippable_ranges);
+        collect_quote_ranges(text, out);
 
         for mat in PARENS_REGEX.find_iter(text) {
-            skippable_ranges.push(SkippableRange::new(
+            out.push(SkippableRange::new(
                 mat.start(),
                 mat.end(),
                 SkippableRangeType::Parentheses,
@@ -1369,7 +1137,7 @@ pub trait Language {
         }
 
         for mat in EMAIL_REGEX.find_iter(text) {
-            skippable_ranges.push(SkippableRange::new(
+            out.push(SkippableRange::new(
                 mat.start(),
                 mat.end(),
                 SkippableRangeType::Email,
@@ -1377,11 +1145,27 @@ pub trait Language {
         }
 
         // Sort ranges by start position for more efficient lookups
-        skippable_ranges.sort_unstable_by_key(|r| r.start);
+        out.sort_unstable_by_key(|r| r.start);
 
         // Cache mispairing on each quote range for re-use
-        populate_quote_mispairing(text, &mut skippable_ranges);
+        tag_quote_mispairing(text, out);
+    }
+}
 
-        skippable_ranges
+#[cfg(test)]
+mod tests {
+    use super::Language;
+    use crate::languages::Japanese;
+
+    #[test]
+    fn get_boundary_extend_sums_run_in_bytes() {
+        let lang = Japanese {};
+
+        assert_eq!(lang.get_boundary_extend(". X"), Some(2));
+        assert_eq!(lang.get_boundary_extend("。次"), Some(3));
+        assert_eq!(lang.get_boundary_extend("。。次"), Some(6));
+        assert_eq!(lang.get_boundary_extend("　　X"), Some(6));
+        assert_eq!(lang.get_boundary_extend(""), Some(0));
+        assert_eq!(lang.get_boundary_extend(" foo"), None);
     }
 }
