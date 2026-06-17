@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.30 - 2026-06-17
+
+### Added
+
+- Trailing marker abbreviation types (#68)
+- Nodejs TypeScript declarations (#69/#70)
+- Exposing `boundary_symbol`/`is_paragraph_break` in `get_sentence_boundaries`
+
+### Changed
+- The `boundary_symbol` → `Option<&'a str>` API break (#71)
+- The readability/optimisation refactor (#72).
+
+
 ## [1.0.29] - 2026-05-27
 
 ### Added
