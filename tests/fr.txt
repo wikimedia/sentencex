@@ -21,3 +21,8 @@ Les derniers ouvrages de Intercept Ltd. sont ici.
 ---
 Les derniers ouvrages de Intercept Ltd. sont ici.
 ===
+Voir p. 12 pour les détails. Ensuite continuez.
+---
+Voir p. 12 pour les détails.
+Ensuite continuez.
+===
