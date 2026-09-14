@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.31 - 2026-09-14
+
+## Added
+
+- Recognize French page and Polish professor abbreviations (#75)
+
 ## 1.0.30 - 2026-06-17
 
 ### Added
