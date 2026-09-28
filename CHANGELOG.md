@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.32 - 2026-09-28
+
+## Added
+
+- Recognize English abbreviations in Japanese text (#77)
+
 ## 1.0.31 - 2026-09-14
 
 ## Added
