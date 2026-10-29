@@ -826,6 +826,7 @@ pub trait Language {
         // Preceding-token rule: trim the initial and any separators
         // get_last_word splits on (whitespace, `.`, `/`), then take the
         // trailing word of what's left.
+        let head = head.trim_end();
         let prefix = head[..head.len() - last_word.len()]
             .trim_end_matches(|c: char| c.is_whitespace() || c == '.' || c == '/');
 
