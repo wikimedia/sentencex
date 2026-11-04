@@ -26,3 +26,28 @@ Voir p. 12 pour les détails. Ensuite continuez.
 Voir p. 12 pour les détails.
 Ensuite continuez.
 ===
+Je vous passe M. Dupont. Un instant, s'il vous plaît.
+---
+Je vous passe M. Dupont.
+Un instant, s'il vous plaît.
+===
+Mme. Martin et le Dr. Roy sont absents. Voulez-vous laisser un message ?
+---
+Mme. Martin et le Dr. Roy sont absents.
+Voulez-vous laisser un message ?
+===
+Rendez-vous à l'église St. Jean. Le Cpt. Roy vous y attend.
+---
+Rendez-vous à l'église St. Jean.
+Le Cpt. Roy vous y attend.
+===
+Nous sommes au 12 bd. Saint-Michel. Venez nous voir.
+---
+Nous sommes au 12 bd. Saint-Michel.
+Venez nous voir.
+===
+Il a franchi le col. Ensuite il est redescendu.
+---
+Il a franchi le col.
+Ensuite il est redescendu.
+===

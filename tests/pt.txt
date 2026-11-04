@@ -19,3 +19,13 @@ A nova legislação era a lei 2.556, de 26 de setembro de 1874, e o decreto 5.88
 ---
 A nova legislação era a lei 2.556, de 26 de setembro de 1874, e o decreto 5.881, de 17 de fevereiro de 1875.[35]
 ===
+Moramos na Av. Paulista. Venha nos visitar.
+---
+Moramos na Av. Paulista.
+Venha nos visitar.
+===
+Fale com a Srta. Costa. Obrigado.
+---
+Fale com a Srta. Costa.
+Obrigado.
+===

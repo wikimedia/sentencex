@@ -190,3 +190,8 @@ Aspetta... I gatti stanno miagolando.
 Aspetta...
 I gatti stanno miagolando.
 ===
+Parli con il Gent. Rossi. Grazie.
+---
+Parli con il Gent. Rossi.
+Grazie.
+===
