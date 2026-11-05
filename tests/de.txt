@@ -167,3 +167,14 @@ Maria blätterte darin, las die ersten Sätze und kaufte es schließlich.
 »Wirklich?«
 »Ja, absolut!«
 »Das glaube ich erst, wenn ich es sehe.«
+===
+Bitte sprechen Sie mit Hrn. Müller. Vielen Dank.
+---
+Bitte sprechen Sie mit Hrn. Müller.
+Vielen Dank.
+===
+Ich danke dir. Tschüss.
+---
+Ich danke dir.
+Tschüss.
+===
