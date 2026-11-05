@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.34 - 2026-11-05
+
+### Bug Fixes
+- Recognize title, rank and saint abbreviations in fr, de, es, it, pt (#80)
+
 ## 1.0.33 - 2026-10-29
 
 ### Bug fixes
