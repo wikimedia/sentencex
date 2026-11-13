@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.35 - 2026-11-13
+
+## Added
+
+- ci: publish musllinux wheels for Alpine (#84)
+
 ## 1.0.34 - 2026-11-05
 
 ### Bug Fixes
