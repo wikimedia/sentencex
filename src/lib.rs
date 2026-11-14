@@ -1,7 +1,7 @@
 use languages::{
     Amharic, Arabic, Armenian, Bengali, Bulgarian, Burmese, Catalan, Danish, Dutch, English,
     Finnish, French, German, Greek, Gujarati, Hindi, Italian, Japanese, Kannada, Kazakh, Language,
-    Malayalam, Marathi, Polish, Portuguese, Punjabi, Russian, Slovak, Spanish, Tamil, Telugu,
+    Malayalam, Marathi, Polish, Portuguese, Punjabi, Russian, Slovak, Spanish, Tamil, Telugu, Thai,
     Ukrainian,
 };
 
@@ -66,6 +66,7 @@ pub fn language_factory(language_code: &str) -> Box<dyn Language> {
             "sk" => return Box::new(Slovak {}),
             "ta" => return Box::new(Tamil {}),
             "te" => return Box::new(Telugu {}),
+            "th" => return Box::new(Thai {}),
             "uk" => return Box::new(Ukrainian {}),
             _ => {
                 if let Some(fallbacks) = languages::get_fallbacks(current_code) {
