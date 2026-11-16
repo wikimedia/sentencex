@@ -40,20 +40,21 @@ static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 // (e.g. a space or punctuation). Used by languages that extend the base continuation
 // check with their own month lists.
 static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^\W*[0-9a-z]").unwrap());
+    LazyLock::new(|| Regex::new(r"^\W*[0-9\p{Lowercase}]").unwrap());
 
 // Ellipsis continuation: treat a multi-char terminator run as mid-sentence when the follow-up is
 // whitespace + a lowercase letter or digit (`... no`, `. . . what`). Languages with a
 // capitalized word that is ambiguous with a sentence start (English standalone `I`) extend
 // this via the `is_ellipsis_continuation` trait method.
 pub(crate) static ELLIPSIS_CONTINUE_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^\s+[0-9a-z]").unwrap());
+    LazyLock::new(|| Regex::new(r"^\s+[0-9\p{Lowercase}]").unwrap());
 
-/// Equivalent to regex `^[0-9a-z]`. Direct byte check is faster for simple pattern.
-fn starts_with_ascii_lowercase_or_digit(s: &str) -> bool {
-    s.as_bytes()
-        .first()
-        .is_some_and(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9'))
+/// Equivalent to regex `^[0-9\p{Lowercase}]`: a digit, or a lowercase letter
+/// of any script (`т.е. в`, `пр.н.е. градът` continue as `e.g. the` does).
+fn starts_with_lowercase_or_digit(s: &str) -> bool {
+    s.chars()
+        .next()
+        .is_some_and(|c| c.is_ascii_digit() || c.is_lowercase())
 }
 
 /// If the bytes at `at` start a `\n[\r]*\n` paragraph separator, return
@@ -1022,7 +1023,7 @@ pub trait Language {
         if matched.chars().nth(1).is_some() {
             return self.is_ellipsis_continuation(next_word_approx)
                 || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
-                    && starts_with_ascii_lowercase_or_digit(next_word_approx));
+                    && starts_with_lowercase_or_digit(next_word_approx));
         }
 
         self.continue_in_next_word(next_word_approx)
@@ -1040,7 +1041,8 @@ pub trait Language {
         next_word_approx: &str,
     ) -> bool {
         let suppress = self.is_name_initial_for(head, last_word, next_word_approx)
-            || self.is_abbreviation_for(last_word, ".");
+            || self.is_abbreviation_for(last_word, ".")
+            || self.is_multi_dot_abbreviation(head, last_word.len());
 
         let marker = classify_trailing_marker(head, self.get_trailing_markers());
         if !suppress && marker.is_none() {
@@ -1112,7 +1114,7 @@ pub trait Language {
     /// the sentence is continuing rather than starting a new one. This helps avoid breaking
     /// sentences at abbreviations or in the middle of compound sentences.
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        if starts_with_ascii_lowercase_or_digit(text_after_boundary) {
+        if starts_with_lowercase_or_digit(text_after_boundary) {
             return true;
         }
 
