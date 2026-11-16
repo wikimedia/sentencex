@@ -18,7 +18,9 @@ use super::quotes::{
 
 use super::trailing_markers::{MarkerTable, classify_trailing_marker, marker_bypasses_suppression};
 
-static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+/// Runs of sentence-terminating punctuation. A language with other sentence
+/// breaks appends them as further alternatives.
+pub(crate) static DEFAULT_SENTENCE_BREAK_PATTERN: LazyLock<String> = LazyLock::new(|| {
     // Branch 1 (`\.(?:[ \t]+\.){2,}`) coalesces three-or-more spaced dots
     // (`. . .`, `. . . .`) into one match. Two-dot `. .` is excluded so a
     // period followed by a leading ellipsis (`raak. ...en`) is not eaten as a
@@ -28,13 +30,14 @@ static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     // mixed or homogeneous (`! !`, `? ? ?`, `! ?`, `… !`). `+` rather than
     // `{2,}` is safe here — there's no leading-ellipsis equivalent for `!`/`?`.
     // Both branches must precede the class for leftmost-first alternation.
-    let pattern = format!(
+    format!(
         r"\.(?:[ \t]+\.){{2,}}|[!?…](?:[ \t]+[!?…])+|[{}]+",
         GLOBAL_SENTENCE_TERMINATORS.iter().collect::<String>()
-    );
-
-    Regex::new(&pattern).unwrap()
+    )
 });
+
+static DEFAULT_SENTENCE_BREAK_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(&DEFAULT_SENTENCE_BREAK_PATTERN).unwrap());
 
 // Matches a lowercase letter or digit, optionally preceded by non-word characters
 // (e.g. a space or punctuation). Used by languages that extend the base continuation

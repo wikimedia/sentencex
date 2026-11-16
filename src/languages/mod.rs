@@ -33,6 +33,7 @@ mod ru;
 mod sk;
 mod ta;
 mod te;
+mod th;
 mod trailing_markers;
 mod uk;
 
@@ -69,6 +70,7 @@ pub use ru::Russian;
 pub use sk::Slovak;
 pub use ta::Tamil;
 pub use te::Telugu;
+pub use th::Thai;
 pub use uk::Ukrainian;
 
 use rustc_hash::FxHashSet;
