@@ -318,6 +318,10 @@ mod tests {
     fn test_chinese_segment() {
         run_language_tests_for_language("zh", "tests/zh.txt");
     }
+    #[test]
+    fn test_georgian_segment() {
+        run_language_tests_for_language("ka", "tests/ka.txt");
+    }
 
     #[test]
     fn test_chunk_text_basic() {
