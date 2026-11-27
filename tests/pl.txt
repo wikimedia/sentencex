@@ -7,3 +7,17 @@ Prof. Kowalski przyszedł. Potem wyszedł.
 Prof. Kowalski przyszedł.
 Potem wyszedł.
 ===
+Spotkanie jest 14 listopada 2026 r. o godz. 14.30. Dobrze.
+---
+Spotkanie jest 14 listopada 2026 r. o godz. 14.30.
+Dobrze.
+===
+Zebranie odbędzie się o godz. 9.00. Bądź punktualny.
+---
+Zebranie odbędzie się o godz. 9.00.
+Bądź punktualny.
+===
+Spotkanie było 14 listopada 2026 r. w Warszawie.
+---
+Spotkanie było 14 listopada 2026 r. w Warszawie.
+===
