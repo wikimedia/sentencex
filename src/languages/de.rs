@@ -50,4 +50,17 @@ mod tests {
     fn test_segment() {
         run_language_tests(German {}, "tests/de.txt");
     }
+
+    #[test]
+    fn test_ordinal_indicators_do_not_split() {
+        let de = German {};
+        assert_eq!(
+            de.segment("Fue el 1.º de mayo. Bien."),
+            vec!["Fue el 1.º de mayo. ", "Bien."]
+        );
+        assert_eq!(
+            de.segment("Es la 2.ª edición del libro."),
+            vec!["Es la 2.ª edición del libro."]
+        );
+    }
 }

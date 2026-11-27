@@ -49,11 +49,15 @@ static CONTINUE_AFTER_NONWORD_REGEX: LazyLock<Regex> =
 pub(crate) static ELLIPSIS_CONTINUE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^\s+[0-9a-z]").unwrap());
 
-/// Equivalent to regex `^[0-9a-z]`. Direct byte check is faster for simple pattern.
-fn starts_with_ascii_lowercase_or_digit(s: &str) -> bool {
-    s.as_bytes()
-        .first()
-        .is_some_and(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9'))
+/// Equivalent to `^[0-9a-zªº]`. Direct byte check avoids UTF-8 decoding on ASCII.
+fn starts_with_continuation_char(s: &str) -> bool {
+    let Some(&b) = s.as_bytes().first() else {
+        return false;
+    };
+    if b.is_ascii() {
+        return matches!(b, b'a'..=b'z' | b'0'..=b'9');
+    }
+    matches!(s.chars().next(), Some('ª' | 'º'))
 }
 
 /// If the bytes at `at` start a `\n[\r]*\n` paragraph separator, return
@@ -538,7 +542,7 @@ fn merge_list_item_boundaries(sentence_boundaries: &mut Vec<usize>, list_starts:
 /// non-word characters), or if its first whitespace-delimited word (case-insensitively
 /// capitalised) is one of the supplied `months`.
 pub fn continues_after_boundary(text: &str, months: &[&str]) -> bool {
-    if CONTINUE_AFTER_NONWORD_REGEX.is_match(text) {
+    if starts_with_continuation_char(text) || CONTINUE_AFTER_NONWORD_REGEX.is_match(text) {
         return true;
     }
 
@@ -1022,7 +1026,7 @@ pub trait Language {
         if matched.chars().nth(1).is_some() {
             return self.is_ellipsis_continuation(next_word_approx)
                 || (head.chars().next_back().is_some_and(|c| !c.is_whitespace())
-                    && starts_with_ascii_lowercase_or_digit(next_word_approx));
+                    && starts_with_continuation_char(next_word_approx));
         }
 
         self.continue_in_next_word(next_word_approx)
@@ -1112,7 +1116,7 @@ pub trait Language {
     /// the sentence is continuing rather than starting a new one. This helps avoid breaking
     /// sentences at abbreviations or in the middle of compound sentences.
     fn continue_in_next_word(&self, text_after_boundary: &str) -> bool {
-        if starts_with_ascii_lowercase_or_digit(text_after_boundary) {
+        if starts_with_continuation_char(text_after_boundary) {
             return true;
         }
 

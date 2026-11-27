@@ -19,3 +19,17 @@ Hable con la Profa. López. Gracias.
 Hable con la Profa. López.
 Gracias.
 ===
+Fue el 1.º de mayo. Bien.
+---
+Fue el 1.º de mayo.
+Bien.
+===
+Es la 2.ª edición del libro.
+---
+Es la 2.ª edición del libro.
+===
+El ganador fue el 1.º. Felicitaciones.
+---
+El ganador fue el 1.º.
+Felicitaciones.
+===
