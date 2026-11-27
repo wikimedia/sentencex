@@ -546,7 +546,7 @@ pub fn continues_after_boundary(text: &str, months: &[&str]) -> bool {
         .split_whitespace()
         .next()
         .unwrap_or("")
-        .trim_matches(['.', '!', '?']);
+        .trim_matches(['.', '!', '?', '…', ',', ';', ':', ')']);
 
     if next_word.is_empty() {
         return false;
