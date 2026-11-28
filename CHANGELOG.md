@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.36 - 2026-11-28
+
+### Bug Fixes
+- Trim trailing punctuation when checking month continuation (#86)
+- Avoid splitting immediately before ordinal indicators (#87)
+- Recognize Polish r. and godz. abbreviations (#88)
+
 ## 1.0.35 - 2026-11-13
 
 ## Added
